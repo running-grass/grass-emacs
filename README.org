@@ -15,13 +15,13 @@
   - [[#定义用户级别的键位映射图][定义用户级别的键位映射图]]
   - [[#emacs-的默认配置][Emacs 的默认配置]]
 - [[#内置包的配置][内置包的配置]]
-- [[#引导-straight][引导 straight]]
-- [[#meow---模态编辑][meow - 模态编辑]]
+- [[#引导-straightel][引导 straight.el]]
+- [[#meow---模态编辑][Meow - 模态编辑]]
 - [[#应用程序][应用程序]]
   - [[#邮件][邮件]]
-  - [[#pocket][pocket]]
+  - [[#pocket][Pocket]]
   - [[#浏览器][浏览器]]
-  - [[#rss][rss]]
+  - [[#rss][RSS]]
 - [[#自动补全][自动补全]]
 - [[#编程语言][编程语言]]
 - [[#项目工程][项目工程]]
@@ -68,6 +68,18 @@
   (setq inhibit-startup-message t)
   ;; 关闭内置的包管理工具
   (setq package-enable-at-startup nil)
+
+  ;; Silence nativecomp warnings popping up
+  (setq native-comp-async-report-warnings-errors nil)
+
+  ;; Settings
+  (setq native-comp-speed 2
+        native-comp-deferred-compilation t
+        package-native-compile t)
+
+  ;; 给 eln-cache 目录换个地方
+  (when (boundp 'native-comp-eln-load-path)
+    (startup-redirect-eln-cache (expand-file-name "~/.cache/emacs/eln-cache/")))
 
   ;; 关闭菜单栏
   (menu-bar-mode -1)
@@ -155,8 +167,8 @@
 
     ;; 允许外部程序的粘贴板
     ;; (setq select-enable-clipboard t)
-    (setq bookmark-default-file (expand-emacs-data "/bookmarks"))
-    (setq auto-save-list-file-prefix  (expand-emacs-state "/auto-save-list/.saves-"))
+    (setq bookmark-default-file (expand-emacs-data "bookmarks"))
+    (setq auto-save-list-file-prefix (expand-emacs-state "auto-save-list/.saves-"))
 
     ;; TAB cycle if there are only few candidates
     (setq completion-cycle-threshold 3)
@@ -232,7 +244,7 @@
     :ensure nil
     :init
     (setq tramp-default-method "ssh")
-    (setq tramp-persistency-file-name (expand-emacs-state "/tramp")))
+    (setq tramp-persistency-file-name (expand-emacs-state "tramp")))
 
 
   ;; 文件被外部程序修改后，重新载入buffer
@@ -267,7 +279,7 @@
 #+end_src
 
 
-* 引导 straight
+* 引导 straight.el
 
 这里使用了 =straight= 来代替内置的 =package.el= 作为包管理工具。
 
@@ -293,7 +305,7 @@
 #+end_src
 
 
-* meow - 模态编辑
+* Meow - 模态编辑
 
 可以说这个模态编辑包是整个配置中我最喜欢的。 它可以最大限度的使用 =Emacs= 原生键位。而不需要每安装一个新的包，就去做一些适配和兼容（我说的就是 =evil= ）
 
@@ -418,7 +430,7 @@
 
 * 应用程序
 
-** COMMENT eaf
+** COMMENT EAF
 
 #+begin_src emacs-lisp
   (use-package eaf
@@ -490,16 +502,7 @@
 #+end_src
 
 
-** COMMENT 音乐
-
-#+begin_src emacs-lisp
-  ;; (use-package linum-node)
-  ;; (use-package netease-cloud-music
-  ;;     :requires (netease-cloud-music netease-cloud-music-ui)
-  ;;   )
-#+end_src
-
-** pocket
+** Pocket
 
 用于阅读和管理稍后阅读列表
 
@@ -531,7 +534,7 @@
     )
 #+end_src
 
-** rss
+** RSS
 
 #+begin_src emacs-lisp
   (use-package elfeed-protocol
@@ -727,6 +730,8 @@
 
   (use-package yasnippet
     :ensure t
+    :config
+    (setq yas--default-user-snippets-dir (expand-emacs-data "snippets"))
     :hook
     (lsp-bridge-mode . yas-global-mode)
     )
@@ -811,7 +816,8 @@
 
 * 项目工程
 
-#+begin_src emacs-lisp 
+#+begin_src emacs-lisp
+
   (use-package magit
     :ensure t
     :bind
@@ -821,8 +827,17 @@
     )
 
 
+  (use-package transient
+    :config
+    (setq
+     transient-levels-file (expand-emacs-state "transient/levels.el")
+     transient-values-file (expand-emacs-state "transient/values.el")
+     transient-history-file (expand-emacs-state "transient/history.el")
+     )
 
-    (use-package project
+    )
+
+  (use-package project
     :ensure nil
     :config
     (setq project-list-file (expand-emacs-state "projects"))
@@ -842,18 +857,18 @@
 
     :config
     (setq
-     projectile-known-projects-file (expand-emacs-state "/projectile-known-projects.eld")
+     projectile-known-projects-file (expand-emacs-state "projectile-known-projects.eld")
      projectile-project-search-path '(
                                       ("~/workspace" . 2)
                                       "~/workspace/mugeda"
                                       )
      )
-     (projectile-mode +1)
+    (projectile-mode +1)
     )
 
   ;; 绑定 consult-projectile
   (use-package consult-projectile
-     :ensure t
+    :ensure t
     :after (consult projectile)
     :bind
     (:map project-keymap
@@ -887,8 +902,6 @@
     (:map project-keymap
           ("t" . projectile-run-vterm))
     )
-
-
 #+end_src
 
 
@@ -1024,8 +1037,6 @@ Org-mode 相关的配置。
     :ensure t ; only need to install it, embark loads it after consult if found
     :hook
     (embark-collect-mode . consult-preview-at-point-mode))
-
-  ;; (use-package eaf)
 #+end_src
 
 
