@@ -1,9 +1,65 @@
-#+TITLE: 我的emacs配置
+#+TITLE: grass-emacs
 
 #+PROPERTY: header-args               :results silent
 #+PROPERTY: header-args:emacs-lisp    :tangle ~/.config/emacs/init.el
 
-* early-init
+本仓库是我的个人 =Emacs= 配置，主打一个满足个人日常使用。如果里面的一些代码对你有帮助，欢迎拿走。
+
+* 目录                                                                  :TOC:
+- [[#如何直接使用][如何直接使用]]
+  - [[#前置条件][前置条件]]
+  - [[#安装][安装]]
+- [[#early-initel-文件][early-init.el 文件]]
+- [[#全局配置][全局配置]]
+  - [[#定义常用目录][定义常用目录]]
+  - [[#定义用户级别的键位映射图][定义用户级别的键位映射图]]
+  - [[#emacs-的默认配置][Emacs 的默认配置]]
+- [[#内置包的配置][内置包的配置]]
+- [[#引导-straight][引导 straight]]
+- [[#meow---模态编辑][meow - 模态编辑]]
+- [[#应用程序][应用程序]]
+  - [[#邮件][邮件]]
+  - [[#pocket][pocket]]
+  - [[#浏览器][浏览器]]
+  - [[#rss][rss]]
+- [[#自动补全][自动补全]]
+- [[#编程语言][编程语言]]
+- [[#项目工程][项目工程]]
+- [[#org][Org]]
+- [[#样式][样式]]
+- [[#杂项][杂项]]
+
+* 如何直接使用
+
+** 前置条件
+1. =Emacs= 版本大于 =29=
+2. 命令行依赖
+   1. git
+   2. wakatime-cli
+   3. mu
+   4. python3
+   5. multimarkdown
+3. 其它依赖
+   1. 确保 =~/.emacs= ， =~/.emacs.d= 和 =~/.config/emacs= 目录不存在，如果存在需要重命名备份
+** 安装
+
+执行下列代码克隆仓库
+
+#+begin_src bash
+  git clone git@github.com:running-grass/grass-emacs.git ~/.config/emacs
+#+end_src
+
+进入 =Emacs= 后， 按 =C-x C-f= 后选择 =~/.config/emacs/README.org= (也就是 本文件)。
+
+使用 =M-x org-babel-tangle= 或者 =C-c C-v C-t= 导出本文件的配置为 =~/.config/emacs/init.el= 和 =~/.config/emacs/early-init.el=
+
+然后关闭 =Emacs= 后，重新启动 =Emacs= ，之后修改配置以后就可以使用 =SPC r= 来重新加载配置了。  
+
+* early-init.el 文件
+
+=Emacs= 会在加载 =init.el= 之前加载 =early-init.el= 文件。这个文件通常用于解决启动速度的问题。
+
+不要在这个文件中进行普通包的配置
 
 #+begin_src emacs-lisp :tangle ~/.config/emacs/early-init.el
   ;; 关闭jit
@@ -22,9 +78,16 @@
 #+end_src
 
 
-* global custom
+* 全局配置
 
-** define home
+** 定义常用目录
+
+这里定义了四个 =Emacs= 使用过程中的目录， 配置、数据、状态、缓存
+
+配置： 存放各种配置文件， 例如 =init.el= 和 =early-init.el= 等，以及用户自定义配置文件，用于存储敏感信息，可以在多台机器直接复用
+数据： 存放数据型的文件，例如 =sqllite= 数据库的存储，或者 =BBDB= 数据库文件等，同样可以在多台机器直接共享。 和配置的区别在于，一个是声明式的，一个是动态增加的数据
+状态： 在多次启动运行之间共享的状态，例如 最近打开的文件，搜索历史等， 不可以跨机器和跨用户使用。
+缓存： 使用过程中的缓存文件，可以被安全的删除，必须可以被重建。
 
 #+begin_src emacs-lisp 
   (use-package xdg
@@ -56,7 +119,11 @@
     )
 #+end_src
 
-** define keymap
+** 定义用户级别的键位映射图
+
+定义了几个键位映射图，用于作为一些常用命令的分组。
+
+会被绑定到 =meow= 的 =leader= 键位图中
 
 #+begin_src emacs-lisp 
   (defvar application-keymap (make-sparse-keymap) "applications")
@@ -72,28 +139,7 @@
   (defalias 'file-keymap file-keymap)
 #+end_src
 
-** bootstrap straight
-
-#+begin_src emacs-lisp
-  (setq straight-base-dir (expand-emacs-cache ""))
-  (defvar bootstrap-version)
-  (let ((bootstrap-file
-         (expand-file-name
-          "straight/repos/straight.el/bootstrap.el"
-          (or (bound-and-true-p straight-base-dir)
-              user-emacs-directory)))
-        (bootstrap-version 7))
-    (unless (file-exists-p bootstrap-file)
-      (with-current-buffer
-          (url-retrieve-synchronously
-           "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
-           'silent 'inhibit-cookies)
-        (goto-char (point-max))
-        (eval-print-last-sexp)))
-    (load bootstrap-file nil 'nomessage))
-#+end_src
-
-** init default
+** Emacs 的默认配置
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -150,7 +196,106 @@
 #+end_src
 
 
-* meow - modal editing
+* 内置包的配置
+
+#+begin_src emacs-lisp 
+  ;; 保存了上一次打开文件时的光标位置
+  (use-package saveplace
+    :ensure nil
+    :init
+    (setq save-place-file (expand-emacs-state "places"))
+    :hook (after-init . save-place-mode))
+
+
+  ;; Persist history over Emacs restarts. Vertico sorts by history position.
+  (use-package savehist
+    :ensure nil
+
+    :init
+    (setq savehist-file (expand-emacs-state "history"))
+    (savehist-mode)
+    )
+  ;; Use Dabbrev with Corfu!
+  (use-package dabbrev
+    :ensure nil
+
+    ;; Swap M-/ and C-M-/
+    :bind (("M-/" . dabbrev-completion)
+           ("C-M-/" . dabbrev-expand))
+    ;; Other useful Dabbrev configurations.
+    :custom
+    (dabbrev-ignored-buffer-regexps '("\\.\\(?:pdf\\|jpe?g\\|png\\)\\'")))
+
+
+  ;; 配置 tramp -- 远程编辑
+  (use-package tramp
+    :ensure nil
+    :init
+    (setq tramp-default-method "ssh")
+    (setq tramp-persistency-file-name (expand-emacs-state "/tramp")))
+
+
+  ;; 文件被外部程序修改后，重新载入buffer
+  (use-package autorevert
+    :ensure nil
+    :defer t
+    :hook (after-init . global-auto-revert-mode))
+
+  ;; 最近打开的文件
+  (use-package recentf
+    :ensure nil
+    :init
+    (setq
+     recentf-save-file (expand-emacs-state "recentf")
+     recentf-max-saved-items 2000
+     recentf-max-menu-items 150)
+    :hook (after-init . recentf-mode)
+    )
+
+  (use-package exec-path-from-shell
+    :ensure t
+    :if (memq window-system '(mac ns))
+    :config
+    (exec-path-from-shell-initialize))
+
+
+  ;; 当某个文件的某一行特别长的时候，自动优化性能
+  (use-package so-long
+    :ensure t
+    :defer t
+    :config (global-so-long-mode 1))
+#+end_src
+
+
+* 引导 straight
+
+这里使用了 =straight= 来代替内置的 =package.el= 作为包管理工具。
+
+本人使用 =NixOS= 上的 =Home Manager= 对 =melpa= 上的包进行管理。其余的包依旧使用 =straight=
+
+#+begin_src emacs-lisp
+  (setq straight-base-dir (expand-emacs-cache ""))
+  (defvar bootstrap-version)
+  (let ((bootstrap-file
+         (expand-file-name
+          "straight/repos/straight.el/bootstrap.el"
+          (or (bound-and-true-p straight-base-dir)
+              user-emacs-directory)))
+        (bootstrap-version 7))
+    (unless (file-exists-p bootstrap-file)
+      (with-current-buffer
+          (url-retrieve-synchronously
+           "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+           'silent 'inhibit-cookies)
+        (goto-char (point-max))
+        (eval-print-last-sexp)))
+    (load bootstrap-file nil 'nomessage))
+#+end_src
+
+
+* meow - 模态编辑
+
+可以说这个模态编辑包是整个配置中我最喜欢的。 它可以最大限度的使用 =Emacs= 原生键位。而不需要每安装一个新的包，就去做一些适配和兼容（我说的就是 =evil= ）
 
 #+begin_src emacs-lisp
   (defun reload-config ()
@@ -270,9 +415,10 @@
     )
 #+end_src
 
-* applications
 
-** eaf
+* 应用程序
+
+** COMMENT eaf
 
 #+begin_src emacs-lisp
   (use-package eaf
@@ -305,7 +451,8 @@
   ;; )
 #+end_src
 
-** mail
+
+** 邮件
 
 
 #+begin_src emacs-lisp 
@@ -342,7 +489,8 @@
     )
 #+end_src
 
-** music
+
+** COMMENT 音乐
 
 #+begin_src emacs-lisp
   ;; (use-package linum-node)
@@ -350,8 +498,10 @@
   ;;     :requires (netease-cloud-music netease-cloud-music-ui)
   ;;   )
 #+end_src
+
 ** pocket
-用于阅读和管理稍后阅读列表的
+
+用于阅读和管理稍后阅读列表
 
 #+begin_src emacs-lisp
   (use-package pocket-reader
@@ -372,13 +522,15 @@
 
     )
 #+end_src
-** brower
+
+** 浏览器
 
 #+begin_src emacs-lisp
   (use-package eww
     :ensure nil
     )
 #+end_src
+
 ** rss
 
 #+begin_src emacs-lisp
@@ -408,57 +560,15 @@
              ("r" . elfeed))
     )
 #+end_src
-* built-in feature
+
+
+* 自动补全
+
+列表补全使用的是 =vertico= / =marginalia= / =consult= / =orderless= 全家桶
+
+而 lsp 则使用了 =lsp-bridge= 统一大包
 
 #+begin_src emacs-lisp 
-  ;; 保存了上一次打开文件时的光标位置
-  (use-package saveplace
-    :ensure nil
-    :init
-    (setq save-place-file (expand-emacs-state "places"))
-    :hook (after-init . save-place-mode))
-
-
-  ;; Persist history over Emacs restarts. Vertico sorts by history position.
-  (use-package savehist
-    :ensure nil
-
-    :init
-    (setq savehist-file (expand-emacs-state "history"))
-    (savehist-mode)
-    )
-
-  ;; 文件被外部程序修改后，重新载入buffer
-  (use-package autorevert
-    :ensure nil
-    :defer t
-    :hook (after-init . global-auto-revert-mode))
-
-  ;; 最近打开的文件
-  (use-package recentf
-    :ensure nil
-    :init
-    (setq
-     recentf-save-file (expand-emacs-state "recentf")
-     recentf-max-saved-items 2000
-     recentf-max-menu-items 150)
-    :hook (after-init . recentf-mode)
-    )
-
-  (use-package exec-path-from-shell
-    :ensure t
-    :defer t
-    :if (memq window-system '(mac ns))
-    :config
-    (exec-path-from-shell-initialize))
-
-
-  ;; 当某个文件的某一行特别长的时候，自动优化性能
-  (use-package so-long
-    :ensure t
-    :defer t
-    :config (global-so-long-mode 1))
-
 
   ;; Enable vertico
   (use-package vertico
@@ -614,22 +724,6 @@
     (setq completion-styles '(orderless basic)
           completion-category-defaults nil
           completion-category-overrides '((file (styles partial-completion)))))
-#+end_src
-
-
-* auto complate
-
-#+begin_src emacs-lisp 
-  ;; Use Dabbrev with Corfu!
-  (use-package dabbrev
-    :ensure nil
-
-    ;; Swap M-/ and C-M-/
-    :bind (("M-/" . dabbrev-completion)
-           ("C-M-/" . dabbrev-expand))
-    ;; Other useful Dabbrev configurations.
-    :custom
-    (dabbrev-ignored-buffer-regexps '("\\.\\(?:pdf\\|jpe?g\\|png\\)\\'")))
 
   (use-package yasnippet
     :ensure t
@@ -650,7 +744,7 @@
 #+end_src
 
 
-* program
+* 编程语言
 
 #+begin_src emacs-lisp 
    ;; use wakatime
@@ -715,7 +809,7 @@
 #+end_src
 
 
-* project
+* 项目工程
 
 #+begin_src emacs-lisp 
   (use-package magit
@@ -799,91 +893,19 @@
 
 
 
-* other
+* Org
+Org-mode 相关的配置。
 
-#+begin_src emacs-lisp 
+我目前只使用 =Org-mode= 来管理我的 =Emacs= 配置。后续再逐步用于任务管理，项目管理，笔记管理等用途。
 
-
-  (use-package elisp-demos
-    :ensure t
-    :config
-    (advice-add 'describe-function-1 :after #'elisp-demos-advice-describe-function-1)
-    )
-  ;; (use-package company)
-
-
-  ;; 记录命令使用次数
-  (use-package keyfreq
-    :ensure t
-    :config
-    (keyfreq-mode 1)
-    (keyfreq-autosave-mode 1))
-
-
-
-  (use-package tramp
-    :demand t
-    :ensure nil
-    :init
-    (setq tramp-default-method "ssh")
-    (setq tramp-persistency-file-name (expand-emacs-state "/tramp")))
-
-
-
-  ;; 快速选择工具
-  ;; (use-package expand-region
-  ;;   :defer t
-  ;;   :bind
-  ;;   ("C-c e" . er/expand-region)
-  ;;   )
-
-  ;; A few more useful configurations...
-
-
-  ;; Optionally use the `orderless' completion style.
-
-
-  (use-package embark
-    :ensure t
-
-    :bind
-    (("C-." . embark-act)         ;; pick some comfortable binding
-     ("C-;" . embark-dwim)        ;; good alternative: M-.
-     ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
-
-    :init
-
-    ;; Optionally replace the key help with a completing-read interface
-    (setq prefix-help-command #'embark-prefix-help-command)
-
-    ;; Show the Embark target at point via Eldoc. You may adjust the
-    ;; Eldoc strategy, if you want to see the documentation from
-    ;; multiple providers. Beware that using this can be a little
-    ;; jarring since the message shown in the minibuffer can be more
-    ;; than one line, causing the modeline to move up and down:
-
-    ;; (add-hook 'eldoc-documentation-functions #'embark-eldoc-first-target)
-    ;; (setq eldoc-documentation-strategy #'eldoc-documentation-compose-eagerly)
-
-    :config
-
-    ;; Hide the mode line of the Embark live/completions buffers
-    (add-to-list 'display-buffer-alist
-                 '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
-                   nil
-                   (window-parameters (mode-line-format . none)))))
-
-  ;; Consult users will also want the embark-consult package.
-  (use-package embark-consult
-    :ensure t ; only need to install it, embark loads it after consult if found
+#+begin_src emacs-lisp
+  ;; 保存是自动更新具有 :TOC: 的标题为目录
+  (use-package toc-org
     :hook
-    (embark-collect-mode . consult-preview-at-point-mode))
-
-  ;; (use-package eaf)
+    (org-mode . toc-org-mode)
+    )
 #+end_src
-
-
-* style - ui
+* 样式
 #+begin_src emacs-lisp 
   ;; 高亮当前行
   (use-package hl-line
@@ -931,4 +953,79 @@
     :config
     (super-save-mode +1))
 
+  
 #+end_src
+
+
+* 杂项
+
+#+begin_src emacs-lisp
+
+  ;; 自动给内置函数增加 demo
+  (use-package elisp-demos
+    :ensure t
+    :config
+    (advice-add 'describe-function-1 :after #'elisp-demos-advice-describe-function-1)
+    )
+  ;; (use-package company)
+
+
+  ;; 记录命令使用次数
+  (use-package keyfreq
+    :ensure t
+    :config
+    (keyfreq-mode 1)
+    (keyfreq-autosave-mode 1))
+
+  ;; 快速选择工具
+  ;; (use-package expand-region
+  ;;   :defer t
+  ;;   :bind
+  ;;   ("C-c e" . er/expand-region)
+  ;;   )
+
+  ;; A few more useful configurations...
+
+
+  ;; Optionally use the `orderless' completion style.
+
+
+  (use-package embark
+    :ensure t
+    :bind
+    (("C-." . embark-act)         ;; pick some comfortable binding
+     ("C-;" . embark-dwim)        ;; good alternative: M-.
+     ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
+
+    :init
+
+    ;; Optionally replace the key help with a completing-read interface
+    (setq prefix-help-command #'embark-prefix-help-command)
+
+    ;; Show the Embark target at point via Eldoc. You may adjust the
+    ;; Eldoc strategy, if you want to see the documentation from
+    ;; multiple providers. Beware that using this can be a little
+    ;; jarring since the message shown in the minibuffer can be more
+    ;; than one line, causing the modeline to move up and down:
+
+    ;; (add-hook 'eldoc-documentation-functions #'embark-eldoc-first-target)
+    ;; (setq eldoc-documentation-strategy #'eldoc-documentation-compose-eagerly)
+
+    :config
+
+    ;; Hide the mode line of the Embark live/completions buffers
+    (add-to-list 'display-buffer-alist
+                 '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                   nil
+                   (window-parameters (mode-line-format . none)))))
+
+  ;; Consult users will also want the embark-consult package.
+  (use-package embark-consult
+    :ensure t ; only need to install it, embark loads it after consult if found
+    :hook
+    (embark-collect-mode . consult-preview-at-point-mode))
+
+  ;; (use-package eaf)
+#+end_src
+
+
