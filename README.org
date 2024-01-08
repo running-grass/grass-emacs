@@ -1,52 +1,62 @@
 #+TITLE: 我的emacs配置
 
 #+PROPERTY: header-args               :results silent
-#+PROPERTY: header-args:emacs-lisp    :tangle ./init.el
-
+#+PROPERTY: header-args:emacs-lisp    :tangle ~/.config/emacs/init.el
 
 * early-init
 
 #+begin_src emacs-lisp :tangle ~/.config/emacs/early-init.el
   ;; 关闭jit
   (setq native-comp-jit-compilation nil)
-
+  ;; 关闭启动画面
+  (setq inhibit-startup-message t)
+  ;; 关闭内置的包管理工具
   (setq package-enable-at-startup nil)
-#+end_src
 
-
-* reset
-
-#+begin_src emacs-lisp
   ;; 关闭菜单栏
   (menu-bar-mode -1)
-  ;; 关闭工具栏，tool-bar-mode 即为一个 Minor Mode
+  ;; 关闭工具栏
   (tool-bar-mode -1)
   ;; 关闭文件滑动控件
   (scroll-bar-mode -1)
-  ;; 关闭启动画面
-  (setq inhibit-startup-message t)
-  ;; 默认查找目录为home目录
-  (setq command-line-default-directory "~")
-  (setq nerd-icons-font-names '("SymbolsNerdFontMono-Regular.ttf")) ;
-
 #+end_src
 
 
-* TODO define home (使用xdg代替)
+* global custom
+
+** define home
 
 #+begin_src emacs-lisp 
-  (defcustom user-config-home (getenv "XDG_CONFIG_HOME") "use xdg config directory")
-  (defcustom user-data-home (getenv "XDG_DATA_HOME") "use xdg data directory")
-  (defcustom user-state-home (getenv "XDG_STATE_HOME") "use xdg state directory")
-  (defcustom user-cache-home (getenv "XDG_CACHE_HOME") "use xdg cache directory")
+  (use-package xdg
+    :ensure nil
+    :config
+    (defun expand-emacs-config (filename)
+      "expand emacs config files"
+      (expand-file-name filename
+                        (expand-file-name "emacs" (xdg-config-home))
+                        ))
 
-  (defcustom user-emacs-config-home (concat user-config-home "/emacs") "emacs config directory")
-  (defcustom user-emacs-data-home (concat user-data-home "/emacs") "emacs data directory")
-  (defcustom user-emacs-state-home (concat user-state-home "/emacs") "emacs state directory")
-  (defcustom user-emacs-cache-home (concat user-cache-home "/emacs") "emacs cache directory")
+    (defun expand-emacs-data (filename)
+      "expand emacs data files"
+      (expand-file-name filename
+                        (expand-file-name "emacs" (xdg-data-home))
+                        ))
+
+    (defun expand-emacs-state (filename)
+      "expand emacs state files"
+      (expand-file-name filename
+                        (expand-file-name "emacs" (xdg-state-home))
+                        ))
+
+    (defun expand-emacs-cache (filename)
+      "expand emacs cache files"
+      (expand-file-name filename
+                        (expand-file-name "emacs" (xdg-cache-home))
+                        ))
+    )
 #+end_src
 
-* define keymap
+** define keymap
 
 #+begin_src emacs-lisp 
   (defvar application-keymap (make-sparse-keymap) "applications")
@@ -62,15 +72,10 @@
   (defalias 'file-keymap file-keymap)
 #+end_src
 
-
-* init default
+** bootstrap straight
 
 #+begin_src emacs-lisp
-  ;; 设置2个空格
-  (setq-default indent-tabs-mode nil)
-  (setq-default tab-width 2)
-  (setq-default default-tab-width 2)
-
+  (setq straight-base-dir (expand-emacs-cache ""))
   (defvar bootstrap-version)
   (let ((bootstrap-file
          (expand-file-name
@@ -86,17 +91,26 @@
         (goto-char (point-max))
         (eval-print-last-sexp)))
     (load bootstrap-file nil 'nomessage))
+#+end_src
 
+** init default
 
+#+begin_src emacs-lisp
   (use-package emacs
     :init
+    ;; 默认查找目录为home目录
+    (setq command-line-default-directory "~")
+    (setq nerd-icons-font-names '("SymbolsNerdFontMono-Regular.ttf")) ;
+
+    ;; 设置2个空格
+    (setq-default indent-tabs-mode nil)
+    (setq-default tab-width 2)
+    (setq-default default-tab-width 2)
 
     ;; 允许外部程序的粘贴板
-    (setq x-select-enable-clipboard t)
-    (setq user-emacs-directory user-emacs-config-home)
-    (setq bookmark-default-file (concat user-emacs-data-home "/bookmarks"))
-    (setq auto-save-list-file-prefix  (concat user-emacs-state-home "/auto-save-list/.saves-"))
-
+    ;; (setq select-enable-clipboard t)
+    (setq bookmark-default-file (expand-emacs-data "/bookmarks"))
+    (setq auto-save-list-file-prefix  (expand-emacs-state "/auto-save-list/.saves-"))
 
     ;; TAB cycle if there are only few candidates
     (setq completion-cycle-threshold 3)
@@ -109,8 +123,6 @@
     ;; Enable indentation+completion using the TAB key.
     ;; `completion-at-point' is often bound to M-TAB.
     (setq tab-always-indent 'complete)
-
-
 
     ;; Add prompt indicator to `completing-read-multiple'.
     ;; We display [CRM<separator>], e.g., [CRM,] if the separator is a comma.
@@ -145,8 +157,8 @@
     "重新加载配置"
     (interactive)
     (progn
-      (org-babel-tangle-file (concat user-emacs-config-home  "README.org")
-      (load-file (concat user-emacs-config-home "/init.el"))
+      (org-babel-tangle-file (expand-emacs-config  "README.org"))
+      (load-file (expand-emacs-config "init.el"))
       )
     )
   (defun meow-setup ()
@@ -251,12 +263,12 @@
      '("<escape>" . ignore))
     )
   (use-package meow
+    :ensure t
     :config
     (meow-setup)
     (meow-global-mode 1)
     )
 #+end_src
-
 
 * applications
 
@@ -298,6 +310,7 @@
 
 #+begin_src emacs-lisp 
   (use-package mu4e
+    :ensure t
     :config
     ;; 默认是motion模式
     (add-to-list 'meow-mode-state-list '(mu4e-view-mode . motion))
@@ -342,6 +355,7 @@
 
 #+begin_src emacs-lisp
   (use-package pocket-reader
+    :ensure t
     :config
     (setq pocket-reader-open-url-default-function #'eww)
 
@@ -369,6 +383,7 @@
 
 #+begin_src emacs-lisp
   (use-package elfeed-protocol
+    :ensure t
     :config
     ;; curl recommend
     (setq elfeed-use-curl t)
@@ -393,16 +408,25 @@
              ("r" . elfeed))
     )
 #+end_src
-* feature
+* built-in feature
 
 #+begin_src emacs-lisp 
   ;; 保存了上一次打开文件时的光标位置
   (use-package saveplace
     :ensure nil
     :init
-    (setq save-place-file (concat user-emacs-state-home "/places"))
+    (setq save-place-file (expand-emacs-state "places"))
     :hook (after-init . save-place-mode))
 
+
+  ;; Persist history over Emacs restarts. Vertico sorts by history position.
+  (use-package savehist
+    :ensure nil
+
+    :init
+    (setq savehist-file (expand-emacs-state "history"))
+    (savehist-mode)
+    )
 
   ;; 文件被外部程序修改后，重新载入buffer
   (use-package autorevert
@@ -415,13 +439,14 @@
     :ensure nil
     :init
     (setq
-     recentf-save-file (concat user-emacs-state-home "/recentf")
+     recentf-save-file (expand-emacs-state "recentf")
      recentf-max-saved-items 2000
      recentf-max-menu-items 150)
     :hook (after-init . recentf-mode)
     )
 
   (use-package exec-path-from-shell
+    :ensure t
     :defer t
     :if (memq window-system '(mac ns))
     :config
@@ -430,12 +455,14 @@
 
   ;; 当某个文件的某一行特别长的时候，自动优化性能
   (use-package so-long
+    :ensure t
     :defer t
     :config (global-so-long-mode 1))
 
 
   ;; Enable vertico
   (use-package vertico
+    :ensure t
     :demand t
     :config
     (vertico-mode)
@@ -456,6 +483,7 @@
   ;; (use-package
   ;; Enable rich annotations using the Marginalia package
   (use-package marginalia
+    :ensure t
     ;; Bind `marginalia-cycle' locally in the minibuffer.  To make the binding
     ;; available in the *Completions* buffer, add it to the
     ;; `completion-list-mode-map'.
@@ -481,6 +509,7 @@
 
   ;; Example configuration for Consult
   (use-package consult
+    :ensure t
     :demand t
     ;; Replace bindings. Lazily loaded due by `use-package'.
     ;; :config
@@ -571,27 +600,11 @@
 
 
 
-
-  ;; Persist history over Emacs restarts. Vertico sorts by history position.
-  (use-package savehist
-    :ensure nil
-
-    :init
-    (setq savehist-file (concat user-emacs-data-home "/history"))
-    (savehist-mode)
-    )
-
-
   ;; ;; 安装icon管理
   ;; (use-package all-the-icons
   ;;   :defer t
   ;;   )
 
-  ;; 自动保存
-  (use-package super-save
-    :demand t
-    :config
-    (super-save-mode +1))
 
   (use-package orderless
     :init
@@ -619,11 +632,13 @@
     (dabbrev-ignored-buffer-regexps '("\\.\\(?:pdf\\|jpe?g\\|png\\)\\'")))
 
   (use-package yasnippet
+    :ensure t
     :hook
     (lsp-bridge-mode . yas-global-mode)
     )
 
   (use-package lsp-bridge
+    :ensure t
     :config
     ;; (setq lsp-bridge-enable-log nil)
     (setq lsp-bridge-php-lsp-server 'phpactor)
@@ -638,57 +653,65 @@
 * program
 
 #+begin_src emacs-lisp 
-  ;; use wakatime
-  (use-package wakatime-mode
-    :hook
-    (after-init . global-wakatime-mode)
-    )
+   ;; use wakatime
+   (use-package wakatime-mode
+     :ensure t
+     :hook
+     (after-init . global-wakatime-mode)
+     )
 
-  (use-package nix-mode
-    :mode "\\.nix\\'")
+   (use-package nix-mode
+     :ensure t
+     :mode "\\.nix\\'")
 
-  ;; 配置php支持
-  (use-package php-mode
-    :mode "\\.php\\'"
-    )
+   ;; 配置php支持
+   (use-package php-mode
+     :ensure t
+     :mode "\\.php\\'"
+     )
 
-  (use-package markdown-mode
-    :mode ("README\\.md\\'" . gfm-mode)
-    :init (setq markdown-command "multimarkdown")
-    :bind (:map markdown-mode-map
-                ("C-c C-e" . markdown-do)
+   (use-package markdown-mode
+     :ensure t
+     :mode ("README\\.md\\'" . gfm-mode)
+     :init (setq markdown-command "multimarkdown")
+     :bind (:map markdown-mode-map
+                 ("C-c C-e" . markdown-do)
 
-                ))
+                 ))
 
-  ;; (use-package phpactor
-  ;; :config
-  ;; (setq phpactor-executable "phpactor")
-  ;; )
+   ;; (use-package phpactor
+     ;; :ensure t
+   ;; :config
+   ;; (setq phpactor-executable "phpactor")
+   ;; )
 
 
 
-  ;; Plantuml
-  (use-package plantuml-mode
-    :defer t
-    :config
-    (setq plantuml-executable-path "~/.nix-profile/bin/plantuml")
-    (setq plantuml-jar-path "~/.nix-profile/lib/plantuml.jar")
-    (setq plantuml-default-exec-mode 'executable)
-    (setq org-plantuml-exec-mode 'executable)
-    (setq org-plantuml-jar-path "~/.nix-profile/lib/plantuml.jar")
-    (setq plantuml-executable-args '(
-                                     "-headless"
-                                     "-charset"
-                                     "UTF-8"
-                                     ))
-    )
+   ;; Plantuml
+   (use-package plantuml-mode
+     :defer t
+     :ensure t
 
-  (use-package format-all
-    :bind
-    (:map buffer-keymap
-          ("=" . format-all-region-or-buffer)
-          )
-    )
+     :config
+     (setq plantuml-executable-path "~/.nix-profile/bin/plantuml")
+     (setq plantuml-jar-path "~/.nix-profile/lib/plantuml.jar")
+     (setq plantuml-default-exec-mode 'executable)
+     (setq org-plantuml-exec-mode 'executable)
+     (setq org-plantuml-jar-path "~/.nix-profile/lib/plantuml.jar")
+     (setq plantuml-executable-args '(
+                                      "-headless"
+                                      "-charset"
+                                      "UTF-8"
+                                      ))
+     )
+
+   (use-package format-all
+     :ensure t
+     :bind
+     (:map buffer-keymap
+           ("=" . format-all-region-or-buffer)
+           )
+     )
 #+end_src
 
 
@@ -696,6 +719,7 @@
 
 #+begin_src emacs-lisp 
   (use-package magit
+    :ensure t
     :bind
     (:map project-keymap
           ("v" . magit)
@@ -707,7 +731,7 @@
     (use-package project
     :ensure nil
     :config
-    (setq project-list-file (concat user-emacs-state-home "/projects"))
+    (setq project-list-file (expand-emacs-state "projects"))
     :bind
     (:map project-keymap
           ("p" . project-switch-project)
@@ -719,11 +743,12 @@
 
 
   (use-package projectile
+    :ensure t
     :demand t
 
     :config
     (setq
-     projectile-known-projects-file (concat user-emacs-state-home "/projectile-known-projects.eld")
+     projectile-known-projects-file (expand-emacs-state "/projectile-known-projects.eld")
      projectile-project-search-path '(
                                       ("~/workspace" . 2)
                                       "~/workspace/mugeda"
@@ -734,6 +759,7 @@
 
   ;; 绑定 consult-projectile
   (use-package consult-projectile
+     :ensure t
     :after (consult projectile)
     :bind
     (:map project-keymap
@@ -772,13 +798,14 @@
 #+end_src
 
 
-* other
 
+* other
 
 #+begin_src emacs-lisp 
 
 
   (use-package elisp-demos
+    :ensure t
     :config
     (advice-add 'describe-function-1 :after #'elisp-demos-advice-describe-function-1)
     )
@@ -787,6 +814,7 @@
 
   ;; 记录命令使用次数
   (use-package keyfreq
+    :ensure t
     :config
     (keyfreq-mode 1)
     (keyfreq-autosave-mode 1))
@@ -798,7 +826,7 @@
     :ensure nil
     :init
     (setq tramp-default-method "ssh")
-    (setq tramp-persistency-file-name (concat user-emacs-state-home "/tramp")))
+    (setq tramp-persistency-file-name (expand-emacs-state "/tramp")))
 
 
 
@@ -865,6 +893,7 @@
 
   ;; 设置主题
   (use-package doom-themes
+    :ensure t
     ;; :defer nil
     :config
     ;; Global settings (defaults)
@@ -881,6 +910,7 @@
 
   ;; 美化modeline
   (use-package doom-modeline
+    :ensure t
     :demand t
     :init
     (setq doom-modeline-modal-icon t)
@@ -889,7 +919,16 @@
 
   ;; 括号的多色彩
   (use-package rainbow-delimiters
+    :ensure t
     :defer t
     :hook (prog-mode . rainbow-delimiters-mode)
     )
+
+    ;; 自动保存
+  (use-package super-save
+    :ensure t
+    :demand t
+    :config
+    (super-save-mode +1))
+
 #+end_src
