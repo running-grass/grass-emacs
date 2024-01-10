@@ -9,6 +9,7 @@
 - [[#如何直接使用][如何直接使用]]
   - [[#前置条件][前置条件]]
   - [[#安装][安装]]
+  - [[#修改配置][修改配置]]
 - [[#early-initel-文件][early-init.el 文件]]
 - [[#全局配置][全局配置]]
   - [[#定义常用目录][定义常用目录]]
@@ -55,6 +56,14 @@
 
 然后关闭 =Emacs= 后，重新启动 =Emacs= ，之后修改配置以后就可以使用 =SPC r= 来重新加载配置了。  
 
+** 修改配置
+
+因为我使用的是 =NixOS= ， 所以有些包我不需要使用 =straight.el= 进行管理，如果你要使用的花，需要把这个配置改魏 =t= 。
+
+#+begin_src emacs-lisp
+  (setq straight-use-package-by-default nil)
+#+end_src
+
 * early-init.el 文件
 
 =Emacs= 会在加载 =init.el= 之前加载 =early-init.el= 文件。这个文件通常用于解决启动速度的问题。
@@ -70,13 +79,15 @@
   (setq package-enable-at-startup nil)
 
   ;; Silence nativecomp warnings popping up
-  (setq native-comp-async-report-warnings-errors nil)
+  (setq native-comp-async-report-warnings-errors t)
 
   ;; Settings
   (setq native-comp-speed 2
-        native-comp-deferred-compilation t
-        package-native-compile t)
+        native-comp-deferred-compilation nil
+        package-native-compile nil)
 
+  (setq no-native-compile t
+        no-byte-compile t)
   ;; 给 eln-cache 目录换个地方
   (when (boundp 'native-comp-eln-load-path)
     (startup-redirect-eln-cache (expand-file-name "~/.cache/emacs/eln-cache/")))
@@ -149,11 +160,19 @@
 
   (defvar file-keymap (make-sparse-keymap) "file operations")
   (defalias 'file-keymap file-keymap)
+
+  (defvar org-keymap (make-sparse-keymap) "所有gtd相关的全局操作都在这里")
+  (defalias 'org-keymap org-keymap)
 #+end_src
 
 ** Emacs 的默认配置
 
 #+begin_src emacs-lisp
+
+  (setq use-package-compute-statistics t)
+  (use-package use-package-ensure-system-package
+    :defer t)
+
   (use-package emacs
     :init
     ;; 默认查找目录为home目录
@@ -242,7 +261,7 @@
   ;; 配置 tramp -- 远程编辑
   (use-package tramp
     :ensure nil
-    :init
+    :config
     (setq tramp-default-method "ssh")
     (setq tramp-persistency-file-name (expand-emacs-state "tramp")))
 
@@ -348,6 +367,7 @@
      '("a" . application-keymap)
      '("b" . buffer-keymap)
      '("f" . file-keymap)
+     '("n" . org-keymap)
 
      '("r" . reload-config)
      ;;  override
@@ -572,11 +592,10 @@
 而 lsp 则使用了 =lsp-bridge= 统一大包
 
 #+begin_src emacs-lisp 
-
   ;; Enable vertico
   (use-package vertico
     :ensure t
-    :demand t
+    :defer 3
     :config
     (vertico-mode)
 
@@ -600,17 +619,13 @@
     ;; Bind `marginalia-cycle' locally in the minibuffer.  To make the binding
     ;; available in the *Completions* buffer, add it to the
     ;; `completion-list-mode-map'.
-    :demand t
     :bind (:map minibuffer-local-map
                 ("M-A" . marginalia-cycle))
 
     ;; The :init section is always executed.
-    :config
-
-    ;; Marginalia must be activated in the :init section of use-package such that
-    ;; the mode gets enabled right away. Note that this forces loading the
-    ;; package.
-    (marginalia-mode))
+    :hook
+    (vertico-mode . marginalia-mode)
+    )
 
   (defun delete-current-file ()
     "Delete the file associated with the current buffer. Delete the current buffer too. If no file is associated, just close buffer without prompt for save."
@@ -623,7 +638,6 @@
   ;; Example configuration for Consult
   (use-package consult
     :ensure t
-    :demand t
     ;; Replace bindings. Lazily loaded due by `use-package'.
     ;; :config
     ;; (meow-leader-define-key '("l" . consult-mode-command))
@@ -726,11 +740,13 @@
     ;;       orderless-component-separator #'orderless-escapable-split-on-space)
     (setq completion-styles '(orderless basic)
           completion-category-defaults nil
-          completion-category-overrides '((file (styles partial-completion)))))
+          completion-category-overrides '((file (styles partial-completion))))
+
+    )
 
   (use-package yasnippet
     :ensure t
-    :config
+    :init
     (setq yas--default-user-snippets-dir (expand-emacs-data "snippets"))
     :hook
     (lsp-bridge-mode . yas-global-mode)
@@ -738,11 +754,11 @@
 
   (use-package lsp-bridge
     :ensure t
+    :defer 5
     :config
     ;; (setq lsp-bridge-enable-log nil)
     (setq lsp-bridge-php-lsp-server 'phpactor)
-    :hook
-    (after-init . global-lsp-bridge-mode)
+    (global-lsp-bridge-mode)
     )
 
   ;; (use-package codeium)
@@ -853,9 +869,11 @@
 
   (use-package projectile
     :ensure t
-    :demand t
+    :defer 5
 
     :config
+    ;; 关闭启动时的自动项目发现
+    (setq projectile-auto-discover nil)
     (setq
      projectile-known-projects-file (expand-emacs-state "projectile-known-projects.eld")
      projectile-project-search-path '(
@@ -917,6 +935,191 @@ Org-mode 相关的配置。
     :hook
     (org-mode . toc-org-mode)
     )
+
+  (use-package ox-hugo
+    :defer t
+    :after ox
+    :hook (org . org-hugo-auto-export-mode)
+
+    :config
+    (setq org-hugo-section "post"
+          org-hugo-auto-set-lastmod	t
+          )
+    )
+
+  ;; Org模式相关的，和GTD相关的
+  (use-package org
+    :defer 3
+    :config
+    (setq org-agenda-include-diary nil)
+    (setq
+     org-directory "~/org/"
+     org-startup-folded 'content
+     ;; org-agenda-files (list "~/org/")
+     org-agenda-files '("~/org")
+     org-refile-targets '(("~/org/task.org" :level . 1)
+                          ("~/org/project.org" :maxlevel . 2)
+                          ("~/org/someday.org" :level . 1)
+                          )
+     org-todo-keywords '(
+                         (sequence "TODO(t)" "|" "DONE(d!)" "CANCELLED(c@)")
+                         )
+     org-clock-string-limit 5
+     org-log-refile 'time
+     org-log-done 'time
+     org-log-into-drawer "LOGBOOK"
+     org-clock-stored-history t
+     org-tag-alist '(
+                     (:startgroup . nil)
+                     ("@office" . ?o)
+                     ("@home" . ?h)
+                     (:endgroup . nil)
+                     )
+     org-capture-templates '(("t" "Todo" entry (file+headline "~/org/inbox.org" "Inbox") "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:")
+                             ("j" "日记" entry (file+datetree "~/org/journal.org" "Journal") "* %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:"))
+
+     org-agenda-custom-commands '(("p" "At the office" tags-todo "project"
+                                   ((org-agenda-overriding-header "Office")
+                                    (org-agenda-skip-function #'my-org-agenda-skip-all-siblings-but-first))))
+     )
+
+
+    (defvar dynamic-agenda-files nil
+      "dynamic generate agenda files list when changing org state")
+
+    (defun update-dynamic-agenda-hook ()
+      (let ((done (or (not org-state) ;; nil when no TODO list
+                      (member org-state org-done-keywords)))
+            (file (buffer-file-name))
+            (agenda (funcall (ad-get-orig-definition 'org-agenda-files)) ))
+        (unless (member file agenda)
+          (if done
+              (save-excursion
+                (goto-char (point-min))
+                ;; Delete file from dynamic files when all TODO entry changed to DONE
+                (unless (and (search-forward-regexp org-not-done-headinqg-regexp nil t)
+                             (search-forward-regexp "SCHEDULED:" nil t)
+                             (search-forward-regexp "DEADLINE:" nil t)
+                             )
+                  (customize-save-variable
+                   'dynamic-agenda-files
+                   (cl-delete-if (lambda (k) (string= k file))
+                                 dynamic-agenda-files))))
+            ;; Add this file to dynamic agenda files
+            (unless (member file dynamic-agenda-files)
+              (customize-save-variable 'dynamic-agenda-files
+                                       (add-to-list 'dynamic-agenda-files file)))))))
+
+    (defun dynamic-agenda-files-advice (orig-val)
+      (cl-union orig-val dynamic-agenda-files :test #'equal))
+
+    (advice-add 'org-agenda-files :filter-return #'dynamic-agenda-files-advice)
+    ;; 在org的todo状态变更时更新agenda列表
+    (add-to-list 'org-after-todo-state-change-hook 'update-dynamic-agenda-hook t)
+
+    (defun my-org-agenda-skip-all-siblings-but-first ()
+      "跳过除第一个未完成条目之外的所有条目。"
+      (let (should-skip-entry)
+        (unless (org-current-is-todo)
+          (setq should-skip-entry t))
+        (save-excursion
+          (while (and (not should-skip-entry) (org-goto-sibling t))
+            (when (org-current-is-todo)
+              (setq should-skip-entry t))))
+        (when should-skip-entry
+          (or (outline-next-heading)
+              (goto-char (point-max))))))
+
+    (defun org-current-is-todo ()
+      (org-entry-is-todo-p))
+
+    (with-eval-after-load 'org-capture
+      (defun org-hugo-new-subtree-post-capture-template ()
+        "Return `org-capture' template string for new Hugo post."
+        (let* ((date (format-time-string (org-time-stamp-format :long :inactive) (org-current-time)))
+               (title (read-from-minibuffer "Post Title: "))
+               (file-name (read-from-minibuffer "File Name: "))
+               (fname (org-hugo-slug file-name)))
+          (mapconcat #'identity
+                     `(
+                       ,(concat "* TODO " title)
+                       ":PROPERTIES:"
+                       ,(concat ":EXPORT_FILE_NAME: " fname)
+                       ,(concat ":EXPORT_DATE: " date)
+                       ":END:"
+                       "%?\n")
+                     "\n")))
+
+      (add-to-list 'org-capture-templates
+                   '("h"
+                     "Hugo post"
+                     entry
+                     (file+olp "~/workspace/blog/post.org" "Blog Ideas")
+                     (function org-hugo-new-subtree-post-capture-template))))
+
+    :bind
+    (:map org-keymap
+          ("s" . org-save-all-org-buffers)
+          ("c" . org-capture)
+          ("t" . org-todo-list)
+          ("a" . org-agenda-list)
+          )
+    )
+
+  ;; 番茄钟
+  ;; (use-package org-pomodoro
+  ;;   :after org
+  ;;   :bind
+  ;;   (:map gtd-map
+  ;;         ("p" . org-pomodoro))
+  ;;   (:map org-agenda-mode-map
+  ;;         ("C-c C-x C-p" . org-pomodoro))
+  ;;   (:map org-mode-map
+  ;;         ("C-c C-x C-p" . org-pomodoro))
+  ;;   )
+
+  ;; (use-package org-roam
+  ;;   :after org
+  ;;   :custom
+  ;;   (org-roam-directory "~/org/org-roam/")
+  ;;   :bind
+  ;;   (:map gtd-map
+  ;;         ("f" . org-roam-find-file)
+  ;;         ("i" . org-roam-insert)
+  ;;         ("j" . org-roam-dailies-find-today))
+  ;;   :config
+  ;;   (setq org-all-files (f-files org-directory 'org-roam--org-file-p t))
+  ;;   )
+
+
+  ;;; 定义一个Helm的source，以便选择要粘贴的.org文件
+  ;; (defvar *org-refile-eof--helm-source* nil
+  ;;   "用于提供目标.org文件下拉菜单的来源")
+
+  ;;; 将当前条目剪切并粘贴到某个目标.org文件的末尾
+  ;; (defun org-refile-to-eof ()
+  ;;   "将当前条目剪切到一个.org文件的末尾。"
+  ;;   (interactive)
+  ;;   ;; 先调用Helm获取目标.org文件。这里需要处理没有选中任何文件的情况
+  ;;   (let ((path (helm :sources '(*org-refile-eof--helm-source*))))
+  ;;     (when path
+  ;;       (org-cut-subtree)
+  ;;       (save-excursion
+  ;;         ;; 打开选中的文件的buffer，并移动到最后
+  ;;         (find-file path)
+  ;;         (end-of-buffer)
+  ;;         ;; 调用org-paste-subtree粘贴进去
+  ;;         (org-paste-subtree)
+  ;;         ))))
+
+  ;; refile到文件末尾
+  ;; (setq *org-refile-eof--helm-source*
+  ;;       '((name . "refile到下列的哪个文件")
+  ;;         (candidates . org-all-files)
+  ;;         (action . (lambda (candidate)
+  ;;                     candidate))))
+
+
 #+end_src
 * 样式
 #+begin_src emacs-lisp 
