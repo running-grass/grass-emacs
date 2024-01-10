@@ -572,7 +572,7 @@
           '(
             ("fever+https://grass@rss.grass.work:30443"
              :api-url "https://grass@rss.grass.work:30443/fever/"
-             :password (shell-command-to-string "rbw get miniflux-fever"))
+             :password  (shell-command-to-string "echo -n `rbw get miniflux-fever`"))
             ))
 
     ;; enable elfeed-protocol
@@ -580,7 +580,7 @@
     (elfeed-protocol-enable)
     :bind
     (:map application-keymap
-             ("r" . elfeed))
+          ("r" . elfeed))
     )
 #+end_src
 
@@ -595,7 +595,7 @@
   ;; Enable vertico
   (use-package vertico
     :ensure t
-    :defer 3
+    :defer 1
     :config
     (vertico-mode)
 
@@ -616,6 +616,7 @@
   ;; Enable rich annotations using the Marginalia package
   (use-package marginalia
     :ensure t
+    :defer 2
     ;; Bind `marginalia-cycle' locally in the minibuffer.  To make the binding
     ;; available in the *Completions* buffer, add it to the
     ;; `completion-list-mode-map'.
@@ -734,6 +735,7 @@
 
 
   (use-package orderless
+   :defer 1
     :init
     ;; Configure a custom style dispatcher (see the Consult wiki)
     ;; (setq orderless-style-dispatchers '(+orderless-consult-dispatch orderless-affix-dispatch)
@@ -754,7 +756,7 @@
 
   (use-package lsp-bridge
     :ensure t
-    :defer 5
+    :defer 2
     :config
     ;; (setq lsp-bridge-enable-log nil)
     (setq lsp-bridge-php-lsp-server 'phpactor)
@@ -1129,10 +1131,10 @@ Org-mode 相关的配置。
     :defer t
     :hook (after-init . global-hl-line-mode))
 
+
   ;; 设置主题
   (use-package doom-themes
     :ensure t
-    ;; :defer nil
     :config
     ;; Global settings (defaults)
     (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
@@ -1149,27 +1151,25 @@ Org-mode 相关的配置。
   ;; 美化modeline
   (use-package doom-modeline
     :ensure t
-    :demand t
-    :init
-    (setq doom-modeline-modal-icon t)
     :config
-    (doom-modeline-mode 1))
+    (setq doom-modeline-modal-icon t)
+    :hook
+    (after-init . doom-modeline-mode))
 
   ;; 括号的多色彩
   (use-package rainbow-delimiters
     :ensure t
     :defer t
-    :hook (prog-mode . rainbow-delimiters-mode)
+    :hook
+    (prog-mode . rainbow-delimiters-mode)
     )
 
-    ;; 自动保存
+  ;; 自动保存
   (use-package super-save
     :ensure t
     :demand t
     :config
     (super-save-mode +1))
-
-  
 #+end_src
 
 
