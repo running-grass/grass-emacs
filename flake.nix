@@ -21,56 +21,61 @@
 
   };
   outputs = { self, nixpkgs, emacs-overlay, flake-utils, ... }:
-    flake-utils.lib.eachDefaultSystem (system:
+    let
+      getEmacs = system:
+        (
+
+          let
+            pkgs = import nixpkgs {
+              inherit system;
+              overlays = [ (import emacs-overlay) ];
+            };
+            emacs =
+              if pkgs.stdenv.isDarwin then pkgs.emacs-macport else pkgs.emacs-pgtk;
+            emacsWrap = (pkgs.emacsWithPackagesFromUsePackage {
+              package = emacs;
+
+              config = ./README.org;
+
+              defaultInitFile = false;
+              alwaysTangle = true;
+            });
+          in {
+            inherit pkgs emacsWrap;
+            packages = with pkgs; [
+              # lsp
+              rnix-lsp
+            ];
+          }
+        );
+
+    in flake-utils.lib.eachDefaultSystem (system:
       let
-        pkgs = import nixpkgs {
-          inherit system nixpkgs;
-          overlays = [ (import emacs-overlay) ];
-        };
         vars = { PROJECT_ROOT = builtins.getEnv "PWD"; };
-        emacs = if pkgs.stdenv.isDarwin then pkgs.emacs-macport else pkgs.emacs;
-        emacsWrap = (pkgs.emacsWithPackagesFromUsePackage {
-          package = emacs;
-
-          config = ./README.org;
-
-          defaultInitFile = false;
-          alwaysTangle = true;
-        });
-
-        packages = with pkgs; [ rnix-lsp ];
+        inherit (getEmacs system) pkgs emacsWrap packages;
       in {
         devShells.default =
           import ./shell.nix { inherit pkgs vars packages emacsWrap; };
-
-      }) // (let
-        system = "x86_64-linux";
-        pkgs = import nixpkgs {
-          inherit system nixpkgs;
-          overlays = [ (import emacs-overlay) ];
-        };
-        vars = { PROJECT_ROOT = builtins.getEnv "PWD"; };
-        emacs = if pkgs.stdenv.isDarwin then pkgs.emacs-macport else pkgs.emacs;
-        emacsWrap = (pkgs.emacsWithPackagesFromUsePackage {
-          package = emacs;
-
-          config = ./README.org;
-
-          defaultInitFile = false;
-          alwaysTangle = true;
-        });
-
-        packages = with pkgs; [ rnix-lsp ];
-
-      in {
-        nixosModules.default = { config }: {
+        nixosModules.emacs = { config, ... }: {
           options = { };
           config = {
             environment.systemPackages = packages;
-            programs.emacs = {
+            services.emacs = {
               enable = true;
               package = emacsWrap;
+              defaultEditor = true;
             };
+          };
+        };
+
+      }) // (let
+        system = "x86_64-linux";
+        inherit (getEmacs system) emacsWrap packages;
+      in {
+        nixosModules.default = { config, ... }: {
+          options = { };
+          config = {
+            environment.systemPackages = packages;
             services.emacs = {
               enable = true;
               package = emacsWrap;

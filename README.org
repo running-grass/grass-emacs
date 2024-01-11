@@ -1135,7 +1135,6 @@ Org-mode 相关的配置。
     :defer t
     :hook (after-init . global-hl-line-mode))
 
-
   ;; 设置主题
   (use-package doom-themes
     :ensure t
