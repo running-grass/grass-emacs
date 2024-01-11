@@ -1,3 +1,8 @@
 *
 !.gitignore
 !README.org
+!flake.nix
+!flake.lock
+!shell.nix
+!packages.nix
+!.envrc

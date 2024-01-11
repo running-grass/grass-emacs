@@ -759,7 +759,11 @@
     :defer 2
     :config
     ;; (setq lsp-bridge-enable-log nil)
-    (setq lsp-bridge-php-lsp-server 'phpactor)
+    (setq
+     lsp-bridge-php-lsp-server 'phpactor
+     lsp-bridge-nix-lsp-server 'rnix-lsp
+     )
+  
     (global-lsp-bridge-mode)
     )
 
