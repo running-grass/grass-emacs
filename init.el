@@ -43,8 +43,13 @@
 (defvar org-keymap (make-sparse-keymap) "所有gtd相关的全局操作都在这里")
 (defalias 'org-keymap org-keymap)
 
+(use-package use-package
+  :ensure nil
+  )
 (setq use-package-compute-statistics t)
+
 (use-package use-package-ensure-system-package
+  :ensure t
   :defer t)
 
 (use-package emacs
@@ -543,14 +548,12 @@
 
 (use-package lsp-bridge
   :ensure t
-  :defer 1
   :config
   ;; (setq lsp-bridge-enable-log nil)
   (setq
    lsp-bridge-php-lsp-server 'phpactor
    lsp-bridge-nix-lsp-server 'rnix-lsp
    )
-
   (global-lsp-bridge-mode)
   )
 
@@ -572,6 +575,13 @@
   :ensure t
   :mode "\\.php\\'"
   )
+
+(use-package vue-mode
+  :ensure t
+  :mode "\\.vue\\'"
+  :config
+  ;; 0, 1, or 2, representing (respectively) none, low, and high coloring
+  (setq mmm-submode-decoration-level 0))
 
 (use-package markdown-mode
   :ensure t
@@ -613,7 +623,7 @@
   :config
   (setq-default format-all-formatters '(("C"     (astyle "--mode=c"))
                                         ("Shell" (shfmt "-i" "4" "-ci"))
-                                        ("nix" (nixfmt))
+                                        ("Nix" (nixfmt))
                                         ))
   :bind
   (:map buffer-keymap

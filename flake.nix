@@ -51,9 +51,11 @@
             inherit pkgs emacsWrap;
             packages = with pkgs; [
               # lsp
-              rnix-lsp
-              phpactor
-
+              rnix-lsp          # nix
+              phpactor          # php
+              nodePackages.typescript-language-server # ts
+              nodePackages.volar                      # vue
+              
               # fmt
               nixfmt
             ];
