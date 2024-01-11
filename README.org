@@ -1,7 +1,7 @@
 #+TITLE: grass-emacs
 
 #+PROPERTY: header-args               :results silent
-#+PROPERTY: header-args:emacs-lisp    :tangle ~/.config/emacs/init.el
+#+PROPERTY: header-args:emacs-lisp    :tangle init.el
 
 本仓库是我的个人 =Emacs= 配置，主打一个满足个人日常使用。如果里面的一些代码对你有帮助，欢迎拿走。
 
@@ -30,9 +30,29 @@
 - [[#样式][样式]]
 - [[#杂项][杂项]]
 
-* 如何直接使用
+* 如何使用
 
-** 前置条件
+** NixOS 用户
+
+*** 使用 Flakes
+
+#+name: flake.nix
+#+begin_src nix
+  # 其它inputs
+  {
+    inputs.grass-emacs.url = "github:running-grass/grass-emacs";
+
+    # 在主机配置中导入模块 
+    nixosConfigurations.galaxy =
+      lib.nixosSystem { modules = [ inputs.grass-emacs.nixosModules.default ]; };
+  }
+#+end_src
+
+可以直接在命令行使用 =Emacs= 启动。
+
+** 非 NixOS 用户
+
+*** 前置条件
 1. =Emacs= 版本大于 =29=
 2. 命令行依赖
    1. git
@@ -42,7 +62,7 @@
    5. multimarkdown
 3. 其它依赖
    1. 确保 =~/.emacs= ， =~/.emacs.d= 和 =~/.config/emacs= 目录不存在，如果存在需要重命名备份
-** 安装
+*** 安装
 
 执行下列代码克隆仓库
 
@@ -56,7 +76,7 @@
 
 然后关闭 =Emacs= 后，重新启动 =Emacs= ，之后修改配置以后就可以使用 =SPC r= 来重新加载配置了。  
 
-** 修改配置
+*** 修改配置
 
 因为我使用的是 =NixOS= ， 所以有些包我不需要使用 =straight.el= 进行管理，如果你要使用的花，需要把这个配置改魏 =t= 。
 
@@ -64,13 +84,14 @@
   (setq straight-use-package-by-default nil)
 #+end_src
 
+
 * early-init.el 文件
 
 =Emacs= 会在加载 =init.el= 之前加载 =early-init.el= 文件。这个文件通常用于解决启动速度的问题。
 
 不要在这个文件中进行普通包的配置
 
-#+begin_src emacs-lisp :tangle ~/.config/emacs/early-init.el
+#+begin_src emacs-lisp :tangle early-init.el
   ;; 关闭jit
   (setq native-comp-jit-compilation nil)
   ;; 关闭启动画面
@@ -733,10 +754,9 @@
   ;;   :defer t
   ;;   )
 
-
   (use-package orderless
-   :defer 1
-    :init
+    :ensure t
+    :config
     ;; Configure a custom style dispatcher (see the Consult wiki)
     ;; (setq orderless-style-dispatchers '(+orderless-consult-dispatch orderless-affix-dispatch)
     ;;       orderless-component-separator #'orderless-escapable-split-on-space)
@@ -748,22 +768,23 @@
 
   (use-package yasnippet
     :ensure t
-    :init
+    :config
     (setq yas--default-user-snippets-dir (expand-emacs-data "snippets"))
     :hook
+
     (lsp-bridge-mode . yas-global-mode)
     )
 
   (use-package lsp-bridge
     :ensure t
-    :defer 2
+    :defer 1
     :config
     ;; (setq lsp-bridge-enable-log nil)
     (setq
      lsp-bridge-php-lsp-server 'phpactor
      lsp-bridge-nix-lsp-server 'rnix-lsp
      )
-  
+
     (global-lsp-bridge-mode)
     )
 
@@ -774,65 +795,70 @@
 * 编程语言
 
 #+begin_src emacs-lisp 
-   ;; use wakatime
-   (use-package wakatime-mode
-     :ensure t
-     :hook
-     (after-init . global-wakatime-mode)
-     )
+  ;; use wakatime
+  (use-package wakatime-mode
+    :ensure t
+    :hook
+    (after-init . global-wakatime-mode)
+    )
 
-   (use-package nix-mode
-     :ensure t
-     :mode "\\.nix\\'")
+  (use-package nix-mode
+    :ensure t
+    :mode "\\.nix\\'")
 
-   ;; 配置php支持
-   (use-package php-mode
-     :ensure t
-     :mode "\\.php\\'"
-     )
+  ;; 配置php支持
+  (use-package php-mode
+    :ensure t
+    :mode "\\.php\\'"
+    )
 
-   (use-package markdown-mode
-     :ensure t
-     :mode ("README\\.md\\'" . gfm-mode)
-     :init (setq markdown-command "multimarkdown")
-     :bind (:map markdown-mode-map
-                 ("C-c C-e" . markdown-do)
+  (use-package markdown-mode
+    :ensure t
+    :mode ("README\\.md\\'" . gfm-mode)
+    :init (setq markdown-command "multimarkdown")
+    :bind (:map markdown-mode-map
+                ("C-c C-e" . markdown-do)
 
-                 ))
+                ))
 
-   ;; (use-package phpactor
-     ;; :ensure t
-   ;; :config
-   ;; (setq phpactor-executable "phpactor")
-   ;; )
+  ;; (use-package phpactor
+  ;; :ensure t
+  ;; :config
+  ;; (setq phpactor-executable "phpactor")
+  ;; )
 
+  ;; Plantuml
+  (use-package plantuml-mode
+    :defer t
+    :ensure t
 
+    :config
+    (setq plantuml-executable-path "~/.nix-profile/bin/plantuml")
+    (setq plantuml-jar-path "~/.nix-profile/lib/plantuml.jar")
+    (setq plantuml-default-exec-mode 'executable)
+    (setq org-plantuml-exec-mode 'executable)
+    (setq org-plantuml-jar-path "~/.nix-profile/lib/plantuml.jar")
+    (setq plantuml-executable-args '(
+                                     "-headless"
+                                     "-charset"
+                                     "UTF-8"
+                                     ))
+    )
 
-   ;; Plantuml
-   (use-package plantuml-mode
-     :defer t
-     :ensure t
-
-     :config
-     (setq plantuml-executable-path "~/.nix-profile/bin/plantuml")
-     (setq plantuml-jar-path "~/.nix-profile/lib/plantuml.jar")
-     (setq plantuml-default-exec-mode 'executable)
-     (setq org-plantuml-exec-mode 'executable)
-     (setq org-plantuml-jar-path "~/.nix-profile/lib/plantuml.jar")
-     (setq plantuml-executable-args '(
-                                      "-headless"
-                                      "-charset"
-                                      "UTF-8"
-                                      ))
-     )
-
-   (use-package format-all
-     :ensure t
-     :bind
-     (:map buffer-keymap
-           ("=" . format-all-region-or-buffer)
-           )
-     )
+  (use-package format-all
+    :ensure t
+    :commands format-all-mode
+    :hook (prog-mode . format-all-mode)
+    :config
+    (setq-default format-all-formatters '(("C"     (astyle "--mode=c"))
+                                          ("Shell" (shfmt "-i" "4" "-ci"))
+                                          ("nix" (nixfmt))
+                                          ))
+    :bind
+    (:map buffer-keymap
+          ("=" . format-all-region-or-buffer)
+          )
+    )
 #+end_src
 
 

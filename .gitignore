@@ -6,3 +6,5 @@
 !shell.nix
 !packages.nix
 !.envrc
+!early-init.el
+!init.el

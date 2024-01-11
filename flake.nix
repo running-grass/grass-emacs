@@ -30,14 +30,21 @@
               inherit system;
               overlays = [ (import emacs-overlay) ];
             };
-            emacs =
-              if pkgs.stdenv.isDarwin then pkgs.emacs-macport else pkgs.emacs-pgtk;
+            emacs = if pkgs.stdenv.isDarwin then
+              pkgs.emacs-macport
+            else
+              pkgs.emacs-pgtk;
             emacsWrap = (pkgs.emacsWithPackagesFromUsePackage {
               package = emacs;
 
               config = ./README.org;
 
-              defaultInitFile = false;
+              # defaultInitFile = ./init.el;
+              defaultInitFile = pkgs.substituteAll {
+                name = "default.el";
+                src = ./init.el;
+              };
+              #              defaultInitFile = false;
               alwaysTangle = true;
             });
           in {
@@ -45,9 +52,12 @@
             packages = with pkgs; [
               # lsp
               rnix-lsp
+              phpactor
+
+              # fmt
+              nixfmt
             ];
-          }
-        );
+          });
 
     in flake-utils.lib.eachDefaultSystem (system:
       let
