@@ -52,6 +52,12 @@
   :ensure t
   :defer t)
 
+(use-package editorconfig
+  :ensure t
+  :config
+  (editorconfig-mode 1))
+
+
 (use-package emacs
   :init
   ;; 默认查找目录为home目录
@@ -62,6 +68,7 @@
   (setq-default indent-tabs-mode nil)
   (setq-default tab-width 2)
   (setq-default default-tab-width 2)
+  (setq-default js-indent-level 2)
 
   ;; 允许外部程序的粘贴板
   ;; (setq select-enable-clipboard t)
@@ -555,6 +562,9 @@
    lsp-bridge-nix-lsp-server 'rnix-lsp
    )
   (global-lsp-bridge-mode)
+
+  :hook
+  (vue-mode . lsp-bridge-mode)
   )
 
 ;; (use-package codeium)

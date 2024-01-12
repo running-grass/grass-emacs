@@ -70,11 +70,7 @@
   git clone git@github.com:running-grass/grass-emacs.git ~/.config/emacs
 #+end_src
 
-进入 =Emacs= 后， 按 =C-x C-f= 后选择 =~/.config/emacs/README.org= (也就是 本文件)。
-
-使用 =M-x org-babel-tangle= 或者 =C-c C-v C-t= 导出本文件的配置为 =~/.config/emacs/init.el= 和 =~/.config/emacs/early-init.el=
-
-然后关闭 =Emacs= 后，重新启动 =Emacs= ，之后修改配置以后就可以使用 =SPC r= 来重新加载配置了。  
+修改配置以后就可以使用 =SPC r= 来重新加载配置了。  
 
 *** 修改配置
 
@@ -85,13 +81,11 @@
 #+end_src
 
 
-* early-init.el 文件
+* 全局配置
 
-=Emacs= 会在加载 =init.el= 之前加载 =early-init.el= 文件。这个文件通常用于解决启动速度的问题。
+** 启动优化
 
-不要在这个文件中进行普通包的配置
-
-#+begin_src emacs-lisp :tangle early-init.el
+#+begin_src emacs-lisp
   ;; 关闭jit
   (setq native-comp-jit-compilation nil)
   ;; 关闭启动画面
@@ -109,9 +103,7 @@
 
   (setq no-native-compile t
         no-byte-compile t)
-  ;; 给 eln-cache 目录换个地方
-  (when (boundp 'native-comp-eln-load-path)
-    (startup-redirect-eln-cache (expand-file-name "~/.cache/emacs/eln-cache/")))
+
 
   ;; 关闭菜单栏
   (menu-bar-mode -1)
@@ -121,8 +113,6 @@
   (scroll-bar-mode -1)
 #+end_src
 
-
-* 全局配置
 
 ** 定义常用目录
 
@@ -134,33 +124,35 @@
 缓存： 使用过程中的缓存文件，可以被安全的删除，必须可以被重建。
 
 #+begin_src emacs-lisp 
-  (use-package xdg
-    :ensure nil
-    :config
-    (defun expand-emacs-config (filename)
-      "expand emacs config files"
-      (expand-file-name filename
-                        (expand-file-name "emacs" (xdg-config-home))
-                        ))
+  (require 'xdg)
 
-    (defun expand-emacs-data (filename)
-      "expand emacs data files"
-      (expand-file-name filename
-                        (expand-file-name "emacs" (xdg-data-home))
-                        ))
+  (defun expand-emacs-config (filename)
+    "expand emacs config files"
+    (expand-file-name filename
+                      (expand-file-name "emacs" (xdg-config-home))
+                      ))
 
-    (defun expand-emacs-state (filename)
-      "expand emacs state files"
-      (expand-file-name filename
-                        (expand-file-name "emacs" (xdg-state-home))
-                        ))
+  (defun expand-emacs-data (filename)
+    "expand emacs data files"
+    (expand-file-name filename
+                      (expand-file-name "emacs" (xdg-data-home))
+                      ))
 
-    (defun expand-emacs-cache (filename)
-      "expand emacs cache files"
-      (expand-file-name filename
-                        (expand-file-name "emacs" (xdg-cache-home))
-                        ))
-    )
+  (defun expand-emacs-state (filename)
+    "expand emacs state files"
+    (expand-file-name filename
+                      (expand-file-name "emacs" (xdg-state-home))
+                      ))
+
+  (defun expand-emacs-cache (filename)
+    "expand emacs cache files"
+    (expand-file-name filename
+                      (expand-file-name "emacs" (xdg-cache-home))
+                      ))
+
+  ;; 给 eln-cache 目录换个地方
+  (when (boundp 'native-comp-eln-load-path)
+    (startup-redirect-eln-cache (expand-emacs-cache "eln-cache")))
 #+end_src
 
 ** 定义用户级别的键位映射图
@@ -199,6 +191,12 @@
     :ensure t
     :defer t)
 
+  (use-package editorconfig
+    :ensure t
+    :config
+    (editorconfig-mode 1))
+
+
   (use-package emacs
     :init
     ;; 默认查找目录为home目录
@@ -209,6 +207,7 @@
     (setq-default indent-tabs-mode nil)
     (setq-default tab-width 2)
     (setq-default default-tab-width 2)
+    (setq-default js-indent-level 2)
 
     ;; 允许外部程序的粘贴板
     ;; (setq select-enable-clipboard t)
@@ -794,6 +793,8 @@
     (vue-mode . lsp-bridge-mode)
     )
 
+
+
   ;; (use-package codeium)
 #+end_src
 
@@ -824,6 +825,14 @@
     :config
     ;; 0, 1, or 2, representing (respectively) none, low, and high coloring
     (setq mmm-submode-decoration-level 0))
+
+  ;; 配置emmet-mode
+  ;; 默认为C-j展开
+  (use-package emmet-mode
+    :hook html-mode
+    :hook css-mode
+    :hook vue-mode
+    )
 
   (use-package markdown-mode
     :ensure t
