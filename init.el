@@ -995,8 +995,28 @@
   :config
   (setq doom-modeline-modal-icon t)
   :hook
+
   (after-init . doom-modeline-mode))
 
+(use-package nerd-icons
+  :ensure t
+  ;; :custom
+  ;; The Nerd Font you want to use in GUI
+  ;; "Symbols Nerd Font Mono" is the default and is recommended
+  ;; but you can use any other Nerd Font if you want
+  ;; (nerd-icons-font-family "Symbols Nerd Font Mono")
+  )
+(use-package nerd-icons-dired
+  :ensure t
+  :after nerd-icons
+  :hook
+  (dired-mode . nerd-icons-dired-mode))
+(use-package nerd-icons-completion
+  :ensure t
+  :after marginalia nerd-icons
+  :config
+  (nerd-icons-completion-mode)
+  (add-hook 'marginalia-mode-hook #'nerd-icons-completion-marginalia-setup))
 ;; 括号的多色彩
 (use-package rainbow-delimiters
   :ensure t
@@ -1040,6 +1060,28 @@
 
 ;; Optionally use the `orderless' completion style.
 
+(use-package dirvish
+  :ensure t
+  :after nerd-icons
+  :init
+  (dirvish-override-dired-mode)
+  :config
+  (setq dirvish-mode-line-format
+        '(:left (sort symlink) :right (omit yank index)))
+  (setq dirvish-mode-line-height 10)
+  (setq dirvish-attributes
+        '(nerd-icons file-time file-size collapse subtree-state vc-state git-msg))
+  (setq dirvish-subtree-state-style 'nerd)
+  (setq delete-by-moving-to-trash t)
+  (setq dirvish-path-separators (list
+                                 (format "  %s " (nerd-icons-codicon "nf-cod-home"))
+                                 (format "  %s " (nerd-icons-codicon "nf-cod-root_folder"))
+                                 (format " %s " (nerd-icons-faicon "nf-fa-angle_right"))))
+  (setq dired-listing-switches
+        "-l --almost-all --human-readable --group-directories-first --no-group")
+  (dirvish-peek-mode) ; Preview files in minibuffer
+  (dirvish-side-follow-mode) ; similar to `treemacs-follow-mode'
+  )
 
 (use-package embark
   :ensure t
@@ -1075,3 +1117,47 @@
   :ensure t ; only need to install it, embark loads it after consult if found
   :hook
   (embark-collect-mode . consult-preview-at-point-mode))
+
+;; use-package:
+(use-package dashboard
+  :ensure t
+  :after nerd-icons
+  :config
+  (setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
+  ;; Set the title
+  (setq dashboard-banner-logo-title "Welcome to Emacs Dashboard")
+  ;; Set the banner
+  ;; (setq dashboard-startup-banner [VALUE])
+  ;; Value can be
+  ;; - nil to display no banner
+  ;; - 'official which displays the official emacs logo
+  ;; - 'logo which displays an alternative emacs logo
+  ;; - 1, 2 or 3 which displays one of the text banners
+  ;; - "path/to/your/image.gif", "path/to/your/image.png", "path/to/your/text.txt" or "path/to/your/image.xbm" which displays whatever gif/image/text/xbm you would prefer
+  ;; - a cons of '("path/to/your/image.png" . "path/to/your/text.txt")
+
+  ;; Content is not centered by default. To center, set
+  (setq dashboard-center-content t)
+
+  ;; To disable shortcut "jump" indicators for each section, set
+  (setq dashboard-show-shortcuts t)
+
+  (setq dashboard-display-icons-p t) ;; display icons on both GUI and terminal
+  (setq dashboard-icon-type 'nerd-icons) ;; use `nerd-icons' package
+
+  (setq dashboard-set-heading-icons t)
+  (setq dashboard-set-file-icons t)
+  (setq dashboard-items '((recents  . 10)
+                        (bookmarks . 10)
+                        ;; (projects . 5)
+                        ;; (agenda . 5)
+                        ;; (registers . 5)
+                        ))
+  (dashboard-modify-heading-icons '((recents . "nf-oct-file")
+                                    (bookmarks . "nf-oct-bookmark")))
+  (setq dashboard-set-navigator t)
+  (setq dashboard-set-init-info t)
+
+  (setq dashboard-projects-switch-function 'counsel-projectile-switch-project-by-name)
+
+  (dashboard-setup-startup-hook))
