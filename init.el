@@ -1,32 +1,61 @@
 (setq straight-use-package-by-default nil)
 
-(use-package xdg
-  :ensure nil
-  :config
-  (defun expand-emacs-config (filename)
-    "expand emacs config files"
-    (expand-file-name filename
-                      (expand-file-name "emacs" (xdg-config-home))
-                      ))
+;; 关闭jit
+(setq native-comp-jit-compilation nil)
+;; 关闭内置的包管理工具
+(setq package-enable-at-startup nil)
 
-  (defun expand-emacs-data (filename)
-    "expand emacs data files"
-    (expand-file-name filename
-                      (expand-file-name "emacs" (xdg-data-home))
-                      ))
+;; Silence nativecomp warnings popping up
+(setq native-comp-async-report-warnings-errors t)
 
-  (defun expand-emacs-state (filename)
-    "expand emacs state files"
-    (expand-file-name filename
-                      (expand-file-name "emacs" (xdg-state-home))
-                      ))
+;; Settings
+(setq native-comp-speed 2
+      native-comp-deferred-compilation nil
+      package-native-compile nil)
 
-  (defun expand-emacs-cache (filename)
-    "expand emacs cache files"
-    (expand-file-name filename
-                      (expand-file-name "emacs" (xdg-cache-home))
-                      ))
-  )
+(setq no-native-compile t
+      no-byte-compile t)
+
+
+;; 关闭菜单栏
+(menu-bar-mode -1)
+;; 关闭工具栏
+(tool-bar-mode -1)
+;; 关闭文件滑动控件
+(scroll-bar-mode -1)
+
+(require 'xdg)
+
+(defun expand-emacs-config (filename)
+  "expand emacs config files"
+  (expand-file-name filename
+
+                    (or (getenv "EMACS_DEBUG_DIR")
+                        (expand-file-name "emacs" (xdg-config-home))
+
+                        )))
+
+(defun expand-emacs-data (filename)
+  "expand emacs data files"
+  (expand-file-name filename
+                    (expand-file-name "emacs" (xdg-data-home))
+                    ))
+
+(defun expand-emacs-state (filename)
+  "expand emacs state files"
+  (expand-file-name filename
+                    (expand-file-name "emacs" (xdg-state-home))
+                    ))
+
+(defun expand-emacs-cache (filename)
+  "expand emacs cache files"
+  (expand-file-name filename
+                    (expand-file-name "emacs" (xdg-cache-home))
+                    ))
+
+;; 给 eln-cache 目录换个地方
+(when (boundp 'native-comp-eln-load-path)
+  (startup-redirect-eln-cache (expand-emacs-cache "eln-cache")))
 
 (defvar application-keymap (make-sparse-keymap) "applications")
 (defalias 'application-keymap application-keymap)
@@ -109,8 +138,17 @@
   ;;       #'command-completion-default-include-p)
 
   ;; Enable recursive minibuffers
-  (setq enable-recursive-minibuffers t))
+  (setq enable-recursive-minibuffers t)
+  :config
+  ;; 关闭启动画面
+  (setq inhibit-startup-screen t)
+  )
 
+(use-package package
+  :ensure nil
+  :config
+  (setq package-user-dir (expand-emacs-cache "elpa"))
+  )
 ;; 保存了上一次打开文件时的光标位置
 (use-package saveplace
   :ensure nil
@@ -438,6 +476,7 @@
 ;; Example configuration for Consult
 (use-package consult
   :ensure t
+  :demand t
   ;; Replace bindings. Lazily loaded due by `use-package'.
   ;; :config
   ;; (meow-leader-define-key '("l" . consult-mode-command))
@@ -555,6 +594,7 @@
 
 (use-package lsp-bridge
   :ensure t
+  :demand t
   :config
   ;; (setq lsp-bridge-enable-log nil)
   (setq
@@ -566,6 +606,8 @@
   :hook
   (vue-mode . lsp-bridge-mode)
   )
+
+
 
 ;; (use-package codeium)
 
@@ -592,6 +634,14 @@
   :config
   ;; 0, 1, or 2, representing (respectively) none, low, and high coloring
   (setq mmm-submode-decoration-level 0))
+
+;; 配置emmet-mode
+;; 默认为C-j展开
+(use-package emmet-mode
+  :hook html-mode
+  :hook css-mode
+  :hook vue-mode
+  )
 
 (use-package markdown-mode
   :ensure t

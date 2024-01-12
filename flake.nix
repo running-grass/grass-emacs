@@ -51,11 +51,11 @@
             inherit pkgs emacsWrap;
             packages = with pkgs; [
               # lsp
-              rnix-lsp          # nix
-              phpactor          # php
+              rnix-lsp # nix
+              phpactor # php
               nodePackages.typescript-language-server # ts
-              nodePackages.volar                      # vue
-              
+              nodePackages.volar # vue
+
               # fmt
               nixfmt
             ];
@@ -63,7 +63,7 @@
 
     in flake-utils.lib.eachDefaultSystem (system:
       let
-        vars = { PROJECT_ROOT = builtins.getEnv "PWD"; };
+        vars = { project_root = builtins.getEnv "PWD"; };
         inherit (getEmacs system) pkgs emacsWrap packages;
       in {
         devShells.default =

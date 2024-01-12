@@ -88,8 +88,6 @@
 #+begin_src emacs-lisp
   ;; 关闭jit
   (setq native-comp-jit-compilation nil)
-  ;; 关闭启动画面
-  (setq inhibit-startup-message t)
   ;; 关闭内置的包管理工具
   (setq package-enable-at-startup nil)
 
@@ -129,8 +127,11 @@
   (defun expand-emacs-config (filename)
     "expand emacs config files"
     (expand-file-name filename
-                      (expand-file-name "emacs" (xdg-config-home))
-                      ))
+
+                      (or (getenv "EMACS_DEBUG_DIR")
+                          (expand-file-name "emacs" (xdg-config-home))
+
+                          )))
 
   (defun expand-emacs-data (filename)
     "expand emacs data files"
@@ -248,13 +249,22 @@
     ;;       #'command-completion-default-include-p)
 
     ;; Enable recursive minibuffers
-    (setq enable-recursive-minibuffers t))
+    (setq enable-recursive-minibuffers t)
+    :config
+    ;; 关闭启动画面
+    (setq inhibit-startup-screen t)
+    )
 #+end_src
 
 
 * 内置包的配置
 
-#+begin_src emacs-lisp 
+#+begin_src emacs-lisp
+  (use-package package
+    :ensure nil
+    :config
+    (setq package-user-dir (expand-emacs-cache "elpa"))
+    )
   ;; 保存了上一次打开文件时的光标位置
   (use-package saveplace
     :ensure nil
@@ -664,6 +674,7 @@
   ;; Example configuration for Consult
   (use-package consult
     :ensure t
+    :demand t
     ;; Replace bindings. Lazily loaded due by `use-package'.
     ;; :config
     ;; (meow-leader-define-key '("l" . consult-mode-command))
@@ -781,6 +792,7 @@
 
   (use-package lsp-bridge
     :ensure t
+    :demand t
     :config
     ;; (setq lsp-bridge-enable-log nil)
     (setq
