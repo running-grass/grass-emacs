@@ -783,7 +783,7 @@
 
   (use-package yasnippet
     :ensure t
-    :config
+    :init
     (setq yas--default-user-snippets-dir (expand-emacs-data "snippets"))
     :hook
 

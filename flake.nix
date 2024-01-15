@@ -80,20 +80,38 @@
           };
         };
 
-      }) // (let
-        system = "x86_64-linux";
-        inherit (getEmacs system) emacsWrap packages;
-      in {
-        nixosModules.default = { config, ... }: {
-          options = { };
-          config = {
-            environment.systemPackages = packages;
-            services.emacs = {
-              enable = true;
-              package = emacsWrap;
-              defaultEditor = true;
-            };
+      })
+    # Nixos 使用的模块
+    // (let
+      system = "x86_64-linux";
+      inherit (getEmacs system) emacsWrap packages;
+    in {
+      nixosModules.default = { config, ... }: {
+        options = { };
+        config = {
+          environment.systemPackages = packages;
+          services.emacs = {
+            enable = true;
+            package = emacsWrap;
+            defaultEditor = true;
           };
         };
-      });
+      };
+    })
+    # Macos 使用的模块
+    // (let
+      system = "x86_64-darwin";
+      inherit (getEmacs system) emacsWrap packages;
+    in {
+      darwinModules.default = { config, ... }: {
+        options = { };
+        config = {
+          environment.systemPackages = packages;
+          services.emacs = {
+            enable = true;
+            package = emacsWrap;
+          };
+        };
+      };
+    });
 }
