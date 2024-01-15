@@ -1,3 +1,4 @@
+
 #+TITLE: grass-emacs
 
 #+PROPERTY: header-args               :results silent
@@ -50,6 +51,23 @@
 
 可以直接在命令行使用 =Emacs= 启动。
 
+** Nix-Darwin 用户
+
+目前还不太好用，堪堪可以使用
+
+#+name: flake.nix
+#+begin_src nix
+  # 其它inputs
+  {
+    inputs.grass-emacs.url = "github:running-grass/grass-emacs";
+
+    # 在主机配置中导入模块 
+    darwinConfigurations.galaxy = inputs.nix-darwin.lib.darwinSystem {
+      modules = [ inputs.grass-emacs.nixosModules.default ];
+    };
+  }
+#+end_src
+
 ** 非 NixOS 用户
 
 *** 前置条件
@@ -79,7 +97,6 @@
 #+begin_src emacs-lisp
   (setq straight-use-package-by-default nil)
 #+end_src
-
 
 * 全局配置
 
@@ -1208,40 +1225,20 @@ Org-mode 相关的配置。
           modus-themes-preset-overrides-intense)
 
     (setq modus-themes-to-toggle '(modus-vivendi-tinted modus-operandi-tinted))
-
+    (load-theme 'modus-vivendi-tinted)
     :bind
     ("<f5>" . modus-themes-toggle)
     ("C-c t" . modus-themes-toggle)
     )
 
-  ;; (use-package svg-lib
-  ;;   :ensure t
-  ;;   )
-
-  ;; 设置主题
-  ;; (use-package doom-themes
-  ;;   :ensure t
-  ;;   :config
-  ;;   ;; Global settings (defaults)
-  ;;   (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
-  ;;         doom-themes-enable-italic t) ; if nil, italics is universally disabled
-  ;;   (load-theme 'doom-one t)
-
-  ;; Enable flashing mode-line on errors
-  ;; (doom-themes-visual-bell-config)
-
-  ;; Corrects (and improves) org-mode's native fontification.
-  ;; (doom-themes-org-config)
-  ;; )
-
   ;; 美化modeline
-  ;; (use-package doom-modeline
-  ;;   :ensure t
-  ;;   :config
-  ;;   (setq doom-modeline-modal-icon t)
-  ;;   :hook
+  (use-package doom-modeline
+    :ensure t
+    :config
+    (setq doom-modeline-modal-icon t)
+    :hook
 
-  ;;   (after-init . doom-modeline-mode))
+    (after-init . doom-modeline-mode))
 
   (use-package nerd-icons
     :ensure t

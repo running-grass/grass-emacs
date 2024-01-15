@@ -272,6 +272,8 @@
    '("f" . file-keymap)
    '("n" . org-keymap)
 
+   '("<SPC>" . execute-extended-command)
+
    '("r" . reload-config)
    ;;  override
    '("h f" . describe-function)
@@ -585,7 +587,7 @@
 
 (use-package yasnippet
   :ensure t
-  :config
+  :init
   (setq yas--default-user-snippets-dir (expand-emacs-data "snippets"))
   :hook
 
@@ -973,20 +975,23 @@
   :defer t
   :hook (after-init . global-hl-line-mode))
 
-;; 设置主题
-(use-package doom-themes
+(use-package modus-themes
   :ensure t
+  :demand t
   :config
-  ;; Global settings (defaults)
-  (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
-        doom-themes-enable-italic t) ; if nil, italics is universally disabled
-  (load-theme 'doom-one t)
+  (setq modus-themes-italic-constructs t
+        modus-themes-bold-constructs nil)
+  ;; Maybe define some palette overrides, such as by using our presets
+  (setq modus-themes-common-palette-overrides
+        modus-themes-preset-overrides-intense)
 
-  ;; Enable flashing mode-line on errors
-  ;; (doom-themes-visual-bell-config)
+  (setq modus-themes-to-toggle '(modus-vivendi-tinted modus-operandi-tinted))
+  :bind
+  ("<f5>" . modus-themes-toggle)
+  ("C-c t" . modus-themes-toggle)
 
-  ;; Corrects (and improves) org-mode's native fontification.
-  ;; (doom-themes-org-config)
+  :hook
+  (after-init . (load-theme 'modus-vivendi-tinted))
   )
 
 ;; 美化modeline
@@ -1026,11 +1031,11 @@
   )
 
 ;; 自动保存
-(use-package super-save
-  :ensure t
-  :demand t
-  :config
-  (super-save-mode +1))
+;; (use-package super-save
+;;   :ensure t
+;;   :demand t
+;;   :config
+;;   (super-save-mode +1))
 
 ;; 自动给内置函数增加 demo
 (use-package elisp-demos
