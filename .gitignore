@@ -8,5 +8,3 @@
 !.envrc
 !early-init.el
 !init.el
-!packages/
-!packages/*
