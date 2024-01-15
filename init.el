@@ -72,6 +72,9 @@
 (defvar org-keymap (make-sparse-keymap) "所有gtd相关的全局操作都在这里")
 (defalias 'org-keymap org-keymap)
 
+(defvar jump-keymap (make-sparse-keymap) "和导航跳转相关的按键")
+(defalias 'jump-keymap jump-keymap)
+
 (use-package use-package
   :ensure nil
   )
@@ -271,6 +274,7 @@
    '("b" . buffer-keymap)
    '("f" . file-keymap)
    '("n" . org-keymap)
+   '("j" . jump-keymap)
 
    '("<SPC>" . execute-extended-command)
 
@@ -491,14 +495,12 @@
          ("f" . find-file)
          ("d" . delete-current-file)
          ("e" . consult-recent-file)
-
          :map buffer-keymap
          ("b" . consult-buffer)
+         :map jump-keymap
+         ("g" . consult-goto-line)             ;; orig. goto-line
+         ("m" . consult-imenu)
          ("s" . consult-line)
-         ("j" . consult-imenu)
-         ("o" . consult-outline)               ;; Alternative: consult-org-heading
-         ("l" . consult-goto-line)             ;; orig. goto-line
-
          )                ;; orig. previous-matching-history-element
 
   ;; Enable automatic preview at point in the *Completions* buffer. This is
@@ -607,10 +609,12 @@
 
   :hook
   (vue-mode . lsp-bridge-mode)
+
+  :bind
+  (:map jump-keymap
+        ("d" . lsp-bridge-find-def)
+        ("D" . lsp-bridge-find-def-return))
   )
-
-
-
 ;; (use-package codeium)
 
 ;; use wakatime
@@ -620,6 +624,12 @@
   (after-init . global-wakatime-mode)
   )
 
+(use-package symbol-overlay
+  :ensure t
+  :bind
+  (:map jump-keymap
+        ("i" . symbol-overlay-put))
+  )
 (use-package nix-mode
   :ensure t
   :mode "\\.nix\\'")
@@ -782,11 +792,13 @@
 
 ;; 保存是自动更新具有 :TOC: 的标题为目录
 (use-package toc-org
+  :ensure t
   :hook
   (org-mode . toc-org-mode)
   )
 
 (use-package ox-hugo
+  :ensure t
   :defer t
   :after ox
   :hook (org . org-hugo-auto-export-mode)
@@ -918,6 +930,7 @@
 
 ;; 番茄钟
 ;; (use-package org-pomodoro
+;; :ensure t
 ;;   :after org
 ;;   :bind
 ;;   (:map gtd-map
@@ -929,6 +942,7 @@
 ;;   )
 
 ;; (use-package org-roam
+;; :ensure t
 ;;   :after org
 ;;   :custom
 ;;   (org-roam-directory "~/org/org-roam/")
@@ -969,6 +983,14 @@
 ;;         (action . (lambda (candidate)
 ;;                     candidate))))
 
+;; org 美化
+;; (use-package org-modern
+;;   :ensure t
+;;   :hook
+;;   (org-mode . org-modern-mode)
+;;   (org-agenda-finalize . org-modern-agenda)
+;;   )
+
 ;; 高亮当前行
 (use-package hl-line
   :ensure nil
@@ -986,12 +1008,10 @@
         modus-themes-preset-overrides-intense)
 
   (setq modus-themes-to-toggle '(modus-vivendi-tinted modus-operandi-tinted))
+  (load-theme 'modus-vivendi-tinted)
   :bind
   ("<f5>" . modus-themes-toggle)
   ("C-c t" . modus-themes-toggle)
-
-  :hook
-  (after-init . (load-theme 'modus-vivendi-tinted))
   )
 
 ;; 美化modeline
@@ -1002,7 +1022,6 @@
   :hook
 
   (after-init . doom-modeline-mode))
-
 (use-package nerd-icons
   :ensure t
   ;; :custom
@@ -1029,7 +1048,6 @@
   :hook
   (prog-mode . rainbow-delimiters-mode)
   )
-
 ;; 自动保存
 ;; (use-package super-save
 ;;   :ensure t
@@ -1166,3 +1184,19 @@
   (setq dashboard-projects-switch-function 'counsel-projectile-switch-project-by-name)
 
   (dashboard-setup-startup-hook))
+
+(use-package emacs
+  :bind
+  ;; (:map jump-keymap
+  ;;       ("l" . goto-line))
+
+  )
+
+(use-package avy
+  :ensure t
+  :bind
+  (:map jump-keymap
+        ("j" . avy-goto-char-timer)
+        ("l" . avy-goto-line)
+        )
+  )

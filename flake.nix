@@ -58,6 +58,13 @@
 
               # fmt
               nixfmt
+
+              # mardown
+              multimarkdown
+
+              # email
+              mu
+              offlineimap
             ];
           });
 
@@ -89,12 +96,12 @@
       nixosModules.default = { config, ... }: {
         options = { };
         config = {
-          environment.systemPackages = packages;
-          services.emacs = {
-            enable = true;
-            package = emacsWrap;
-            defaultEditor = true;
-          };
+          environment.systemPackages = packages ++ [ emacsWrap ];
+          # services.emacs = {
+          #   enable = true;
+          #   package = emacsWrap;
+          #   defaultEditor = true;
+          # };
         };
       };
     })
@@ -106,11 +113,11 @@
       darwinModules.default = { config, ... }: {
         options = { };
         config = {
-          environment.systemPackages = packages;
-          services.emacs = {
-            enable = true;
-            package = emacsWrap;
-          };
+          environment.systemPackages = packages ++ [ emacsWrap ];
+          # services.emacs = {
+          #   enable = true;
+          #   package = emacsWrap;
+          # };
         };
       };
     });

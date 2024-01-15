@@ -7,12 +7,12 @@
 本仓库是我的个人 =Emacs= 配置，主打一个满足个人日常使用。如果里面的一些代码对你有帮助，欢迎拿走。
 
 * 目录                                                                  :TOC:
-- [[#如何直接使用][如何直接使用]]
-  - [[#前置条件][前置条件]]
-  - [[#安装][安装]]
-  - [[#修改配置][修改配置]]
-- [[#early-initel-文件][early-init.el 文件]]
+- [[#如何使用][如何使用]]
+  - [[#nixos-用户][NixOS 用户]]
+  - [[#nix-darwin-用户][Nix-Darwin 用户]]
+  - [[#非-nixos-用户][非 NixOS 用户]]
 - [[#全局配置][全局配置]]
+  - [[#启动优化][启动优化]]
   - [[#定义常用目录][定义常用目录]]
   - [[#定义用户级别的键位映射图][定义用户级别的键位映射图]]
   - [[#emacs-的默认配置][Emacs 的默认配置]]
@@ -30,9 +30,11 @@
 - [[#org][Org]]
 - [[#样式][样式]]
 - [[#杂项][杂项]]
+  - [[#小功能][小功能]]
+  - [[#仪表盘][仪表盘]]
+  - [[#跳转][跳转]]
 
 * 如何使用
-
 ** NixOS 用户
 
 *** 使用 Flakes
@@ -194,6 +196,9 @@
 
   (defvar org-keymap (make-sparse-keymap) "所有gtd相关的全局操作都在这里")
   (defalias 'org-keymap org-keymap)
+
+  (defvar jump-keymap (make-sparse-keymap) "和导航跳转相关的按键")
+  (defalias 'jump-keymap jump-keymap)
 #+end_src
 
 ** Emacs 的默认配置
@@ -420,6 +425,7 @@
      '("b" . buffer-keymap)
      '("f" . file-keymap)
      '("n" . org-keymap)
+     '("j" . jump-keymap)
 
      '("<SPC>" . execute-extended-command)
 
@@ -706,14 +712,12 @@
            ("f" . find-file)
            ("d" . delete-current-file)
            ("e" . consult-recent-file)
-
            :map buffer-keymap
            ("b" . consult-buffer)
+           :map jump-keymap
+           ("g" . consult-goto-line)             ;; orig. goto-line
+           ("m" . consult-imenu)
            ("s" . consult-line)
-           ("j" . consult-imenu)
-           ("o" . consult-outline)               ;; Alternative: consult-org-heading
-           ("l" . consult-goto-line)             ;; orig. goto-line
-
            )                ;; orig. previous-matching-history-element
 
     ;; Enable automatic preview at point in the *Completions* buffer. This is
@@ -822,10 +826,12 @@
 
     :hook
     (vue-mode . lsp-bridge-mode)
+
+    :bind
+    (:map jump-keymap
+          ("d" . lsp-bridge-find-def)
+          ("D" . lsp-bridge-find-def-return))
     )
-
-
-
   ;; (use-package codeium)
 #+end_src
 
@@ -833,6 +839,8 @@
 * 编程语言
 
 #+begin_src emacs-lisp
+
+
   ;; use wakatime
   (use-package wakatime-mode
     :ensure t
@@ -840,6 +848,12 @@
     (after-init . global-wakatime-mode)
     )
 
+  (use-package symbol-overlay
+    :ensure t
+    :bind
+    (:map jump-keymap
+          ("i" . symbol-overlay-put))
+    )
   (use-package nix-mode
     :ensure t
     :mode "\\.nix\\'")
@@ -1017,11 +1031,13 @@ Org-mode 相关的配置。
 #+begin_src emacs-lisp
   ;; 保存是自动更新具有 :TOC: 的标题为目录
   (use-package toc-org
+    :ensure t
     :hook
     (org-mode . toc-org-mode)
     )
 
   (use-package ox-hugo
+    :ensure t
     :defer t
     :after ox
     :hook (org . org-hugo-auto-export-mode)
@@ -1153,6 +1169,7 @@ Org-mode 相关的配置。
 
   ;; 番茄钟
   ;; (use-package org-pomodoro
+  ;; :ensure t
   ;;   :after org
   ;;   :bind
   ;;   (:map gtd-map
@@ -1164,6 +1181,7 @@ Org-mode 相关的配置。
   ;;   )
 
   ;; (use-package org-roam
+  ;; :ensure t
   ;;   :after org
   ;;   :custom
   ;;   (org-roam-directory "~/org/org-roam/")
@@ -1204,7 +1222,13 @@ Org-mode 相关的配置。
   ;;         (action . (lambda (candidate)
   ;;                     candidate))))
 
-
+  ;; org 美化
+  ;; (use-package org-modern
+  ;;   :ensure t
+  ;;   :hook
+  ;;   (org-mode . org-modern-mode)
+  ;;   (org-agenda-finalize . org-modern-agenda)
+  ;;   )
 #+end_src
 * 样式
 #+begin_src emacs-lisp 
@@ -1239,7 +1263,6 @@ Org-mode 相关的配置。
     :hook
 
     (after-init . doom-modeline-mode))
-
   (use-package nerd-icons
     :ensure t
     ;; :custom
@@ -1266,7 +1289,6 @@ Org-mode 相关的配置。
     :hook
     (prog-mode . rainbow-delimiters-mode)
     )
-
   ;; 自动保存
   ;; (use-package super-save
   ;;   :ensure t
@@ -1415,4 +1437,24 @@ Org-mode 相关的配置。
     (setq dashboard-projects-switch-function 'counsel-projectile-switch-project-by-name)
 
     (dashboard-setup-startup-hook))
+#+end_src
+
+** 跳转
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :bind
+    ;; (:map jump-keymap
+    ;;       ("l" . goto-line))
+
+    )
+
+  (use-package avy
+    :ensure t
+    :bind
+    (:map jump-keymap
+          ("j" . avy-goto-char-timer)
+          ("l" . avy-goto-line)
+          )
+    )
 #+end_src
