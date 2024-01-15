@@ -553,6 +553,7 @@
     :config
     ;; 默认是motion模式
     (add-to-list 'meow-mode-state-list '(mu4e-view-mode . motion))
+    (add-to-list 'meow-mode-state-list '(lsp-bridge-ref-mode . motion))
     ;; allow for updating mail using 'U' in the main view:
 
     (setq user-full-name "Leo Liu"
@@ -619,10 +620,10 @@
 #+begin_src emacs-lisp
   (use-package elfeed-protocol
     :ensure t
-    :config
+    :init
     ;; curl recommend
     (setq elfeed-use-curl t)
-    (elfeed-set-timeout 36000)
+    (elfesed-set-timeout 36000)
     (setq elfeed-curl-extra-arguments '("--insecure")) ;necessary for https without a trust certificate
     ;; (setq elfeed-protocol-fever-update-unread-only nil)
     (setq elfeed-protocol-fever-fetch-category-as-tag t)
