@@ -22,101 +22,21 @@
   };
   outputs = { self, nixpkgs, emacs-overlay, flake-utils, ... }:
     let
-      getEmacs = system:
-        (
+      getEmacs = system: rec {
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [ (import emacs-overlay) ];
+        };
+        emacsWrap = import ./emacsWrap.nix { inherit pkgs; };
+        packages = import ./packages.nix { inherit pkgs; };
+        env-vars = {
+          # eaf
+          QT_QPA_PLATFORM_PLUGIN_PATH =
+            "${pkgs.qt6.qtbase.outPath}/lib/qt-6/plugins";
+        };
+      };
 
-          let
-            pkgs = import nixpkgs {
-              inherit system;
-              overlays = [ (import emacs-overlay) ];
-            };
-            emacs = if pkgs.stdenv.isDarwin then
-              pkgs.emacs-macport
-            else
-              pkgs.emacs-pgtk;
-            emacsWrap = (pkgs.emacsWithPackagesFromUsePackage {
-              package = emacs;
-
-              config = ./README.org;
-
-              # defaultInitFile = ./init.el;
-              defaultInitFile = pkgs.substituteAll {
-                name = "default.el";
-                src = ./init.el;
-              };
-              #              defaultInitFile = false;
-              alwaysTangle = true;
-            });
-            my-python-packages = python-packages:
-              with python-packages; [
-                pandas
-                requests
-                sexpdata
-                tld
-                pyqt6
-                pyqt6-sip
-                pyqt6-webengine
-                epc
-                lxml # for eaf
-                qrcode # eaf-file-browser
-                pysocks # eaf-browser
-                pymupdf # eaf-pdf-viewer
-                pypinyin # eaf-file-manager
-                psutil # eaf-system-monitor
-                retry # eaf-markdown-previewer
-                markdown
-              ];
-            python-with-my-packages =
-              pkgs.python3.withPackages my-python-packages;
-          in {
-            inherit pkgs emacsWrap;
-            packages = with pkgs; [
-              # lsp
-              rnix-lsp # nix
-              phpactor # php
-              nodePackages.typescript-language-server # ts
-              nodePackages.volar # vue
-
-              # fmt
-              nixfmt
-
-              # mardown
-              multimarkdown
-
-              # email
-              mu
-              offlineimap
-
-              # eaf
-              pkg-config
-              libinput
-              libevdev
-
-              git
-              nodejs
-              wmctrl
-              xdotool
-              python-with-my-packages
-              # eaf-browser
-              aria
-              # eaf-file-manager
-              fd
-            ];
-            env-vars = {
-              # eaf
-              QT_QPA_PLATFORM_PLUGIN_PATH =
-                "${pkgs.qt6.qtbase.outPath}/lib/qt-6/plugins";
-            };
-          });
-
-    in flake-utils.lib.eachDefaultSystem (system:
-      let
-        vars = { project_root = builtins.getEnv "PWD"; };
-        inherit (getEmacs system) pkgs emacsWrap packages env-vars;
-      in {
-        devShells.default =
-          import ./shell.nix { inherit pkgs vars packages emacsWrap env-vars; };
-      })
+    in { }
     # Nixos 使用的模块
     // (let
       system = "x86_64-linux";
@@ -151,5 +71,17 @@
           # };
         };
       };
-    });
+    })
+    # 为每个系统提供
+    // flake-utils.lib.eachDefaultSystem (system:
+      let
+        vars = { project_root = builtins.getEnv "PWD"; };
+        inherit (getEmacs system) pkgs emacsWrap packages env-vars;
+      in {
+        # devShells
+        devShells.default =
+          import ./shell.nix { inherit pkgs vars packages emacsWrap env-vars; };
+      })
+
+  ;
 }

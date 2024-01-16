@@ -1,10 +1,7 @@
 *
 !.gitignore
 !README.org
-!flake.nix
+!*.nix
 !flake.lock
-!shell.nix
-!packages.nix
 !.envrc
-!early-init.el
-!init.el
+!*.el

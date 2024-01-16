@@ -605,7 +605,6 @@
 
 (use-package lsp-bridge
   :ensure t
-  :defer 10
   :config
   ;; (setq lsp-bridge-enable-log nil)
   (setq
