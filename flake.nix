@@ -47,6 +47,27 @@
               #              defaultInitFile = false;
               alwaysTangle = true;
             });
+            my-python-packages = python-packages:
+              with python-packages; [
+                pandas
+                requests
+                sexpdata
+                tld
+                pyqt6
+                pyqt6-sip
+                pyqt6-webengine
+                epc
+                lxml # for eaf
+                qrcode # eaf-file-browser
+                pysocks # eaf-browser
+                pymupdf # eaf-pdf-viewer
+                pypinyin # eaf-file-manager
+                psutil # eaf-system-monitor
+                retry # eaf-markdown-previewer
+                markdown
+              ];
+            python-with-my-packages =
+              pkgs.python3.withPackages my-python-packages;
           in {
             inherit pkgs emacsWrap;
             packages = with pkgs; [
@@ -65,38 +86,47 @@
               # email
               mu
               offlineimap
+
+              # eaf
+              pkg-config
+              libinput
+              libevdev
+
+              git
+              nodejs
+              wmctrl
+              xdotool
+              python-with-my-packages
+              # eaf-browser
+              aria
+              # eaf-file-manager
+              fd
             ];
+            env-vars = {
+              # eaf
+              QT_QPA_PLATFORM_PLUGIN_PATH =
+                "${pkgs.qt6.qtbase.outPath}/lib/qt-6/plugins";
+            };
           });
 
     in flake-utils.lib.eachDefaultSystem (system:
       let
         vars = { project_root = builtins.getEnv "PWD"; };
-        inherit (getEmacs system) pkgs emacsWrap packages;
+        inherit (getEmacs system) pkgs emacsWrap packages env-vars;
       in {
         devShells.default =
-          import ./shell.nix { inherit pkgs vars packages emacsWrap; };
-        nixosModules.emacs = { config, ... }: {
-          options = { };
-          config = {
-            environment.systemPackages = packages;
-            services.emacs = {
-              enable = true;
-              package = emacsWrap;
-              defaultEditor = true;
-            };
-          };
-        };
-
+          import ./shell.nix { inherit pkgs vars packages emacsWrap env-vars; };
       })
     # Nixos 使用的模块
     // (let
       system = "x86_64-linux";
-      inherit (getEmacs system) emacsWrap packages;
+      inherit (getEmacs system) emacsWrap packages env-vars;
     in {
       nixosModules.default = { config, ... }: {
         options = { };
         config = {
           environment.systemPackages = packages ++ [ emacsWrap ];
+          environment.variables = env-vars;
           # services.emacs = {
           #   enable = true;
           #   package = emacsWrap;
@@ -108,12 +138,13 @@
     # Macos 使用的模块
     // (let
       system = "x86_64-darwin";
-      inherit (getEmacs system) emacsWrap packages;
+      inherit (getEmacs system) emacsWrap packages env-vars;
     in {
       darwinModules.default = { config, ... }: {
         options = { };
         config = {
           environment.systemPackages = packages ++ [ emacsWrap ];
+          environment.variables = env-vars;
           # services.emacs = {
           #   enable = true;
           #   package = emacsWrap;

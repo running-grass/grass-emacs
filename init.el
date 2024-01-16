@@ -75,6 +75,9 @@
 (defvar jump-keymap (make-sparse-keymap) "和导航跳转相关的按键")
 (defalias 'jump-keymap jump-keymap)
 
+(defvar toggle-keymap (make-sparse-keymap) "一些开关按键")
+(defalias 'toggle-keymap toggle-keymap)
+
 (use-package use-package
   :ensure nil
   )
@@ -275,6 +278,7 @@
    '("f" . file-keymap)
    '("n" . org-keymap)
    '("j" . jump-keymap)
+   '("t" . toggle-keymap)
 
    '("<SPC>" . execute-extended-command)
 
@@ -353,6 +357,8 @@
   :config
   (meow-setup)
   (meow-global-mode 1)
+  (add-to-list 'meow-mode-state-list '(minibuffer-mode . insert))
+
   )
 
 (use-package mu4e
@@ -414,7 +420,6 @@
   :config
   ;; curl recommend
   (setq elfeed-use-curl t)
-  (elfeed-set-timeout 36000)
   (setq elfeed-curl-extra-arguments '("--insecure")) ;necessary for https without a trust certificate
   ;; (setq elfeed-protocol-fever-update-unread-only nil)
   (setq elfeed-protocol-fever-fetch-category-as-tag t)
@@ -429,7 +434,9 @@
 
   ;; enable elfeed-protocol
   (setq elfeed-protocol-enabled-protocols '(fever))
-  (elfeed-protocol-enable)
+  (elfeed-set-timeout 36000)
+  :hook
+  (after-init . elfeed-protocol-enable)
   :bind
   (:map application-keymap
         ("r" . elfeed))
@@ -598,22 +605,32 @@
 
 (use-package lsp-bridge
   :ensure t
-  :demand t
+  :defer 10
   :config
   ;; (setq lsp-bridge-enable-log nil)
   (setq
    lsp-bridge-php-lsp-server 'phpactor
    lsp-bridge-nix-lsp-server 'rnix-lsp
    )
-  (global-lsp-bridge-mode)
+
+  (add-to-list 'meow-mode-state-list '(lsp-bridge-ref-mode . motion))
+  ;; (global-lsp-bridge-mode)
 
   :hook
   (vue-mode . lsp-bridge-mode)
+  (nix-mode . lsp-bridge-mode)
+  (php-mode . lsp-bridge-mode)
+  (org-mode . lsp-bridge-mode)
+  ;; (emacs-lisp-mode . lsp-bridge-mode)
 
   :bind
   (:map jump-keymap
         ("d" . lsp-bridge-find-def)
-        ("D" . lsp-bridge-find-def-return))
+        ("D" . lsp-bridge-find-def-return)
+        )
+  (:map toggle-keymap
+        ("l" . lsp-bridge-mode)
+        )
   )
 ;; (use-package codeium)
 
@@ -1011,7 +1028,9 @@
   (load-theme 'modus-vivendi-tinted)
   :bind
   ("<f5>" . modus-themes-toggle)
-  ("C-c t" . modus-themes-toggle)
+  (:map toggle-keymap
+        ("m" . modus-themes-toggle)
+        )
   )
 
 ;; 美化modeline
@@ -1022,6 +1041,7 @@
   :hook
 
   (after-init . doom-modeline-mode))
+
 (use-package nerd-icons
   :ensure t
   ;; :custom
@@ -1086,8 +1106,6 @@
 (use-package dirvish
   :ensure t
   :after nerd-icons
-  :init
-  (dirvish-override-dired-mode)
   :config
   (setq dirvish-mode-line-format
         '(:left (sort symlink) :right (omit yank index)))
@@ -1104,6 +1122,8 @@
         "-l --almost-all --human-readable --group-directories-first --no-group")
   (dirvish-peek-mode) ; Preview files in minibuffer
   (dirvish-side-follow-mode) ; similar to `treemacs-follow-mode'
+  :hook
+  (dired-mode . (dirvish-override-dired-mode))
   )
 
 (use-package embark
