@@ -397,6 +397,7 @@
 
 (use-package pocket-reader
   :ensure t
+  :defer 10
   :config
   (setq pocket-reader-open-url-default-function #'eww)
 
@@ -615,6 +616,7 @@
   (nix-mode . lsp-bridge-mode)
   (php-mode . lsp-bridge-mode)
   (org-mode . lsp-bridge-mode)
+  (typescript-ts-mode . lsp-bridge-mode)
   (after-init . global-lsp-bridge-mode)
   ;; (emacs-lisp-mode . lsp-bridge-mode)
 
@@ -651,6 +653,9 @@
   :ensure t
   :mode "\\.php\\'"
   )
+(use-package typescript-ts-mode
+  :mode "\\.ts\\'"
+  )
 
 (use-package vue-mode
   :ensure t
@@ -676,15 +681,10 @@
 
               ))
 
-(use-package yaml-mode
-  :ensure t
+(use-package yaml-ts-mode
+  :ensure nil
   :mode "\\.yml\\'"
   )
-;; (use-package phpactor
-;; :ensure t
-;; :config
-;; (setq phpactor-executable "phpactor")
-;; )
 
 ;; Plantuml
 (use-package plantuml-mode

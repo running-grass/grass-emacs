@@ -14,6 +14,10 @@ let
     };
     #              defaultInitFile = false;
     alwaysTangle = true;
+
+    extraEmacsPackages = epkgs:
+      with epkgs;
+      [ treesit-grammars.with-all-grammars ];
   });
 
 in emacsWrap

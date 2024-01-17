@@ -5,8 +5,10 @@ in with pkgs;
   # lsp
   rnix-lsp # nix
   phpactor # php
+  vscode-langservers-extracted
   nodePackages.typescript-language-server # ts
   nodePackages.volar # vue
+  yaml-language-server
 
   # mardown
   multimarkdown
