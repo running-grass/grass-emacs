@@ -83,15 +83,6 @@
   )
 (setq use-package-compute-statistics t)
 
-(use-package use-package-ensure-system-package
-  :ensure t
-  :defer t)
-
-(use-package editorconfig
-  :ensure t
-  :config
-  (editorconfig-mode 1))
-
 
 (use-package emacs
   :init
@@ -105,8 +96,14 @@
   (setq-default default-tab-width 2)
   (setq-default js-indent-level 2)
 
-  ;; 允许外部程序的粘贴板
-  ;; (setq select-enable-clipboard t)
+
+  ;; 禁用外部程序的粘贴板，避免扰乱emacs 内部的 kill-ring
+  (setq select-enable-clipboard nil)
+  ;; 为外部剪切板增加绑定
+  (keymap-global-set "C-S-y" 'meow-clipboard-yank)
+  (keymap-global-set "C-S-s" 'meow-clipboard-save)
+  (keymap-global-unset  "C-h C-f")
+
   (setq bookmark-default-file (expand-emacs-data "bookmarks"))
   (setq auto-save-list-file-prefix (expand-emacs-state "auto-save-list/.saves-"))
 
@@ -149,6 +146,15 @@
   ;; 关闭启动画面
   (setq inhibit-startup-screen t)
   )
+
+(use-package use-package-ensure-system-package
+  :ensure t
+  :defer t)
+
+(use-package editorconfig
+  :ensure t
+  :config
+  (editorconfig-mode 1))
 
 (use-package package
   :ensure nil
@@ -283,9 +289,6 @@
    '("<SPC>" . execute-extended-command)
 
    '("r" . reload-config)
-   ;;  override
-   '("h f" . describe-function)
-
    )
   (meow-normal-define-key
    '("0" . meow-expand-0)
@@ -337,7 +340,6 @@
    '("r" . meow-replace)
    '("R" . meow-swap-grab)
    '("s" . meow-kill)
-   '("S" . meow-clipboard-kill)
    '("t" . meow-till)
    '("u" . meow-undo)
    '("U" . meow-undo-in-selection)
@@ -354,11 +356,11 @@
   )
 (use-package meow
   :ensure t
+  :demand t
   :config
   (meow-setup)
   (meow-global-mode 1)
   (add-to-list 'meow-mode-state-list '(minibuffer-mode . insert))
-
   )
 
 (use-package mu4e
@@ -445,13 +447,7 @@
 ;; Enable vertico
 (use-package vertico
   :ensure t
-  :defer 1
   :config
-  (vertico-mode)
-
-  ;; Different scroll margin
-  ;; (setq vertico-scroll-margin 0)
-
   ;; Show more candidates
   (setq vertico-count 20)
 
@@ -460,13 +456,13 @@
 
   ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
   ;; (setq vertico-cycle t)
-
+  :hook
+  (after-init . vertico-mode)
   )
 ;; (use-package
 ;; Enable rich annotations using the Marginalia package
 (use-package marginalia
   :ensure t
-  :defer 2
   ;; Bind `marginalia-cycle' locally in the minibuffer.  To make the binding
   ;; available in the *Completions* buffer, add it to the
   ;; `completion-list-mode-map'.
@@ -613,13 +609,13 @@
    )
 
   (add-to-list 'meow-mode-state-list '(lsp-bridge-ref-mode . motion))
-  ;; (global-lsp-bridge-mode)
 
   :hook
   (vue-mode . lsp-bridge-mode)
   (nix-mode . lsp-bridge-mode)
   (php-mode . lsp-bridge-mode)
   (org-mode . lsp-bridge-mode)
+  (after-init . global-lsp-bridge-mode)
   ;; (emacs-lisp-mode . lsp-bridge-mode)
 
   :bind
@@ -680,6 +676,10 @@
 
               ))
 
+(use-package yaml-mode
+  :ensure t
+  :mode "\\.yml\\'"
+  )
 ;; (use-package phpactor
 ;; :ensure t
 ;; :config
@@ -712,6 +712,7 @@
   (setq-default format-all-formatters '(("C"     (astyle "--mode=c"))
                                         ("Shell" (shfmt "-i" "4" "-ci"))
                                         ("Nix" (nixfmt))
+                                        ("YAML" (prettier))
                                         ))
   :bind
   (:map buffer-keymap

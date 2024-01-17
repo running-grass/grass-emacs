@@ -8,9 +8,6 @@ in with pkgs;
   nodePackages.typescript-language-server # ts
   nodePackages.volar # vue
 
-  # fmt
-  nixfmt
-
   # mardown
   multimarkdown
 
@@ -21,9 +18,11 @@ in with pkgs;
   # org
   pandoc
 
-  # check
+  # check and format
   shellcheck
   html-tidy
+  nixfmt
+  nodePackages.prettier
 
   # plantuml
   # plantuml
