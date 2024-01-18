@@ -1,35 +1,74 @@
+;;; init.el --- Load the full configuration -*- lexical-binding: t -*-
+;;; Commentary:
+
+;; This file bootstraps the full configuration
+
+;;; Code:
+
+(when (version< emacs-version "29")
+  (error "必须要使用 Emacs 29 以上的版本"))
+
 (setq straight-use-package-by-default nil)
 
-;; 关闭jit
-(setq native-comp-jit-compilation nil)
-;; 关闭内置的包管理工具
-(setq package-enable-at-startup nil)
+;; 关闭启动画面
+(setq inhibit-startup-screen t)
+;; 禁用对话框
+(setq use-dialog-box nil)
+;; 禁用文件对话框
+(setq use-file-dialog nil)
 
-;; Silence nativecomp warnings popping up
-(setq native-comp-async-report-warnings-errors t)
+;; 允许像素级别调整窗口和窗体大小
+(setq-default
+ window-resize-pixelwise t
+ frame-resize-pixelwise t)
 
-;; Settings
-(setq native-comp-speed 2
-      native-comp-deferred-compilation nil
-      package-native-compile nil)
-
-(setq no-native-compile t
-      no-byte-compile t)
-
-
+;; 关闭工具栏
+(when (fboundp 'tool-bar-mode)
+  (tool-bar-mode -1))
+;; 关闭文件滑动控件
+(when (fboundp 'set-scroll-bar-mode)
+  (set-scroll-bar-mode nil))
 ;; 关闭菜单栏
 (menu-bar-mode -1)
-;; 关闭工具栏
-(tool-bar-mode -1)
-;; 关闭文件滑动控件
-(scroll-bar-mode -1)
+
+;; 隐藏内部边框
+(let ((no-border '(internal-border-width . 0)))
+  (add-to-list 'default-frame-alist no-border)
+  (add-to-list 'initial-frame-alist no-border))
+
+;; 开启像素级滚动
+(when (fboundp 'pixel-scroll-precision-mode)
+  (pixel-scroll-precision-mode))
+
+;; 判断是否是 MacOS 系统
+(defconst *is-mac* (eq system-type 'darwin) "是否是 MacOS 操作系统")
+;; 判断是否是 Linux 系统
+(defconst *is-linux* (eq system-type 'gnu/linux) "是否是 Linux 操作系统")
+;; 判断是否是 Windows 系统
+(defconst *is-win* (eq system-type 'windows-nt) "是否是 Windows 操作系统")
+
+;; 是否是 GUI
+(defconst *is-gui* (display-graphic-p))
+;; 是否是 TUI
+(defconst *is-tui* (not *is-gui*))
+
+;; 调大 gc 的阈值
+(let ((normal-gc-cons-threshold (* 20 1024 1024))
+      (init-gc-cons-threshold (* 128 1024 1024)))
+  (setq gc-cons-threshold init-gc-cons-threshold)
+  (add-hook 'emacs-startup-hook
+            (lambda () (setq gc-cons-threshold normal-gc-cons-threshold))))
+
+;; 调大子进程的输出读取缓冲
+(setq read-process-output-max (* 4 1024 1024))
+;; 关闭对子进程读取输出时的延迟缓冲
+(setq process-adaptive-read-buffering nil)
 
 (require 'xdg)
 
 (defun expand-emacs-config (filename)
   "expand emacs config files"
   (expand-file-name filename
-
                     (or (getenv "EMACS_DEBUG_DIR")
                         (expand-file-name "emacs" (xdg-config-home))
 
@@ -56,6 +95,8 @@
 ;; 给 eln-cache 目录换个地方
 (when (boundp 'native-comp-eln-load-path)
   (startup-redirect-eln-cache (expand-emacs-cache "eln-cache")))
+;; 定义自定义文件
+(defconst *custom-file* (expand-emacs-config "custom.el") "一些个性化的定义存放之地")
 
 (defvar application-keymap (make-sparse-keymap) "applications")
 (defalias 'application-keymap application-keymap)
@@ -142,9 +183,6 @@
 
   ;; Enable recursive minibuffers
   (setq enable-recursive-minibuffers t)
-  :config
-  ;; 关闭启动画面
-  (setq inhibit-startup-screen t)
   )
 
 (use-package use-package-ensure-system-package
@@ -226,6 +264,9 @@
   :ensure t
   :defer t
   :config (global-so-long-mode 1))
+
+;; 关闭内置的包管理工具
+(setq package-enable-at-startup nil)
 
 (setq straight-base-dir (expand-emacs-cache ""))
 (defvar bootstrap-version)
@@ -423,6 +464,7 @@
   :config
   ;; curl recommend
   (setq elfeed-use-curl t)
+  (setq elfeed-db-directory (expand-emacs-cache "elfeed"))
   (setq elfeed-curl-extra-arguments '("--insecure")) ;necessary for https without a trust certificate
   ;; (setq elfeed-protocol-fever-update-unread-only nil)
   (setq elfeed-protocol-fever-fetch-category-as-tag t)
@@ -591,6 +633,41 @@
 
   )
 
+;; (use-package codeium)
+
+;; 高亮显示符号，跳转和重构
+(use-package symbol-overlay
+  :ensure t
+  :bind
+  (:map jump-keymap
+        ("i" . symbol-overlay-put))
+  )
+(use-package format-all
+  :ensure t
+  :commands format-all-mode
+  :hook (prog-mode . format-all-mode)
+  :bind
+  (:map buffer-keymap
+        ("=" . format-all-region-or-buffer)
+        )
+  )
+
+(use-package emacs
+  :bind
+  ;; (:map jump-keymap
+  ;;       ("l" . goto-line))
+
+  )
+
+(use-package avy
+  :ensure t
+  :bind
+  (:map jump-keymap
+        ("j" . avy-goto-char-timer)
+        ("l" . avy-goto-line)
+        )
+  )
+
 (use-package yasnippet
   :ensure t
   :init
@@ -612,15 +689,12 @@
   (add-to-list 'meow-mode-state-list '(lsp-bridge-ref-mode . motion))
 
   :hook
-  (vue-mode . lsp-bridge-mode)
-  (nix-mode . lsp-bridge-mode)
-  (php-mode . lsp-bridge-mode)
-  (org-mode . lsp-bridge-mode)
-  (typescript-ts-mode . lsp-bridge-mode)
   (after-init . global-lsp-bridge-mode)
-  ;; (emacs-lisp-mode . lsp-bridge-mode)
 
   :bind
+  ("M-." . lsp-bridge-find-def)
+  ("M-," . lsp-bridge-find-def-return)
+
   (:map jump-keymap
         ("d" . lsp-bridge-find-def)
         ("D" . lsp-bridge-find-def-return)
@@ -629,33 +703,45 @@
         ("l" . lsp-bridge-mode)
         )
   )
-;; (use-package codeium)
 
-;; use wakatime
-(use-package wakatime-mode
-  :ensure t
-  :hook
-  (after-init . global-wakatime-mode)
-  )
-
-(use-package symbol-overlay
-  :ensure t
-  :bind
-  (:map jump-keymap
-        ("i" . symbol-overlay-put))
-  )
 (use-package nix-mode
   :ensure t
-  :mode "\\.nix\\'")
+  :mode "\\.nix\\'"
+  :config
+  (setq lsp-bridge-nix-lsp-server 'rnix-lsp)
+  (setq-default format-all-formatters '(("Nix" (nixfmt))))
+  )
 
-;; 配置php支持
 (use-package php-mode
   :ensure t
   :mode "\\.php\\'"
+  :config
+  (setq lsp-bridge-php-lsp-server 'phpactor)
   )
+
+;; 配置emmet-mode
+;; 默认为C-j展开
+(use-package emmet-mode
+  :ensure t
+  :hook html-mode
+  :hook html-ts-mode
+  :hook css-mode
+  :hook vue-mode
+  )
+
 (use-package typescript-ts-mode
+  :ensure nil
   :mode "\\.ts\\'"
   )
+
+(use-package tide
+  :ensure t
+  ;; :after (company flycheck)
+  :hook ((typescript-ts-mode . tide-setup)
+         (tsx-ts-mode . tide-setup)
+         (js-mode . tide-setup)
+         (typescript-ts-mode . tide-hl-identifier-mode)
+         (before-save . tide-format-before-save)))
 
 (use-package vue-mode
   :ensure t
@@ -663,14 +749,6 @@
   :config
   ;; 0, 1, or 2, representing (respectively) none, low, and high coloring
   (setq mmm-submode-decoration-level 0))
-
-;; 配置emmet-mode
-;; 默认为C-j展开
-(use-package emmet-mode
-  :hook html-mode
-  :hook css-mode
-  :hook vue-mode
-  )
 
 (use-package markdown-mode
   :ensure t
@@ -684,41 +762,8 @@
 (use-package yaml-ts-mode
   :ensure nil
   :mode "\\.yml\\'"
-  )
-
-;; Plantuml
-(use-package plantuml-mode
-  :defer t
-  :ensure t
-
   :config
-  (setq plantuml-executable-path "~/.nix-profile/bin/plantuml")
-  (setq plantuml-jar-path "~/.nix-profile/lib/plantuml.jar")
-  (setq plantuml-default-exec-mode 'executable)
-  (setq org-plantuml-exec-mode 'executable)
-  (setq org-plantuml-jar-path "~/.nix-profile/lib/plantuml.jar")
-  (setq plantuml-executable-args '(
-                                   "-headless"
-                                   "-charset"
-                                   "UTF-8"
-                                   ))
-  )
-
-(use-package format-all
-  :ensure t
-  :commands format-all-mode
-  :hook (prog-mode . format-all-mode)
-  :config
-  (setq-default format-all-formatters '(("C"     (astyle "--mode=c"))
-                                        ("Shell" (shfmt "-i" "4" "-ci"))
-                                        ("Nix" (nixfmt))
-                                        ("YAML" (prettier))
-                                        ))
-  :bind
-  (:map buffer-keymap
-        ("=" . format-all-region-or-buffer)
-        )
-  )
+  (setq-default format-all-formatters '(("YAML" (prettier)))))
 
 (use-package magit
   :ensure t
@@ -1025,7 +1070,7 @@
         modus-themes-preset-overrides-intense)
 
   (setq modus-themes-to-toggle '(modus-vivendi-tinted modus-operandi-tinted))
-  (load-theme 'modus-vivendi-tinted)
+  (load-theme 'modus-vivendi-tinted t)
   :bind
   ("<f5>" . modus-themes-toggle)
   (:map toggle-keymap
@@ -1090,6 +1135,13 @@
   :config
   (keyfreq-mode 1)
   (keyfreq-autosave-mode 1))
+
+(use-package wakatime-mode
+  :ensure t
+  :hook
+  (after-init . global-wakatime-mode)
+  )
+
 
 ;; 快速选择工具
 ;; (use-package expand-region
@@ -1205,18 +1257,7 @@
 
   (dashboard-setup-startup-hook))
 
-(use-package emacs
-  :bind
-  ;; (:map jump-keymap
-  ;;       ("l" . goto-line))
+(when (file-exists-p *custom-file*)
+  (load *custom-file*))
 
-  )
-
-(use-package avy
-  :ensure t
-  :bind
-  (:map jump-keymap
-        ("j" . avy-goto-char-timer)
-        ("l" . avy-goto-line)
-        )
-  )
+;;; init.el ends here

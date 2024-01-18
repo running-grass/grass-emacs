@@ -11,8 +11,13 @@
   - [[#nixos-用户][NixOS 用户]]
   - [[#nix-darwin-用户][Nix-Darwin 用户]]
   - [[#非-nixos-用户][非 NixOS 用户]]
+- [[#header][Header]]
 - [[#全局配置][全局配置]]
-  - [[#启动优化][启动优化]]
+  - [[#emacs-版本判断][Emacs 版本判断]]
+  - [[#包管理配置][包管理配置]]
+  - [[#功能优化][功能优化]]
+  - [[#定义常量][定义常量]]
+  - [[#性能优化][性能优化]]
   - [[#定义常用目录][定义常用目录]]
   - [[#定义用户级别的键位映射图][定义用户级别的键位映射图]]
   - [[#emacs-的默认配置][Emacs 的默认配置]]
@@ -24,16 +29,23 @@
   - [[#pocket][Pocket]]
   - [[#浏览器][浏览器]]
   - [[#rss][RSS]]
-- [[#自动补全][自动补全]]
-  - [[#tui-下的补全方案][TUI 下的补全方案]]
+- [[#补全][补全]]
 - [[#编程语言][编程语言]]
+  - [[#通用配置][通用配置]]
+  - [[#nix][Nix]]
+  - [[#php][PHP]]
+  - [[#web][Web]]
+  - [[#vue][Vue]]
+  - [[#markdown][Markdown]]
+  - [[#yaml][YAML]]
 - [[#项目工程][项目工程]]
 - [[#org][Org]]
 - [[#样式][样式]]
 - [[#杂项][杂项]]
   - [[#小功能][小功能]]
   - [[#仪表盘][仪表盘]]
-  - [[#跳转][跳转]]
+- [[#加载自定义文件][加载自定义文件]]
+- [[#footer][Footer]]
 
 * 如何使用
 ** NixOS 用户
@@ -93,44 +105,102 @@
 
 修改配置以后就可以使用 =SPC r= 来重新加载配置了。  
 
-*** 修改配置
 
-因为我使用的是 =NixOS= ， 所以有些包我不需要使用 =straight.el= 进行管理，如果你要使用的花，需要把这个配置改魏 =t= 。
 
+* Header
 #+begin_src emacs-lisp
-  (setq straight-use-package-by-default nil)
+;;; init.el --- Load the full configuration -*- lexical-binding: t -*-
+;;; Commentary:
+
+;; This file bootstraps the full configuration
+
+;;; Code:
 #+end_src
 
 * 全局配置
 
-** 启动优化
+** Emacs 版本判断
 
 #+begin_src emacs-lisp
-  ;; 关闭jit
-  (setq native-comp-jit-compilation nil)
-  ;; 关闭内置的包管理工具
-  (setq package-enable-at-startup nil)
-
-  ;; Silence nativecomp warnings popping up
-  (setq native-comp-async-report-warnings-errors t)
-
-  ;; Settings
-  (setq native-comp-speed 2
-        native-comp-deferred-compilation nil
-        package-native-compile nil)
-
-  (setq no-native-compile t
-        no-byte-compile t)
-
-
-  ;; 关闭菜单栏
-  (menu-bar-mode -1)
-  ;; 关闭工具栏
-  (tool-bar-mode -1)
-  ;; 关闭文件滑动控件
-  (scroll-bar-mode -1)
+  (when (version< emacs-version "29")
+    (error "必须要使用 Emacs 29 以上的版本"))
 #+end_src
 
+
+** 包管理配置
+
+因为我使用的是 =NixOS= ， 所以有些包我不需要使用 =straight.el= 进行管理，如果你要使用的花，需要把这个配置改魏 =t= 。
+
+#+begin_src emacs-lisp
+
+  (setq straight-use-package-by-default nil)
+#+end_src
+
+** 功能优化
+#+begin_src emacs-lisp
+  ;; 关闭启动画面
+  (setq inhibit-startup-screen t)
+  ;; 禁用对话框
+  (setq use-dialog-box nil)
+  ;; 禁用文件对话框
+  (setq use-file-dialog nil)
+
+  ;; 允许像素级别调整窗口和窗体大小
+  (setq-default
+   window-resize-pixelwise t
+   frame-resize-pixelwise t)
+
+  ;; 关闭工具栏
+  (when (fboundp 'tool-bar-mode)
+    (tool-bar-mode -1))
+  ;; 关闭文件滑动控件
+  (when (fboundp 'set-scroll-bar-mode)
+    (set-scroll-bar-mode nil))
+  ;; 关闭菜单栏
+  (menu-bar-mode -1)
+
+  ;; 隐藏内部边框
+  (let ((no-border '(internal-border-width . 0)))
+    (add-to-list 'default-frame-alist no-border)
+    (add-to-list 'initial-frame-alist no-border))
+
+  ;; 开启像素级滚动
+  (when (fboundp 'pixel-scroll-precision-mode)
+    (pixel-scroll-precision-mode))
+
+#+end_src
+
+
+
+** 定义常量
+#+begin_src emacs-lisp
+  ;; 判断是否是 MacOS 系统
+  (defconst *is-mac* (eq system-type 'darwin) "是否是 MacOS 操作系统")
+  ;; 判断是否是 Linux 系统
+  (defconst *is-linux* (eq system-type 'gnu/linux) "是否是 Linux 操作系统")
+  ;; 判断是否是 Windows 系统
+  (defconst *is-win* (eq system-type 'windows-nt) "是否是 Windows 操作系统")
+
+  ;; 是否是 GUI
+  (defconst *is-gui* (display-graphic-p))
+  ;; 是否是 TUI
+  (defconst *is-tui* (not *is-gui*))
+#+end_src
+
+** 性能优化
+#+begin_src emacs-lisp
+  ;; 调大 gc 的阈值
+  (let ((normal-gc-cons-threshold (* 20 1024 1024))
+        (init-gc-cons-threshold (* 128 1024 1024)))
+    (setq gc-cons-threshold init-gc-cons-threshold)
+    (add-hook 'emacs-startup-hook
+              (lambda () (setq gc-cons-threshold normal-gc-cons-threshold))))
+
+  ;; 调大子进程的输出读取缓冲
+  (setq read-process-output-max (* 4 1024 1024))
+  ;; 关闭对子进程读取输出时的延迟缓冲
+  (setq process-adaptive-read-buffering nil)
+#+end_src
 
 ** 定义常用目录
 
@@ -147,7 +217,6 @@
   (defun expand-emacs-config (filename)
     "expand emacs config files"
     (expand-file-name filename
-
                       (or (getenv "EMACS_DEBUG_DIR")
                           (expand-file-name "emacs" (xdg-config-home))
 
@@ -174,6 +243,8 @@
   ;; 给 eln-cache 目录换个地方
   (when (boundp 'native-comp-eln-load-path)
     (startup-redirect-eln-cache (expand-emacs-cache "eln-cache")))
+  ;; 定义自定义文件
+  (defconst *custom-file* (expand-emacs-config "custom.el") "一些个性化的定义存放之地")
 #+end_src
 
 ** 定义用户级别的键位映射图
@@ -273,9 +344,6 @@
 
     ;; Enable recursive minibuffers
     (setq enable-recursive-minibuffers t)
-    :config
-    ;; 关闭启动画面
-    (setq inhibit-startup-screen t)
     )
 
   (use-package use-package-ensure-system-package
@@ -372,6 +440,9 @@
 本人使用 =NixOS= 上的 =Home Manager= 对 =melpa= 上的包进行管理。其余的包依旧使用 =straight=
 
 #+begin_src emacs-lisp
+  ;; 关闭内置的包管理工具
+  (setq package-enable-at-startup nil)
+
   (setq straight-base-dir (expand-emacs-cache ""))
   (defvar bootstrap-version)
   (let ((bootstrap-file
@@ -650,6 +721,7 @@
     :config
     ;; curl recommend
     (setq elfeed-use-curl t)
+    (setq elfeed-db-directory (expand-emacs-cache "elfeed"))
     (setq elfeed-curl-extra-arguments '("--insecure")) ;necessary for https without a trust certificate
     ;; (setq elfeed-protocol-fever-update-unread-only nil)
     (setq elfeed-protocol-fever-fetch-category-as-tag t)
@@ -674,7 +746,7 @@
 #+end_src
 
 
-* 自动补全
+* 补全
 
 列表补全使用的是 =vertico= / =marginalia= / =consult= / =orderless= 全家桶
 
@@ -827,6 +899,59 @@
 
     )
 
+  ;; (use-package codeium)
+#+end_src
+
+* 编程语言
+
+** 通用配置
+
+一些不区分语言的功能，例如重命名，简单重构等
+
+*** 格式化 
+
+#+begin_src emacs-lisp
+  ;; 高亮显示符号，跳转和重构
+  (use-package symbol-overlay
+    :ensure t
+    :bind
+    (:map jump-keymap
+          ("i" . symbol-overlay-put))
+    )
+  (use-package format-all
+    :ensure t
+    :commands format-all-mode
+    :hook (prog-mode . format-all-mode)
+    :bind
+    (:map buffer-keymap
+          ("=" . format-all-region-or-buffer)
+          )
+    )
+#+end_src
+
+*** 代码跳转和导航
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :bind
+    ;; (:map jump-keymap
+    ;;       ("l" . goto-line))
+
+    )
+
+  (use-package avy
+    :ensure t
+    :bind
+    (:map jump-keymap
+          ("j" . avy-goto-char-timer)
+          ("l" . avy-goto-line)
+          )
+    )
+#+end_src
+
+*** 代码自动补全
+
+#+begin_src emacs-lisp
   (use-package yasnippet
     :ensure t
     :init
@@ -836,6 +961,11 @@
     (lsp-bridge-mode . yas-global-mode)
     )
 
+  
+#+end_src
+
+**** GUI
+#+begin_src emacs-lisp
   (use-package lsp-bridge
     :ensure t
     :config
@@ -848,15 +978,12 @@
     (add-to-list 'meow-mode-state-list '(lsp-bridge-ref-mode . motion))
 
     :hook
-    (vue-mode . lsp-bridge-mode)
-    (nix-mode . lsp-bridge-mode)
-    (php-mode . lsp-bridge-mode)
-    (org-mode . lsp-bridge-mode)
-    (typescript-ts-mode . lsp-bridge-mode)
     (after-init . global-lsp-bridge-mode)
-    ;; (emacs-lisp-mode . lsp-bridge-mode)
 
     :bind
+    ("M-." . lsp-bridge-find-def)
+    ("M-," . lsp-bridge-find-def-return)
+
     (:map jump-keymap
           ("d" . lsp-bridge-find-def)
           ("D" . lsp-bridge-find-def-return)
@@ -865,59 +992,77 @@
           ("l" . lsp-bridge-mode)
           )
     )
-  ;; (use-package codeium)
 #+end_src
 
-** TODO TUI 下的补全方案
+**** TODO TUI
 
 由于 lsp-bridge 不支持tui，需要单独配置一套 tui 下的方案
 
-* 编程语言
-
+** Nix
 #+begin_src emacs-lisp
-
-
-  ;; use wakatime
-  (use-package wakatime-mode
-    :ensure t
-    :hook
-    (after-init . global-wakatime-mode)
-    )
-
-  (use-package symbol-overlay
-    :ensure t
-    :bind
-    (:map jump-keymap
-          ("i" . symbol-overlay-put))
-    )
   (use-package nix-mode
     :ensure t
-    :mode "\\.nix\\'")
+    :mode "\\.nix\\'"
+    :config
+    (setq lsp-bridge-nix-lsp-server 'rnix-lsp)
+    (setq-default format-all-formatters '(("Nix" (nixfmt))))
+    )
+#+end_src
 
-  ;; 配置php支持
+** PHP
+
+#+begin_src emacs-lisp
   (use-package php-mode
     :ensure t
     :mode "\\.php\\'"
+    :config
+    (setq lsp-bridge-php-lsp-server 'phpactor)
     )
+#+end_src
+
+
+** Web
+
+使用 =Emmet= 处理快速展开，语法高亮都使用 =treesite= ， =ts= 和 =js= 的基础补全使用 =lsp= ，其余高级功能使用 =tide=
+#+begin_src emacs-lisp
+  ;; 配置emmet-mode
+  ;; 默认为C-j展开
+  (use-package emmet-mode
+    :ensure t
+    :hook html-mode
+    :hook html-ts-mode
+    :hook css-mode
+    :hook vue-mode
+    )
+
   (use-package typescript-ts-mode
+    :ensure nil
     :mode "\\.ts\\'"
     )
 
+  (use-package tide
+    :ensure t
+    ;; :after (company flycheck)
+    :hook ((typescript-ts-mode . tide-setup)
+           (tsx-ts-mode . tide-setup)
+           (js-mode . tide-setup)
+           (typescript-ts-mode . tide-hl-identifier-mode)
+           (before-save . tide-format-before-save)))
+#+end_src
+
+** Vue
+#+begin_src emacs-lisp
   (use-package vue-mode
     :ensure t
     :mode "\\.vue\\'"
     :config
     ;; 0, 1, or 2, representing (respectively) none, low, and high coloring
     (setq mmm-submode-decoration-level 0))
+#+end_src
 
-  ;; 配置emmet-mode
-  ;; 默认为C-j展开
-  (use-package emmet-mode
-    :hook html-mode
-    :hook css-mode
-    :hook vue-mode
-    )
+** Markdown
 
+#+begin_src emacs-lisp
   (use-package markdown-mode
     :ensure t
     :mode ("README\\.md\\'" . gfm-mode)
@@ -926,13 +1071,21 @@
                 ("C-c C-e" . markdown-do)
 
                 ))
+#+end_src
 
+** YAML
+
+#+begin_src emacs-lisp
   (use-package yaml-ts-mode
     :ensure nil
     :mode "\\.yml\\'"
-    )
+    :config
+    (setq-default format-all-formatters '(("YAML" (prettier)))))
+#+end_src
 
-  ;; Plantuml
+** COMMENT PlantUML
+
+#+begin_src emacs-lisp
   (use-package plantuml-mode
     :defer t
     :ensure t
@@ -949,24 +1102,7 @@
                                      "UTF-8"
                                      ))
     )
-
-  (use-package format-all
-    :ensure t
-    :commands format-all-mode
-    :hook (prog-mode . format-all-mode)
-    :config
-    (setq-default format-all-formatters '(("C"     (astyle "--mode=c"))
-                                          ("Shell" (shfmt "-i" "4" "-ci"))
-                                          ("Nix" (nixfmt))
-                                          ("YAML" (prettier))
-                                          ))
-    :bind
-    (:map buffer-keymap
-          ("=" . format-all-region-or-buffer)
-          )
-    )
 #+end_src
-
 
 * 项目工程
 
@@ -1288,7 +1424,7 @@ Org-mode 相关的配置。
           modus-themes-preset-overrides-intense)
 
     (setq modus-themes-to-toggle '(modus-vivendi-tinted modus-operandi-tinted))
-    (load-theme 'modus-vivendi-tinted)
+    (load-theme 'modus-vivendi-tinted t)
     :bind
     ("<f5>" . modus-themes-toggle)
     (:map toggle-keymap
@@ -1360,6 +1496,13 @@ Org-mode 相关的配置。
     :config
     (keyfreq-mode 1)
     (keyfreq-autosave-mode 1))
+
+  (use-package wakatime-mode
+    :ensure t
+    :hook
+    (after-init . global-wakatime-mode)
+    )
+
 
   ;; 快速选择工具
   ;; (use-package expand-region
@@ -1481,22 +1624,15 @@ Org-mode 相关的配置。
     (dashboard-setup-startup-hook))
 #+end_src
 
-** 跳转
 
+
+* 加载自定义文件
 #+begin_src emacs-lisp
-  (use-package emacs
-    :bind
-    ;; (:map jump-keymap
-    ;;       ("l" . goto-line))
+  (when (file-exists-p *custom-file*)
+    (load *custom-file*))
+#+end_src
 
-    )
-
-  (use-package avy
-    :ensure t
-    :bind
-    (:map jump-keymap
-          ("j" . avy-goto-char-timer)
-          ("l" . avy-goto-line)
-          )
-    )
+* Footer
+#+begin_src emacs-lisp
+  ;;; init.el ends here
 #+end_src
