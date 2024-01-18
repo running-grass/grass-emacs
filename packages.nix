@@ -1,5 +1,17 @@
 { pkgs, ... }:
-let python = import ./python.nix { inherit pkgs; };
+let 
+  python = import ./python.nix { inherit pkgs; };
+
+  onlyLinux = if pkgs.stdenv.isLinux then (with pkgs; [
+    # eaf
+    pkg-config
+    libinput
+    libevdev
+    xdotool
+  ]) else [];
+  onlyDarwin = if pkgs.stdenv.isDarwin then [
+  ] else [];
+
 in with pkgs;
 [
   # lsp
@@ -31,18 +43,14 @@ in with pkgs;
   # jdk
   # graphviz-nox
 
-  # eaf
-  pkg-config
-  libinput
-  libevdev
+ 
 
   git
   nodejs
   wmctrl
-  xdotool
   # eaf-browser
   aria
   # eaf-file-manager
   fd
 
-] ++ [ python ]
+] ++ [ python ] ++ onlyDarwin ++ onlyLinux
