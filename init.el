@@ -141,6 +141,8 @@
   (setq-default default-tab-width 2)
   (setq-default js-indent-level 2)
 
+  ;; 使用短的 y-or-n
+  (setopt use-short-answers t)
 
   ;; 禁用外部程序的粘贴板，避免扰乱emacs 内部的 kill-ring
   (setq select-enable-clipboard nil)
@@ -718,6 +720,13 @@
         )
   )
 
+(use-package acm-terminal
+  :ensure t
+  :after (yasnippet lsp-bridge acm)
+  ;; :requires (acm yasnippet lsp-bridge)
+  :when *is-tui*
+  )
+
 (use-package nix-mode
   :ensure t
   :mode "\\.nix\\'"
@@ -1073,18 +1082,18 @@
   :defer t
   :hook (after-init . global-hl-line-mode))
 
-(use-package modus-themes
-  :ensure t
-  :demand t
+(use-package emacs
+  :ensure nil
   :config
   (setq modus-themes-italic-constructs t
         modus-themes-bold-constructs nil)
-  ;; Maybe define some palette overrides, such as by using our presets
-  (setq modus-themes-common-palette-overrides
-        modus-themes-preset-overrides-intense)
 
   (setq modus-themes-to-toggle '(modus-vivendi-tinted modus-operandi-tinted))
   (load-theme 'modus-vivendi-tinted t)
+  ;; Maybe define some palette overrides, such as by using our presets
+  ;; (setq modus-themes-common-palette-overrides
+  ;;       modus-themes-preset-overrides-intense)
+
   :bind
   ("<f5>" . modus-themes-toggle)
   (:map toggle-keymap
@@ -1109,6 +1118,7 @@
   ;; but you can use any other Nerd Font if you want
   ;; (nerd-icons-font-family "Symbols Nerd Font Mono")
   )
+
 (use-package nerd-icons-dired
   :ensure t
   :after nerd-icons
