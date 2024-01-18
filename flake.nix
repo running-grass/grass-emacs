@@ -25,6 +25,7 @@
       getEmacs = system: rec {
         pkgs = import nixpkgs {
           inherit system;
+          config.allowUnfree = true;
           overlays = [ (import emacs-overlay) ];
         };
         emacsWrap = import ./emacsWrap.nix { inherit pkgs; };

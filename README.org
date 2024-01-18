@@ -243,8 +243,12 @@
   ;; 给 eln-cache 目录换个地方
   (when (boundp 'native-comp-eln-load-path)
     (startup-redirect-eln-cache (expand-emacs-cache "eln-cache")))
+
   ;; 定义自定义文件
-  (defconst *custom-file* (expand-emacs-config "custom.el") "一些个性化的定义存放之地")
+  (defconst *custom-file* (expand-emacs-data "custom.el") "一些个性化的定义存放之地")
+
+  ;; 插件默认使用这个目录，如果需要的话，再调整到其它相关目录
+  (setq user-emacs-directory (expand-emacs-state ""))
 #+end_src
 
 ** 定义用户级别的键位映射图
@@ -974,9 +978,19 @@
      lsp-bridge-php-lsp-server 'phpactor
      lsp-bridge-nix-lsp-server 'rnix-lsp
      )
+    (setq lsp-bridge-use-local-codeium t
+          acm-enable-codeium t
+          acm-backend-codeium-api-key-path (expand-emacs-data "lsp-bridge/codeium_api_key.txt"))
 
     (add-to-list 'meow-mode-state-list '(lsp-bridge-ref-mode . motion))
 
+    ;; 自动安装 codeium ， 后续需要通过 nixpkgs 来安装
+    (let* ((binary-dir (file-name-as-directory codeium-bridge-folder))
+          (binary-file (concat binary-dir "language_server"))
+          )
+      (unless (file-exists-p binary-file)
+        (lsp-bridge-install-update-codeium))
+      )
     :hook
     (after-init . global-lsp-bridge-mode)
 
