@@ -1,4 +1,3 @@
-
 #+TITLE: grass-emacs
 
 #+PROPERTY: header-args               :results silent
@@ -15,7 +14,7 @@
 - [[#全局配置][全局配置]]
   - [[#emacs-版本判断][Emacs 版本判断]]
   - [[#包管理配置][包管理配置]]
-  - [[#功能优化][功能优化]]
+  - [[#修改默认配置][修改默认配置]]
   - [[#定义常量][定义常量]]
   - [[#性能优化][性能优化]]
   - [[#定义常用目录][定义常用目录]]
@@ -23,6 +22,20 @@
   - [[#emacs-的默认配置][Emacs 的默认配置]]
 - [[#内置包的配置][内置包的配置]]
 - [[#引导-straightel][引导 straight.el]]
+- [[#功能增强][功能增强]]
+  - [[#ace-window][ace-window]]
+  - [[#mwim][mwim]]
+  - [[#doom-modeline][doom-modeline]]
+  - [[#good-scroll][good-scroll]]
+  - [[#which-key][which-key]]
+  - [[#avy][avy]]
+  - [[#marginalia][marginalia]]
+  - [[#consult][consult]]
+  - [[#vertico][vertico]]
+  - [[#embark][embark]]
+  - [[#orderless][orderless]]
+  - [[#rainbow-delimiters][rainbow-delimiters]]
+  - [[#symbol-overlay][symbol-overlay]]
 - [[#meow---模态编辑][Meow - 模态编辑]]
 - [[#应用程序][应用程序]]
   - [[#邮件][邮件]]
@@ -137,7 +150,7 @@
   (setq straight-use-package-by-default nil)
 #+end_src
 
-** 功能优化
+** 修改默认配置
 #+begin_src emacs-lisp
   ;; 关闭启动画面
   (setq inhibit-startup-screen t)
@@ -169,6 +182,29 @@
   (when (fboundp 'pixel-scroll-precision-mode)
     (pixel-scroll-precision-mode))
 
+
+  ;; 关闭emacs自带的退出确认
+  (setq confirm-kill-emacs #'yes-or-no-p)
+
+  ;; 自动补全括号
+  (electric-pair-mode t)
+
+
+  ;; 编程模式下，光标在括号上时高亮另一个括号
+  (add-hook 'prog-mode-hook #'show-paren-mode)
+  ;; 在 Mode line 上显示列号
+  (column-number-mode 1)
+
+  ;; 选中文本后输入文本会替换文本（更符合我们习惯了的其它编辑器的逻辑）
+  (delete-selection-mode t)
+
+  ;; 关闭文件自动备份
+  (setq make-backup-files nil)
+  ;; 编程模式下，可以折叠代码块
+  (add-hook 'prog-mode-hook #'hs-minor-mode)
+
+  ;; 关闭内置的包管理工具
+  (setq package-enable-at-startup nil)
 #+end_src
 
 
@@ -250,6 +286,8 @@
 
   ;; 插件默认使用这个目录，如果需要的话，再调整到其它相关目录
   (setq user-emacs-directory (expand-emacs-state ""))
+  ;; 更改到缓存目录
+  (setq package-user-dir (expand-emacs-cache "elpa"))
 #+end_src
 
 ** 定义用户级别的键位映射图
@@ -367,11 +405,6 @@
 * 内置包的配置
 
 #+begin_src emacs-lisp
-  (use-package package
-    :ensure nil
-    :config
-    (setq package-user-dir (expand-emacs-cache "elpa"))
-    )
   ;; 保存了上一次打开文件时的光标位置
   (use-package saveplace
     :ensure nil
@@ -379,19 +412,17 @@
     (setq save-place-file (expand-emacs-state "places"))
     :hook (after-init . save-place-mode))
 
-
   ;; Persist history over Emacs restarts. Vertico sorts by history position.
   (use-package savehist
     :ensure nil
-
-    :init
+    :config
     (setq savehist-file (expand-emacs-state "history"))
-    (savehist-mode)
+    :hook
+    (after-init . savehist-mode)
     )
-  ;; Use Dabbrev with Corfu!
+
   (use-package dabbrev
     :ensure nil
-
     ;; Swap M-/ and C-M-/
     :bind (("M-/" . dabbrev-completion)
            ("C-M-/" . dabbrev-expand))
@@ -411,8 +442,8 @@
   ;; 文件被外部程序修改后，重新载入buffer
   (use-package autorevert
     :ensure nil
-    :defer t
-    :hook (after-init . global-auto-revert-mode))
+    :hook (after-init . global-auto-revert-mode)
+    )
 
   ;; 最近打开的文件
   (use-package recentf
@@ -435,9 +466,12 @@
   ;; 当某个文件的某一行特别长的时候，自动优化性能
   (use-package so-long
     :ensure t
-    :defer t
-    :config (global-so-long-mode 1))
+    :hook
+    (after-init . global-so-long-mode)
+    )
 #+end_src
+
+
 
 
 * 引导 straight.el
@@ -447,8 +481,6 @@
 本人使用 =NixOS= 上的 =Home Manager= 对 =melpa= 上的包进行管理。其余的包依旧使用 =straight=
 
 #+begin_src emacs-lisp
-  ;; 关闭内置的包管理工具
-  (setq package-enable-at-startup nil)
 
   (setq straight-base-dir (expand-emacs-cache ""))
   (defvar bootstrap-version)
@@ -469,6 +501,316 @@
 #+end_src
 
 
+* 功能增强
+
+** ace-window
+
+这又是一个 abo-abo（Oleh Krehel）的项目。我们用 Emacs 多窗口时，window 超过 3 个后就很难使用 C-x o 进行切换了。ace-window 对 C-x o 重新绑定，使用时可以为每个 window 编个号，用编号进行跳转。
+
+
+#+begin_src emacs-lisp
+  (use-package ace-window
+    :ensure t
+    :bind (("C-x o" . 'ace-window)))
+#+end_src
+
+
+** mwim
+
+还记得我们提到 C-a 对应了 move-beginning-of-line，M-m 对应了 back-to-indentation。当代码有缩进时，前者会把光标移动到行首（到空格之前），后者会移动到代码文字的开头（到空格之后）。那么实际中这两个按法差别较大，且不易区分，使用起来不方便。mwim 就将二者合并，覆盖 C-a 为 mwim-beginning-of-code-or-line，这样按一次 C-a 时移动到代码文字开头，再按一次则是移动到整行的行首，如此反复。
+
+同时，更有意义的是，它还可以覆盖 C-e move-end-of-line 为 mwim-end-of-code-or-line，当本行代码结尾有注释时，第一次按 C-e 将光标移动到代码尾部、注释之前。再按一次则是移动到整行的行尾。 这就大大提高了写代码的效率。
+
+#+begin_src emacs-lisp
+  (use-package mwim
+    :ensure t
+    :bind
+    ("C-a" . mwim-beginning-of-code-or-line)
+    ("C-e" . mwim-end-of-code-or-line))
+#+end_src
+
+
+** doom-modeline
+
+可以进行丰富的定制化
+
+#+begin_src emacs-lisp
+  ;; 美化modeline
+  (use-package doom-modeline
+    :ensure t
+    :config
+    (setq doom-modeline-modal-icon t)
+    :hook
+    (after-init . doom-modeline-mode))
+#+end_src
+
+** good-scroll
+
+在现代图形界面操作系统中，光标在上下移动、翻页的时候 Emacs 会直接刷新界面，滚动时也是按行滚动，比较粗糙。good-scroll 提供了平滑滚动，并且支持变速滚动，更加顺手。
+
+
+#+begin_src emacs-lisp
+  (use-package good-scroll
+    :ensure t
+    :when *is-gui*          ; 在图形化界面时才使用这个插件
+    :hook
+    (after-init . good-scroll-mode)
+    )
+#+end_src
+
+** which-key
+
+这是一个实用小工具，专门针对 Emacs 快捷键多而杂的问题，安装后，当按下部分快捷键前缀时，它会通过 minibuffer 提示你都有哪些可以按的快捷键及其命令名。例如启动了 hs-minor-mode 后，我们正常可以通过 C-c @ C-h 折叠代码块、用 C-c @ C-s 来展开代码块。但这个快捷键很长，时常记不住，那么有了 which-key 后我们可以先按下 C-c @ ，此时 which-key 就会提示我们接下来可以按的键：
+
+#+begin_src emacs-lisp
+  (use-package which-key
+    :ensure t
+    :hook
+    (after-init . which-key-mode))
+#+end_src
+
+
+** avy
+
+[[https://pavinberg.github.io/emacs-book/zh/enhancement/#avy][使用方法]]
+
+#+begin_src emacs-lisp
+  (use-package avy
+    :ensure t
+    :bind
+    (:map jump-keymap
+          ("j" . avy-goto-char-timer)
+          ("l" . avy-goto-line)
+          )
+    )
+#+end_src
+
+** marginalia
+
+可以为 Emacs minibuffer 中的选项添加注解
+
+#+begin_src emacs-lisp
+  ;; Enable rich annotations using the Marginalia package
+  (use-package marginalia
+    :ensure t
+    ;; Bind `marginalia-cycle' locally in the minibuffer.  To make the binding
+    ;; available in the *Completions* buffer, add it to the
+    ;; `completion-list-mode-map'.
+    :bind (:map minibuffer-local-map
+                ("M-A" . marginalia-cycle))
+
+    ;; The :init section is always executed.
+    :hook
+    (after-init . marginalia-mode)
+    )
+#+end_src
+
+** consult
+
+#+begin_src emacs-lisp
+  (defun delete-current-file ()
+    "Delete the file associated with the current buffer. Delete the current buffer too. If no file is associated, just close buffer without prompt for save."
+    (interactive)
+    (let ((currentFile (buffer-file-name)))
+      (when (yes-or-no-p (concat "Delete file?: " currentFile))
+        (kill-buffer (current-buffer))
+        (when currentFile (delete-file currentFile)))))
+
+  ;; Example configuration for Consult
+  (use-package consult
+    :ensure t
+    :demand t
+    ;; Replace bindings. Lazily loaded due by `use-package'.
+    ;; :config
+    ;; (meow-leader-define-key '("l" . consult-mode-command))
+
+    :bind (
+           :map project-keymap
+           ("s" . consult-ripgrep)
+
+           :map file-keymap
+           ("f" . find-file)
+           ("d" . delete-current-file)
+           ("e" . consult-recent-file)
+           :map buffer-keymap
+           ("b" . consult-buffer)
+           :map jump-keymap
+           ("g" . consult-goto-line)             ;; orig. goto-line
+           ("m" . consult-imenu)
+           ("s" . consult-line)
+           )                ;; orig. previous-matching-history-element
+
+    ;; Enable automatic preview at point in the *Completions* buffer. This is
+    ;; relevant when you use the default completion UI.
+    :hook (completion-list-mode . consult-preview-at-point-mode)
+
+    ;; The :init configuration is always executed (Not lazy)
+    :init
+
+    ;; Optionally configure the register formatting. This improves the register
+    ;; preview for `consult-register', `consult-register-load',
+    ;; `consult-register-store' and the Emacs built-ins.
+    (setq register-preview-delay 0.5
+          register-preview-function #'consult-register-format)
+
+    ;; Optionally tweak the register preview window.
+    ;; This adds thin lines, sorting and hides the mode line of the window.
+    (advice-add #'register-preview :override #'consult-register-window)
+
+    ;; Use Consult to select xref locations with preview
+    (setq xref-show-xrefs-function #'consult-xref
+          xref-show-definitions-function #'consult-xref)
+
+    ;; Configure other variables and modes in the :config section,
+    ;; after lazily loading the package.
+    :config
+
+    ;; Optionally configure preview. The default value
+    ;; is 'any, such that any key triggers the preview.
+    ;; (setq consult-preview-key 'any)
+    ;; (setq consult-preview-key "M-.")
+    ;; (setq consult-preview-key '("S-<down>" "S-<up>"))
+    ;; For some commands and buffer sources it is useful to configure the
+    ;; :preview-key on a per-command basis using the `consult-customize' macro.
+    (consult-customize
+     consult-theme :preview-key '(:debounce 0.2 any)
+     consult-ripgrep consult-git-grep consult-grep
+     consult-bookmark consult-recent-file
+     ;; consult-xref
+     consult--source-bookmark consult--source-file-register
+     consult--source-recent-file consult--source-project-recent-file
+     ;; :preview-key "M-."
+     :preview-key '(:debounce 0.4 any))
+
+    ;; Optionally configure the narrowing key.
+    ;; Both < and C-+ work reasonably well.
+    (setq consult-narrow-key "<") ;; "C-+"
+
+    ;; Optionally make narrowing help available in the minibuffer.
+    ;; You may want to use `embark-prefix-help-command' or which-key instead.
+    ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
+
+    ;; By default `consult-project-function' uses `project-root' from project.el.
+    ;; Optionally configure a different project root function.
+      ;;;; 1. project.el (the default)
+    ;; (setq consult-project-function #'consult--default-project-function)
+      ;;;; 2. vc.el (vc-root-dir)
+    ;; (setq consult-project-function (lambda (_) (vc-root-dir)))
+      ;;;; 3. locate-dominating-file
+    ;; (setq consult-project-function (lambda (_) (locate-dominating-file "." ".git")))
+    ;; 4. projectile.el (projectile-project-root)
+    (autoload 'projectile-project-root "projectile")
+    (setq consult-project-function (lambda (_) (projectile-project-root)))
+      ;;;; 5. No project support
+    ;; (setq consult-project-function nil)
+    )
+#+end_src
+
+** vertico
+
+#+begin_src emacs-lisp
+  ;; Enable vertico
+  (use-package vertico
+    :ensure t
+    :config
+    ;; Show more candidates
+    (setq vertico-count 20)
+
+    ;; Grow and shrink the Vertico minibuffer
+    ;; (setq vertico-resize t)
+
+    ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
+    ;; (setq vertico-cycle t)
+    :hook
+    (after-init . vertico-mode)
+    )
+#+end_src
+
+** embark
+
+embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输入命令再输入命令作用的对象。例如，我们先按下 C-x C-f 再输入文件名来打开文件。但是有的时候，我们按下命令、选择了文件后，可能又后悔了，想要对相同的文件输入另一个命令。例如我们按下 C-x k 打算关闭一个后台 buffer，然后输入了文件名，这时我们忽然想再查看一眼那个文件。那么平常，我们只好按下 C-g 放弃这次命令，再用 C-x b 切换过去。而有了 embark ，我们可以在按下 C-x k 、输入了部分文件名选中文件后 ，按下 C-. 触发 embark- act，这时按下 o 就可以在另一个新的窗口打开这个 buffer 了。我们无需放弃命令重新输入，而是继续输入就好了。
+
+#+begin_src emacs-lisp
+  (use-package embark
+    :ensure t
+    :bind
+    (("C-." . embark-act)         ;; pick some comfortable binding
+     ("C-;" . embark-dwim)        ;; good alternative: M-.
+     ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
+
+    :init
+
+    ;; Optionally replace the key help with a completing-read interface
+    (setq prefix-help-command #'embark-prefix-help-command)
+
+    ;; Show the Embark target at point via Eldoc. You may adjust the
+    ;; Eldoc strategy, if you want to see the documentation from
+    ;; multiple providers. Beware that using this can be a little
+    ;; jarring since the message shown in the minibuffer can be more
+    ;; than one line, causing the modeline to move up and down:
+
+    ;; (add-hook 'eldoc-documentation-functions #'embark-eldoc-first-target)
+    ;; (setq eldoc-documentation-strategy #'eldoc-documentation-compose-eagerly)
+
+    :config
+
+    ;; Hide the mode line of the Embark live/completions buffers
+    (add-to-list 'display-buffer-alist
+                 '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                   nil
+                   (window-parameters (mode-line-format . none)))))
+
+  ;; Consult users will also want the embark-consult package.
+  (use-package embark-consult
+    :ensure t ; only need to install it, embark loads it after consult if found
+    :after (consult embark)
+    :hook
+    (embark-collect-mode . consult-preview-at-point-mode))
+#+end_src
+
+** orderless
+一个模糊搜索的插件，可以为多个其它插件提供排序函数
+#+begin_src emacs-lisp
+  (use-package orderless
+    :ensure t
+    :config
+    ;; Configure a custom style dispatcher (see the Consult wiki)
+    ;; (setq orderless-style-dispatchers '(+orderless-consult-dispatch orderless-affix-dispatch)
+    ;;       orderless-component-separator #'orderless-escapable-split-on-space)
+    (setq completion-styles '(orderless basic)
+          completion-category-defaults nil
+          completion-category-overrides '((file (styles partial-completion))))
+
+    )
+#+end_src
+
+** rainbow-delimiters
+
+这个插件可以用不同颜色标记多级括号，方便看清代码块（尤其在 EmacsLisp 中）。
+
+#+begin_src emacs-lisp
+  ;; 括号的多色彩
+  (use-package rainbow-delimiters
+    :ensure t
+    :defer t
+    :hook
+    (prog-mode . rainbow-delimiters-mode)
+    )
+#+end_src
+
+** symbol-overlay
+
+这个插件可以高亮出当前 Buffer 中所有的、与光标所在处的符号相同的符号，同时提供一组动作
+
+#+begin_src emacs-lisp
+  (use-package symbol-overlay
+    :ensure t
+    :bind
+    (:map jump-keymap
+          ("i" . symbol-overlay-put))
+    )
+
+#+end_src
 * Meow - 模态编辑
 
 可以说这个模态编辑包是整个配置中我最喜欢的。 它可以最大限度的使用 =Emacs= 原生键位。而不需要每安装一个新的包，就去做一些适配和兼容（我说的就是 =evil= ）
@@ -757,153 +1099,14 @@
 
 列表补全使用的是 =vertico= / =marginalia= / =consult= / =orderless= 全家桶
 
-而 lsp 则使用了 =lsp-bridge= 统一大包
-
-#+begin_src emacs-lisp 
-  ;; Enable vertico
-  (use-package vertico
+#+begin_src emacs-lisp
+  ;; Use Dabbrev with Corfu!
+  (use-package yasnippet
     :ensure t
-    :config
-    ;; Show more candidates
-    (setq vertico-count 20)
-
-    ;; Grow and shrink the Vertico minibuffer
-    ;; (setq vertico-resize t)
-
-    ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
-    ;; (setq vertico-cycle t)
-    :hook
-    (after-init . vertico-mode)
-    )
-  ;; (use-package
-  ;; Enable rich annotations using the Marginalia package
-  (use-package marginalia
-    :ensure t
-    ;; Bind `marginalia-cycle' locally in the minibuffer.  To make the binding
-    ;; available in the *Completions* buffer, add it to the
-    ;; `completion-list-mode-map'.
-    :bind (:map minibuffer-local-map
-                ("M-A" . marginalia-cycle))
-
-    ;; The :init section is always executed.
-    :hook
-    (vertico-mode . marginalia-mode)
-    )
-
-  (defun delete-current-file ()
-    "Delete the file associated with the current buffer. Delete the current buffer too. If no file is associated, just close buffer without prompt for save."
-    (interactive)
-    (let ((currentFile (buffer-file-name)))
-      (when (yes-or-no-p (concat "Delete file?: " currentFile))
-        (kill-buffer (current-buffer))
-        (when currentFile (delete-file currentFile)))))
-
-  ;; Example configuration for Consult
-  (use-package consult
-    :ensure t
-    :demand t
-    ;; Replace bindings. Lazily loaded due by `use-package'.
-    ;; :config
-    ;; (meow-leader-define-key '("l" . consult-mode-command))
-
-    :bind (
-           :map project-keymap
-           ("s" . consult-ripgrep)
-
-           :map file-keymap
-           ("f" . find-file)
-           ("d" . delete-current-file)
-           ("e" . consult-recent-file)
-           :map buffer-keymap
-           ("b" . consult-buffer)
-           :map jump-keymap
-           ("g" . consult-goto-line)             ;; orig. goto-line
-           ("m" . consult-imenu)
-           ("s" . consult-line)
-           )                ;; orig. previous-matching-history-element
-
-    ;; Enable automatic preview at point in the *Completions* buffer. This is
-    ;; relevant when you use the default completion UI.
-    :hook (completion-list-mode . consult-preview-at-point-mode)
-
-    ;; The :init configuration is always executed (Not lazy)
     :init
-
-    ;; Optionally configure the register formatting. This improves the register
-    ;; preview for `consult-register', `consult-register-load',
-    ;; `consult-register-store' and the Emacs built-ins.
-    (setq register-preview-delay 0.5
-          register-preview-function #'consult-register-format)
-
-    ;; Optionally tweak the register preview window.
-    ;; This adds thin lines, sorting and hides the mode line of the window.
-    (advice-add #'register-preview :override #'consult-register-window)
-
-    ;; Use Consult to select xref locations with preview
-    (setq xref-show-xrefs-function #'consult-xref
-          xref-show-definitions-function #'consult-xref)
-
-    ;; Configure other variables and modes in the :config section,
-    ;; after lazily loading the package.
-    :config
-
-    ;; Optionally configure preview. The default value
-    ;; is 'any, such that any key triggers the preview.
-    ;; (setq consult-preview-key 'any)
-    ;; (setq consult-preview-key "M-.")
-    ;; (setq consult-preview-key '("S-<down>" "S-<up>"))
-    ;; For some commands and buffer sources it is useful to configure the
-    ;; :preview-key on a per-command basis using the `consult-customize' macro.
-    (consult-customize
-     consult-theme :preview-key '(:debounce 0.2 any)
-     consult-ripgrep consult-git-grep consult-grep
-     consult-bookmark consult-recent-file
-     ;; consult-xref
-     consult--source-bookmark consult--source-file-register
-     consult--source-recent-file consult--source-project-recent-file
-     ;; :preview-key "M-."
-     :preview-key '(:debounce 0.4 any))
-
-    ;; Optionally configure the narrowing key.
-    ;; Both < and C-+ work reasonably well.
-    (setq consult-narrow-key "<") ;; "C-+"
-
-    ;; Optionally make narrowing help available in the minibuffer.
-    ;; You may want to use `embark-prefix-help-command' or which-key instead.
-    ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
-
-    ;; By default `consult-project-function' uses `project-root' from project.el.
-    ;; Optionally configure a different project root function.
-    ;;;; 1. project.el (the default)
-    ;; (setq consult-project-function #'consult--default-project-function)
-    ;;;; 2. vc.el (vc-root-dir)
-    ;; (setq consult-project-function (lambda (_) (vc-root-dir)))
-    ;;;; 3. locate-dominating-file
-    ;; (setq consult-project-function (lambda (_) (locate-dominating-file "." ".git")))
-    ;; 4. projectile.el (projectile-project-root)
-    (autoload 'projectile-project-root "projectile")
-    (setq consult-project-function (lambda (_) (projectile-project-root)))
-    ;;;; 5. No project support
-    ;; (setq consult-project-function nil)
-    )
-
-
-
-  ;; ;; 安装icon管理
-  ;; (use-package all-the-icons
-  ;;   :defer t
-  ;;   )
-
-  (use-package orderless
-    :ensure t
-    :config
-    ;; Configure a custom style dispatcher (see the Consult wiki)
-    ;; (setq orderless-style-dispatchers '(+orderless-consult-dispatch orderless-affix-dispatch)
-    ;;       orderless-component-separator #'orderless-escapable-split-on-space)
-    (setq completion-styles '(orderless basic)
-          completion-category-defaults nil
-          completion-category-overrides '((file (styles partial-completion))))
-
+    (setq yas--default-user-snippets-dir (expand-emacs-data "snippets"))
+    :hook
+    (after-init . yas-global-mode)
     )
 
   ;; (use-package codeium)
@@ -918,13 +1121,6 @@
 *** 格式化 
 
 #+begin_src emacs-lisp
-  ;; 高亮显示符号，跳转和重构
-  (use-package symbol-overlay
-    :ensure t
-    :bind
-    (:map jump-keymap
-          ("i" . symbol-overlay-put))
-    )
   (use-package format-all
     :ensure t
     :commands format-all-mode
@@ -946,30 +1142,10 @@
 
     )
 
-  (use-package avy
-    :ensure t
-    :bind
-    (:map jump-keymap
-          ("j" . avy-goto-char-timer)
-          ("l" . avy-goto-line)
-          )
-    )
+  
 #+end_src
 
 *** 代码自动补全
-
-#+begin_src emacs-lisp
-  (use-package yasnippet
-    :ensure t
-    :init
-    (setq yas--default-user-snippets-dir (expand-emacs-data "snippets"))
-    :hook
-
-    (lsp-bridge-mode . yas-global-mode)
-    )
-
-  
-#+end_src
 
 **** LSP-Bridge
 #+begin_src emacs-lisp
@@ -1236,21 +1412,20 @@ Org-mode 相关的配置。
     (org-mode . toc-org-mode)
     )
 
-  (use-package ox-hugo
-    :ensure t
-    :defer t
-    :after ox
-    :hook (org . org-hugo-auto-export-mode)
+  ;; (use-package ox-hugo
+  ;;   :ensure t
+  ;;   :defer t
+  ;;   :after ox
+  ;;   :hook (org . org-hugo-auto-export-mode)
 
-    :config
-    (setq org-hugo-section "post"
-          org-hugo-auto-set-lastmod	t
-          )
-    )
+  ;;   :config
+  ;;   (setq org-hugo-section "post"
+  ;;         org-hugo-auto-set-lastmod	t
+  ;;         )
+  ;;   )
 
   ;; Org模式相关的，和GTD相关的
   (use-package org
-    :defer 3
     :config
     (setq org-agenda-include-diary nil)
     (setq
@@ -1367,6 +1542,15 @@ Org-mode 相关的配置。
           )
     )
 
+
+  ;; (use-package svg-lib)
+
+
+  ;; (use-package org-margin
+  ;;   :config
+  ;;   (org-margin-mode 1)
+  ;;   )
+
   ;; 番茄钟
   ;; (use-package org-pomodoro
   ;; :ensure t
@@ -1457,15 +1641,6 @@ Org-mode 相关的配置。
           )
     )
 
-  ;; 美化modeline
-  (use-package doom-modeline
-    :ensure t
-    :config
-    (setq doom-modeline-modal-icon t)
-    :hook
-
-    (after-init . doom-modeline-mode))
-
   (use-package nerd-icons
     :ensure t
     ;; :custom
@@ -1486,13 +1661,6 @@ Org-mode 相关的配置。
     :config
     (nerd-icons-completion-mode)
     (add-hook 'marginalia-mode-hook #'nerd-icons-completion-marginalia-setup))
-  ;; 括号的多色彩
-  (use-package rainbow-delimiters
-    :ensure t
-    :defer t
-    :hook
-    (prog-mode . rainbow-delimiters-mode)
-    )
   ;; 自动保存
   ;; (use-package super-save
   ;;   :ensure t
@@ -1575,40 +1743,8 @@ Org-mode 相关的配置。
     (dired-mode . (dirvish-override-dired-mode))
     )
 
-  (use-package embark
-    :ensure t
-    :bind
-    (("C-." . embark-act)         ;; pick some comfortable binding
-     ("C-;" . embark-dwim)        ;; good alternative: M-.
-     ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
+  
 
-    :init
-
-    ;; Optionally replace the key help with a completing-read interface
-    (setq prefix-help-command #'embark-prefix-help-command)
-
-    ;; Show the Embark target at point via Eldoc. You may adjust the
-    ;; Eldoc strategy, if you want to see the documentation from
-    ;; multiple providers. Beware that using this can be a little
-    ;; jarring since the message shown in the minibuffer can be more
-    ;; than one line, causing the modeline to move up and down:
-
-    ;; (add-hook 'eldoc-documentation-functions #'embark-eldoc-first-target)
-    ;; (setq eldoc-documentation-strategy #'eldoc-documentation-compose-eagerly)
-
-    :config
-
-    ;; Hide the mode line of the Embark live/completions buffers
-    (add-to-list 'display-buffer-alist
-                 '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
-                   nil
-                   (window-parameters (mode-line-format . none)))))
-
-  ;; Consult users will also want the embark-consult package.
-  (use-package embark-consult
-    :ensure t ; only need to install it, embark loads it after consult if found
-    :hook
-    (embark-collect-mode . consult-preview-at-point-mode))
 #+end_src
 
 
