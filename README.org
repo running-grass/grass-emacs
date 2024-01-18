@@ -42,6 +42,7 @@
 - [[#org][Org]]
 - [[#样式][样式]]
 - [[#杂项][杂项]]
+  - [[#undoredo][Undo/Redo]]
   - [[#小功能][小功能]]
   - [[#仪表盘][仪表盘]]
 - [[#加载自定义文件][加载自定义文件]]
@@ -1503,6 +1504,16 @@ Org-mode 相关的配置。
 
 * 杂项
 
+** Undo/Redo
+#+begin_src emacs-lisp
+  (use-package vundo
+    :ensure t
+
+    :bind
+    ("C-c u" . vundo)
+    )
+ 
+#+end_src
 ** 小功能
 #+begin_src emacs-lisp
 

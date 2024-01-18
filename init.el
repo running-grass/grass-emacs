@@ -1144,6 +1144,13 @@
 ;;   :config
 ;;   (super-save-mode +1))
 
+(use-package vundo
+  :ensure t
+
+  :bind
+  ("C-c u" . vundo)
+  )
+
 ;; 自动给内置函数增加 demo
 (use-package elisp-demos
   :ensure t
