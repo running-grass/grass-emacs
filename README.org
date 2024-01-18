@@ -13,15 +13,14 @@
 - [[#header][Header]]
 - [[#全局配置][全局配置]]
   - [[#emacs-版本判断][Emacs 版本判断]]
-  - [[#包管理配置][包管理配置]]
-  - [[#修改默认配置][修改默认配置]]
   - [[#定义常量][定义常量]]
-  - [[#性能优化][性能优化]]
   - [[#定义常用目录][定义常用目录]]
+  - [[#修改默认配置][修改默认配置]]
+  - [[#性能优化][性能优化]]
   - [[#定义用户级别的键位映射图][定义用户级别的键位映射图]]
   - [[#emacs-的默认配置][Emacs 的默认配置]]
+  - [[#el-get][el-get]]
 - [[#内置包的配置][内置包的配置]]
-- [[#引导-straightel][引导 straight.el]]
 - [[#功能增强][功能增强]]
   - [[#ace-window][ace-window]]
   - [[#mwim][mwim]]
@@ -141,17 +140,76 @@
 #+end_src
 
 
-** 包管理配置
-
-因为我使用的是 =NixOS= ， 所以有些包我不需要使用 =straight.el= 进行管理，如果你要使用的花，需要把这个配置改魏 =t= 。
-
+** 定义常量
 #+begin_src emacs-lisp
+  ;; 判断是否是 MacOS 系统
+  (defconst *is-mac* (eq system-type 'darwin) "是否是 MacOS 操作系统")
+  ;; 判断是否是 Linux 系统
+  (defconst *is-linux* (eq system-type 'gnu/linux) "是否是 Linux 操作系统")
+  ;; 判断是否是 Windows 系统
+  (defconst *is-win* (eq system-type 'windows-nt) "是否是 Windows 操作系统")
 
-  (setq straight-use-package-by-default nil)
+  ;; 是否是 GUI
+  (defconst *is-gui* (display-graphic-p))
+  ;; 是否是 TUI
+  (defconst *is-tui* (not *is-gui*))
+#+end_src
+
+** 定义常用目录
+
+这里定义了四个 =Emacs= 使用过程中的目录， 配置、数据、状态、缓存
+
+配置： 存放各种配置文件， 例如 =init.el= 和 =early-init.el= 等，以及用户自定义配置文件，用于存储敏感信息，可以在多台机器直接复用
+数据： 存放数据型的文件，例如 =sqllite= 数据库的存储，或者 =BBDB= 数据库文件等，同样可以在多台机器直接共享。 和配置的区别在于，一个是声明式的，一个是动态增加的数据
+状态： 在多次启动运行之间共享的状态，例如 最近打开的文件，搜索历史等， 不可以跨机器和跨用户使用。
+缓存： 使用过程中的缓存文件，可以被安全的删除，必须可以被重建。
+
+#+begin_src emacs-lisp 
+  (require 'xdg)
+
+  (defun expand-emacs-config (filename)
+    "expand emacs config files"
+    (expand-file-name filename
+                      (or (getenv "EMACS_DEBUG_DIR")
+                          (expand-file-name "emacs" (xdg-config-home))
+
+                          )))
+
+  (defun expand-emacs-data (filename)
+    "expand emacs data files"
+    (expand-file-name filename
+                      (expand-file-name "emacs" (xdg-data-home))
+                      ))
+
+  (defun expand-emacs-state (filename)
+    "expand emacs state files"
+    (expand-file-name filename
+                      (expand-file-name "emacs" (xdg-state-home))
+                      ))
+
+  (defun expand-emacs-cache (filename)
+    "expand emacs cache files"
+    (expand-file-name filename
+                      (expand-file-name "emacs" (xdg-cache-home))
+                      ))
+
+  ;; 给 eln-cache 目录换个地方
+  (when (boundp 'native-comp-eln-load-path)
+    (startup-redirect-eln-cache (expand-emacs-cache "eln-cache")))
+
+  ;; 定义自定义文件
+  (defconst *custom-file* (expand-emacs-data "custom.el") "一些个性化的定义存放之地")
+
+  ;; 插件默认使用这个目录，如果需要的话，再调整到其它相关目录
+  (setq user-emacs-directory (expand-emacs-state ""))
+  ;; 更改到缓存目录
+  (setq package-user-dir (expand-emacs-cache "elpa"))
 #+end_src
 
 ** 修改默认配置
 #+begin_src emacs-lisp
+  ;; 关闭原生编译警告
+  (setq native-comp-async-report-warnings-errors nil)
   ;; 关闭启动画面
   (setq inhibit-startup-screen t)
   ;; 禁用对话框
@@ -205,24 +263,9 @@
 
   ;; 关闭内置的包管理工具
   (setq package-enable-at-startup nil)
-#+end_src
+#+End_src
 
 
-
-** 定义常量
-#+begin_src emacs-lisp
-  ;; 判断是否是 MacOS 系统
-  (defconst *is-mac* (eq system-type 'darwin) "是否是 MacOS 操作系统")
-  ;; 判断是否是 Linux 系统
-  (defconst *is-linux* (eq system-type 'gnu/linux) "是否是 Linux 操作系统")
-  ;; 判断是否是 Windows 系统
-  (defconst *is-win* (eq system-type 'windows-nt) "是否是 Windows 操作系统")
-
-  ;; 是否是 GUI
-  (defconst *is-gui* (display-graphic-p))
-  ;; 是否是 TUI
-  (defconst *is-tui* (not *is-gui*))
-#+end_src
 
 ** 性能优化
 #+begin_src emacs-lisp
@@ -237,57 +280,6 @@
   (setq read-process-output-max (* 4 1024 1024))
   ;; 关闭对子进程读取输出时的延迟缓冲
   (setq process-adaptive-read-buffering nil)
-#+end_src
-
-** 定义常用目录
-
-这里定义了四个 =Emacs= 使用过程中的目录， 配置、数据、状态、缓存
-
-配置： 存放各种配置文件， 例如 =init.el= 和 =early-init.el= 等，以及用户自定义配置文件，用于存储敏感信息，可以在多台机器直接复用
-数据： 存放数据型的文件，例如 =sqllite= 数据库的存储，或者 =BBDB= 数据库文件等，同样可以在多台机器直接共享。 和配置的区别在于，一个是声明式的，一个是动态增加的数据
-状态： 在多次启动运行之间共享的状态，例如 最近打开的文件，搜索历史等， 不可以跨机器和跨用户使用。
-缓存： 使用过程中的缓存文件，可以被安全的删除，必须可以被重建。
-
-#+begin_src emacs-lisp 
-  (require 'xdg)
-
-  (defun expand-emacs-config (filename)
-    "expand emacs config files"
-    (expand-file-name filename
-                      (or (getenv "EMACS_DEBUG_DIR")
-                          (expand-file-name "emacs" (xdg-config-home))
-
-                          )))
-
-  (defun expand-emacs-data (filename)
-    "expand emacs data files"
-    (expand-file-name filename
-                      (expand-file-name "emacs" (xdg-data-home))
-                      ))
-
-  (defun expand-emacs-state (filename)
-    "expand emacs state files"
-    (expand-file-name filename
-                      (expand-file-name "emacs" (xdg-state-home))
-                      ))
-
-  (defun expand-emacs-cache (filename)
-    "expand emacs cache files"
-    (expand-file-name filename
-                      (expand-file-name "emacs" (xdg-cache-home))
-                      ))
-
-  ;; 给 eln-cache 目录换个地方
-  (when (boundp 'native-comp-eln-load-path)
-    (startup-redirect-eln-cache (expand-emacs-cache "eln-cache")))
-
-  ;; 定义自定义文件
-  (defconst *custom-file* (expand-emacs-data "custom.el") "一些个性化的定义存放之地")
-
-  ;; 插件默认使用这个目录，如果需要的话，再调整到其它相关目录
-  (setq user-emacs-directory (expand-emacs-state ""))
-  ;; 更改到缓存目录
-  (setq package-user-dir (expand-emacs-cache "elpa"))
 #+end_src
 
 ** 定义用户级别的键位映射图
@@ -402,6 +394,17 @@
 #+end_src
 
 
+** el-get
+因为我使用的是 =NixOS= ，有些包直接使用 =NixPkgs= 管理，其余的使用 =el-get= 
+
+#+begin_src emacs-lisp
+  (use-package el-get
+    :ensure t
+    :config
+    (setq el-get-dir (expand-emacs-cache "el-get"))
+    )
+#+end_src
+
 * 内置包的配置
 
 #+begin_src emacs-lisp
@@ -473,32 +476,6 @@
 
 
 
-
-* 引导 straight.el
-
-这里使用了 =straight= 来代替内置的 =package.el= 作为包管理工具。
-
-本人使用 =NixOS= 上的 =Home Manager= 对 =melpa= 上的包进行管理。其余的包依旧使用 =straight=
-
-#+begin_src emacs-lisp
-
-  (setq straight-base-dir (expand-emacs-cache ""))
-  (defvar bootstrap-version)
-  (let ((bootstrap-file
-         (expand-file-name
-          "straight/repos/straight.el/bootstrap.el"
-          (or (bound-and-true-p straight-base-dir)
-              user-emacs-directory)))
-        (bootstrap-version 7))
-    (unless (file-exists-p bootstrap-file)
-      (with-current-buffer
-          (url-retrieve-synchronously
-           "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
-           'silent 'inhibit-cookies)
-        (goto-char (point-max))
-        (eval-print-last-sexp)))
-    (load bootstrap-file nil 'nomessage))
-#+end_src
 
 
 * 功能增强
@@ -1543,13 +1520,21 @@ Org-mode 相关的配置。
     )
 
 
-  ;; (use-package svg-lib)
 
+  (use-package svg-lib
+    :init
+    (el-get-bundle rougier/svg-lib)
+    )
 
-  ;; (use-package org-margin
-  ;;   :config
-  ;;   (org-margin-mode 1)
-  ;;   )
+  (use-package org-margin
+    :init
+    (el-get-bundle rougier/org-margin)
+
+    :config
+    (setq org-margin--left-margin-width 30)
+    :hook
+    (org-mode . org-margin-mode-on)
+    )
 
   ;; 番茄钟
   ;; (use-package org-pomodoro

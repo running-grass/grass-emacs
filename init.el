@@ -8,8 +8,60 @@
 (when (version< emacs-version "29")
   (error "必须要使用 Emacs 29 以上的版本"))
 
-(setq straight-use-package-by-default nil)
+;; 判断是否是 MacOS 系统
+(defconst *is-mac* (eq system-type 'darwin) "是否是 MacOS 操作系统")
+;; 判断是否是 Linux 系统
+(defconst *is-linux* (eq system-type 'gnu/linux) "是否是 Linux 操作系统")
+;; 判断是否是 Windows 系统
+(defconst *is-win* (eq system-type 'windows-nt) "是否是 Windows 操作系统")
 
+;; 是否是 GUI
+(defconst *is-gui* (display-graphic-p))
+;; 是否是 TUI
+(defconst *is-tui* (not *is-gui*))
+
+(require 'xdg)
+
+(defun expand-emacs-config (filename)
+  "expand emacs config files"
+  (expand-file-name filename
+                    (or (getenv "EMACS_DEBUG_DIR")
+                        (expand-file-name "emacs" (xdg-config-home))
+
+                        )))
+
+(defun expand-emacs-data (filename)
+  "expand emacs data files"
+  (expand-file-name filename
+                    (expand-file-name "emacs" (xdg-data-home))
+                    ))
+
+(defun expand-emacs-state (filename)
+  "expand emacs state files"
+  (expand-file-name filename
+                    (expand-file-name "emacs" (xdg-state-home))
+                    ))
+
+(defun expand-emacs-cache (filename)
+  "expand emacs cache files"
+  (expand-file-name filename
+                    (expand-file-name "emacs" (xdg-cache-home))
+                    ))
+
+;; 给 eln-cache 目录换个地方
+(when (boundp 'native-comp-eln-load-path)
+  (startup-redirect-eln-cache (expand-emacs-cache "eln-cache")))
+
+;; 定义自定义文件
+(defconst *custom-file* (expand-emacs-data "custom.el") "一些个性化的定义存放之地")
+
+;; 插件默认使用这个目录，如果需要的话，再调整到其它相关目录
+(setq user-emacs-directory (expand-emacs-state ""))
+;; 更改到缓存目录
+(setq package-user-dir (expand-emacs-cache "elpa"))
+
+;; 关闭原生编译警告
+(setq native-comp-async-report-warnings-errors nil)
 ;; 关闭启动画面
 (setq inhibit-startup-screen t)
 ;; 禁用对话框
@@ -64,18 +116,6 @@
 ;; 关闭内置的包管理工具
 (setq package-enable-at-startup nil)
 
-;; 判断是否是 MacOS 系统
-(defconst *is-mac* (eq system-type 'darwin) "是否是 MacOS 操作系统")
-;; 判断是否是 Linux 系统
-(defconst *is-linux* (eq system-type 'gnu/linux) "是否是 Linux 操作系统")
-;; 判断是否是 Windows 系统
-(defconst *is-win* (eq system-type 'windows-nt) "是否是 Windows 操作系统")
-
-;; 是否是 GUI
-(defconst *is-gui* (display-graphic-p))
-;; 是否是 TUI
-(defconst *is-tui* (not *is-gui*))
-
 ;; 调大 gc 的阈值
 (let ((normal-gc-cons-threshold (* 20 1024 1024))
       (init-gc-cons-threshold (* 128 1024 1024)))
@@ -87,46 +127,6 @@
 (setq read-process-output-max (* 4 1024 1024))
 ;; 关闭对子进程读取输出时的延迟缓冲
 (setq process-adaptive-read-buffering nil)
-
-(require 'xdg)
-
-(defun expand-emacs-config (filename)
-  "expand emacs config files"
-  (expand-file-name filename
-                    (or (getenv "EMACS_DEBUG_DIR")
-                        (expand-file-name "emacs" (xdg-config-home))
-
-                        )))
-
-(defun expand-emacs-data (filename)
-  "expand emacs data files"
-  (expand-file-name filename
-                    (expand-file-name "emacs" (xdg-data-home))
-                    ))
-
-(defun expand-emacs-state (filename)
-  "expand emacs state files"
-  (expand-file-name filename
-                    (expand-file-name "emacs" (xdg-state-home))
-                    ))
-
-(defun expand-emacs-cache (filename)
-  "expand emacs cache files"
-  (expand-file-name filename
-                    (expand-file-name "emacs" (xdg-cache-home))
-                    ))
-
-;; 给 eln-cache 目录换个地方
-(when (boundp 'native-comp-eln-load-path)
-  (startup-redirect-eln-cache (expand-emacs-cache "eln-cache")))
-
-;; 定义自定义文件
-(defconst *custom-file* (expand-emacs-data "custom.el") "一些个性化的定义存放之地")
-
-;; 插件默认使用这个目录，如果需要的话，再调整到其它相关目录
-(setq user-emacs-directory (expand-emacs-state ""))
-;; 更改到缓存目录
-(setq package-user-dir (expand-emacs-cache "elpa"))
 
 (defvar application-keymap (make-sparse-keymap) "applications")
 (defalias 'application-keymap application-keymap)
@@ -226,6 +226,12 @@
   :config
   (editorconfig-mode 1))
 
+(use-package el-get
+  :ensure t
+  :config
+  (setq el-get-dir (expand-emacs-cache "el-get"))
+  )
+
 ;; 保存了上一次打开文件时的光标位置
 (use-package saveplace
   :ensure nil
@@ -290,23 +296,6 @@
   :hook
   (after-init . global-so-long-mode)
   )
-
-(setq straight-base-dir (expand-emacs-cache ""))
-(defvar bootstrap-version)
-(let ((bootstrap-file
-       (expand-file-name
-        "straight/repos/straight.el/bootstrap.el"
-        (or (bound-and-true-p straight-base-dir)
-            user-emacs-directory)))
-      (bootstrap-version 7))
-  (unless (file-exists-p bootstrap-file)
-    (with-current-buffer
-        (url-retrieve-synchronously
-         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
-         'silent 'inhibit-cookies)
-      (goto-char (point-max))
-      (eval-print-last-sexp)))
-  (load bootstrap-file nil 'nomessage))
 
 (use-package ace-window
   :ensure t
@@ -1097,13 +1086,21 @@
   )
 
 
-;; (use-package svg-lib)
 
+(use-package svg-lib
+  :init
+  (el-get-bundle rougier/svg-lib)
+  )
 
-;; (use-package org-margin
-;;   :config
-;;   (org-margin-mode 1)
-;;   )
+(use-package org-margin
+  :init
+  (el-get-bundle rougier/org-margin)
+
+  :config
+  (setq org-margin--left-margin-width 30)
+  :hook
+  (org-mode . org-margin-mode-on)
+  )
 
 ;; 番茄钟
 ;; (use-package org-pomodoro
