@@ -7,6 +7,7 @@ pkgs.mkShell {
 
   # vars
   inherit (env-vars) QT_QPA_PLATFORM_PLUGIN_PATH;
+  GRASS_EMACS_ENV = "debug-shell";
 
   buildInputs = [ emacsWrap packages ];
 

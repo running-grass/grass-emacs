@@ -34,6 +34,7 @@
           # eaf
           QT_QPA_PLATFORM_PLUGIN_PATH =
             "${pkgs.qt6.qtbase.outPath}/lib/qt-6/plugins";
+          GRASS_EMACS_ENV = "manaual";
         };
       };
 
@@ -47,7 +48,9 @@
         options = { };
         config = {
           environment.systemPackages = packages ++ [ emacsWrap ];
-          environment.variables = env-vars;
+          environment.variables =
+            (env-vars // { GRASS_EMACS_ENV = "nix-module"; });
+
           # services.emacs = {
           #   enable = true;
           #   package = emacsWrap;
@@ -65,7 +68,9 @@
         options = { };
         config = {
           environment.systemPackages = packages ++ [ emacsWrap ];
-          environment.variables = env-vars;
+          environment.variables =
+            (env-vars // { GRASS_EMACS_ENV = "nix-module"; });
+
           # services.emacs = {
           #   enable = true;
           #   package = emacsWrap;

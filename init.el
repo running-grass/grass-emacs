@@ -20,6 +20,9 @@
 ;; 是否是 TUI
 (defconst *is-tui* (not *is-gui*))
 
+;; 是否是 nixos/darwin 模块 使用
+(defconst *is-nix-module* (eq (getenv "GRASS_EMACS_ENV") "nix-module"))
+
 (require 'xdg)
 
 (defun expand-emacs-config (filename)
@@ -228,8 +231,6 @@
 
 (use-package el-get
   :ensure t
-  :config
-  (setq el-get-dir (expand-emacs-cache "el-get"))
   )
 
 ;; 保存了上一次打开文件时的光标位置
@@ -529,9 +530,12 @@
 (defun reload-config ()
   "重新加载配置"
   (interactive)
-  (progn
-    (org-babel-tangle-file (expand-emacs-config  "README.org"))
-    (load-file (expand-emacs-config "init.el"))
+  (if *is-nix-module*
+      (warn "Nixos/NixDarwin 使用Module的场景下，不允许重新加载配置。因为配置不在用户文件夹中")
+    (progn
+      (org-babel-tangle-file (expand-emacs-config  "README.org"))
+      (load-file (expand-emacs-config "init.el"))
+      )
     )
   )
 (defun meow-setup ()
@@ -568,7 +572,7 @@
    '("j" . jump-keymap)
    '("t" . toggle-keymap)
 
-   '("<SPC>" . execute-extended-command)
+   '("<SPC>" . consult-mode-command)
 
    '("r" . reload-config)
    )
@@ -664,17 +668,20 @@
         message-sendmail-f-is-evil t
         message-sendmail-extra-arguments '("--read-envelope-from")
         message-send-mail-function 'message-send-mail-with-sendmail
-
+        )
+  (setq
         mu4e-attachment-dir  "~/Downloads"
         mu4e-get-mail-command "offlineimap -o"
         mu4e-update-interval 300
-
+        mu4e-notification-support t
         )
 
   :bind
   (:map application-keymap
         ("m" . mu4e)
         )
+  :hook
+  (after-init . mu4e-update-minor-mode)
   )
 
 (use-package pocket-reader
@@ -994,7 +1001,7 @@
                    ("@home" . ?h)
                    (:endgroup . nil)
                    )
-   org-capture-templates '(("t" "Todo" entry (file+headline "~/org/inbox.org" "Inbox") "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:")
+   org-capture-templates '(("t" "Todo" entry (file "~/org/inbox.org") "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:")
                            ("j" "日记" entry (file+datetree "~/org/journal.org" "Journal") "* %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:"))
 
    org-agenda-custom-commands '(("p" "At the office" tags-todo "project"
@@ -1091,6 +1098,7 @@
   :init
   (el-get-bundle rougier/svg-lib)
   )
+
 
 (use-package org-margin
   :init
@@ -1285,20 +1293,11 @@
 ;; use-package:
 (use-package dashboard
   :ensure t
-  :after nerd-icons
+  :after nerd-icons                     
   :config
   (setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
   ;; Set the title
-  (setq dashboard-banner-logo-title "Welcome to Emacs Dashboard")
-  ;; Set the banner
-  ;; (setq dashboard-startup-banner [VALUE])
-  ;; Value can be
-  ;; - nil to display no banner
-  ;; - 'official which displays the official emacs logo
-  ;; - 'logo which displays an alternative emacs logo
-  ;; - 1, 2 or 3 which displays one of the text banners
-  ;; - "path/to/your/image.gif", "path/to/your/image.png", "path/to/your/text.txt" or "path/to/your/image.xbm" which displays whatever gif/image/text/xbm you would prefer
-  ;; - a cons of '("path/to/your/image.png" . "path/to/your/text.txt")
+  (setq dashboard-banner-logo-title "Welcome to Grass Emacs")
 
   ;; Content is not centered by default. To center, set
   (setq dashboard-center-content t)
@@ -1309,20 +1308,33 @@
   (setq dashboard-display-icons-p t) ;; display icons on both GUI and terminal
   (setq dashboard-icon-type 'nerd-icons) ;; use `nerd-icons' package
 
-  (setq dashboard-set-heading-icons t)
+  (setq dashboard-set-heading-icons nil)
   (setq dashboard-set-file-icons t)
   (setq dashboard-items '((recents  . 10)
-                        (bookmarks . 10)
-                        ;; (projects . 5)
-                        ;; (agenda . 5)
-                        ;; (registers . 5)
-                        ))
-  (dashboard-modify-heading-icons '((recents . "nf-oct-file")
-                                    (bookmarks . "nf-oct-bookmark")))
+                          (bookmarks . 10)
+                          ;; (projects . 5)
+                          ;; (agenda . 5)
+                          ;; (registers . 5)
+                          ))
   (setq dashboard-set-navigator t)
   (setq dashboard-set-init-info t)
 
-  (setq dashboard-projects-switch-function 'counsel-projectile-switch-project-by-name)
+  (setq dashboard-projects-switch-function 'projectile-switch-project-by-name)
+
+  (dashboard-modify-heading-icons '((recents . "nf-oct-file")
+                                    (bookmarks . "nf-oct-bookmark")
+                                    ;; (agenda . "nf-oct-calendar")
+                                    ))
+
+  ;; Set the banner
+  ;; (setq dashboard-startup-banner [VALUE])
+  ;; Value can be
+  ;; - nil to display no banner
+  ;; - 'official which displays the official emacs logo
+  ;; - 'logo which displays an alternative emacs logo
+  ;; - 1, 2 or 3 which displays one of the text banners
+  ;; - "path/to/your/image.gif", "path/to/your/image.png", "path/to/your/text.txt" or "path/to/your/image.xbm" which displays whatever gif/image/text/xbm you would prefer
+  ;; - a cons of '("path/to/your/image.png" . "path/to/your/text.txt")
 
   (dashboard-setup-startup-hook))
 
