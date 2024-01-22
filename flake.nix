@@ -73,7 +73,7 @@
           home-manager.users.grass = {
     
             programs.zsh.shellAliases = {
-              emacs = "${emacsWrap}/Applications/Emacs.app/Contents/MacOS/Emacs";
+              emacsMac = "${emacsWrap}/Applications/Emacs.app/Contents/MacOS/Emacs";
             };
           };
         };
