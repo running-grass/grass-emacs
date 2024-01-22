@@ -1616,12 +1616,13 @@ Org-mode 相关的配置。
 
   (use-package modus-themes
     :ensure t
+    :demand t
     :config
     (setq modus-themes-italic-constructs t
           modus-themes-bold-constructs nil)
 
     (setq modus-themes-to-toggle '(modus-vivendi-tinted modus-operandi-tinted))
-    (load-theme 'modus-vivendi-tinted t)
+    (load-theMe 'modus-vivendi-tinted t)
     ;; Maybe define some palette overrides, such as by using our presets
     ;; (setq modus-themes-common-palette-overrides
     ;;       modus-themes-preset-overrides-intense)

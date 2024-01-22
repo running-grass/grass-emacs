@@ -1179,6 +1179,7 @@
 
 (use-package modus-themes
   :ensure t
+  :demand t
   :config
   (setq modus-themes-italic-constructs t
         modus-themes-bold-constructs nil)
