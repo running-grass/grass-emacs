@@ -70,11 +70,12 @@
           environment.systemPackages = packages ++ [ emacsWrap ];
           environment.variables =
             (env-vars // { GRASS_EMACS_ENV = "nix-module"; });
-
-          # services.emacs = {
-          #   enable = true;
-          #   package = emacsWrap;
-          # };
+          home-manager.users.grass = {
+    
+            programs.zsh.shellAliases = {
+              emacs = "${emacsWrap}/Applications/Emacs.app/Contents/MacOS/Emacs";
+            };
+          };
         };
       };
     })
