@@ -1622,7 +1622,7 @@ Org-mode 相关的配置。
           modus-themes-bold-constructs nil)
 
     (setq modus-themes-to-toggle '(modus-vivendi-tinted modus-operandi-tinted))
-    (load-theMe 'modus-vivendi-tinted t)
+    (load-theme 'modus-vivendi-tinted t)
     ;; Maybe define some palette overrides, such as by using our presets
     ;; (setq modus-themes-common-palette-overrides
     ;;       modus-themes-preset-overrides-intense)
