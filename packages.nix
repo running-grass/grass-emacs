@@ -43,7 +43,7 @@ in with pkgs;
   # jdk
   # graphviz-nox
 
- 
+  # wakatime
 
   git
   nodejs

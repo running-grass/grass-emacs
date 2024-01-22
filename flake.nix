@@ -18,7 +18,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.nixpkgs-stable.follows = "nixpkgs-stable";
     };
-
   };
   outputs = { self, nixpkgs, emacs-overlay, flake-utils, ... }:
     let
@@ -26,7 +25,9 @@
         pkgs = import nixpkgs {
           inherit system;
           config.allowUnfree = true;
-          overlays = [ (import emacs-overlay) ];
+          overlays = [
+             (import emacs-overlay) 
+          ];
         };
         emacsWrap = import ./emacsWrap.nix { inherit pkgs; };
         packages = import ./packages.nix { inherit pkgs; };
@@ -67,14 +68,29 @@
       darwinModules.default = { config, ... }: {
         options = { };
         config = {
-          environment.systemPackages = packages ++ [ emacsWrap ];
+          environment.systemPackages = packages;
           environment.variables =
             (env-vars // { GRASS_EMACS_ENV = "nix-module"; });
+          
+          homebrew = {
+            enable = true;
+            taps = [
+              "d12frosted/emacs-plus"
+            ];
+
+            brews = [
+              "emacs-plus@30"
+            ];
+          };
+          
+          # services.emacs = {
+          #   enable = true;
+          #   package = emacsWrap;
+          # };
           home-manager.users.grass = {
-    
-            programs.zsh.shellAliases = {
-              emacsMac = "${emacsWrap}/Applications/Emacs.app/Contents/MacOS/Emacs";
-            };
+            # programs.zsh.shellAliases = {
+            #   emacsMac = "${emacsWrap}/Applications/Emacs.app/Contents/MacOS/Emacs";
+            # };
           };
         };
       };
