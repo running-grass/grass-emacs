@@ -21,7 +21,7 @@
 (defconst *is-tui* (not *is-gui*))
 
 ;; 是否是 nixos/darwin 模块 使用
-(defconst *is-nix-module* (eq (getenv "GRASS_EMACS_ENV") "nix-module"))
+(defconst *is-nix-module* (equal (getenv "GRASS_EMACS_ENV") "nix-module"))
 
 (require 'xdg)
 
@@ -651,6 +651,7 @@
 
 (use-package mu4e
   :ensure t
+  :defer 5
   :config
   ;; 默认是motion模式
   (add-to-list 'meow-mode-state-list '(mu4e-view-mode . motion))
@@ -675,13 +676,10 @@
         mu4e-update-interval 300
         mu4e-notification-support t
         )
-
   :bind
   (:map application-keymap
         ("m" . mu4e)
         )
-  :hook
-  (after-init . mu4e-update-minor-mode)
   )
 
 (use-package pocket-reader
@@ -1179,8 +1177,8 @@
   :defer t
   :hook (after-init . global-hl-line-mode))
 
-(use-package emacs
-  :ensure nil
+(use-package modus-themes
+  :ensure t
   :config
   (setq modus-themes-italic-constructs t
         modus-themes-bold-constructs nil)
