@@ -7,12 +7,11 @@ let
 
     config = ./README.org;
 
-    # defaultInitFile = ./init.el;
     defaultInitFile = pkgs.substituteAll {
       name = "default.el";
       src = ./init.el;
     };
-    #              defaultInitFile = false;
+
     alwaysTangle = true;
 
     extraEmacsPackages = epkgs:

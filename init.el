@@ -818,6 +818,11 @@
   :mode "\\.php\\'"
   :config
   (setq lsp-bridge-php-lsp-server 'phpactor)
+  :bind
+  (:map php-mode-map
+        ;; 清除 C-. 为 embark 腾空
+        ("C-," . nil)
+        ("C-." . nil))
   )
 
 ;; 配置emmet-mode
@@ -979,11 +984,11 @@
   (setq
    org-directory "~/org/"
    org-startup-folded 'content
-   ;; org-agenda-files (list "~/org/")
+   ;; org-agenda-files (list "~/org/" "~/org/gtd")
    org-agenda-files '("~/org")
-   org-refile-targets '(("~/org/task.org" :level . 1)
+   org-refile-targets '(
+                        ("~/org/task.org" :level . 1)
                         ("~/org/project.org" :maxlevel . 2)
-                        ("~/org/someday.org" :level . 1)
                         )
    org-todo-keywords '(
                        (sequence "TODO(t)" "|" "DONE(d!)" "CANCELLED(c@)")
@@ -1292,14 +1297,17 @@
 ;; use-package:
 (use-package dashboard
   :ensure t
-  :after nerd-icons                     
+  :after nerd-icons
+
+  :init
+  ;; Content is not centered by default. To center, set
+  (setq dashboard-center-content t)
+
   :config
   (setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
   ;; Set the title
-  (setq dashboard-banner-logo-title "Welcome to Grass Emacs")
-
-  ;; Content is not centered by default. To center, set
-  (setq dashboard-center-content t)
+  ;; (setq dashboard-banner-logo-title nil)
+  (setq dashboard-startup-banner 'logo)
 
   ;; To disable shortcut "jump" indicators for each section, set
   (setq dashboard-show-shortcuts t)
@@ -1307,23 +1315,25 @@
   (setq dashboard-display-icons-p t) ;; display icons on both GUI and terminal
   (setq dashboard-icon-type 'nerd-icons) ;; use `nerd-icons' package
 
-  (setq dashboard-set-heading-icons nil)
+  (setq dashboard-set-heading-icons t)
   (setq dashboard-set-file-icons t)
   (setq dashboard-items '((recents  . 10)
                           (bookmarks . 10)
                           ;; (projects . 5)
-                          ;; (agenda . 5)
+                          (agenda . 5)
                           ;; (registers . 5)
                           ))
-  (setq dashboard-set-navigator t)
+  (setq dashboard-set-navigator nil)
+  (setq dashboard-set-footer t)
   (setq dashboard-set-init-info t)
 
   (setq dashboard-projects-switch-function 'projectile-switch-project-by-name)
 
   (dashboard-modify-heading-icons '((recents . "nf-oct-file")
                                     (bookmarks . "nf-oct-bookmark")
-                                    ;; (agenda . "nf-oct-calendar")
+                                    (agenda . "nf-oct-calendar")
                                     ))
+  (setq dashboard-agenda-item-icon (nerd-icons-mdicon "nf-md-chevron_triple_right"))
 
   ;; Set the banner
   ;; (setq dashboard-startup-banner [VALUE])
@@ -1334,6 +1344,13 @@
   ;; - 1, 2 or 3 which displays one of the text banners
   ;; - "path/to/your/image.gif", "path/to/your/image.png", "path/to/your/text.txt" or "path/to/your/image.xbm" which displays whatever gif/image/text/xbm you would prefer
   ;; - a cons of '("path/to/your/image.png" . "path/to/your/text.txt")
+
+  (defun dashboard-refresh-buffer ()
+    (interactive)
+    (when (get-buffer dashboard-buffer-name)
+      (kill-buffer dashboard-buffer-name))
+    (dashboard-insert-startupify-lists)
+    (switch-to-buffer dashboard-buffer-name))
 
   (dashboard-setup-startup-hook))
 
