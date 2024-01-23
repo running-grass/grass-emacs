@@ -982,6 +982,23 @@
   :config
   (setq org-agenda-include-diary nil)
   (setq
+   ;; Edit settings
+   org-auto-align-tags t
+   org-tags-column 0
+   org-catch-invisible-edits 'show-and-error
+   org-special-ctrl-a/e t
+   org-insert-heading-respect-content t
+
+   ;; Org styling, hide markup etc.
+   org-hide-emphasis-markers t
+   org-pretty-entities t
+
+   ;; Agenda styling
+   org-agenda-tags-column 0
+   )
+
+  (setq
+
    org-directory "~/org/"
    org-startup-folded 'content
    ;; org-agenda-files (list "~/org/" "~/org/gtd")
@@ -1103,15 +1120,15 @@
   )
 
 
-(use-package org-margin
-  :init
-  (el-get-bundle rougier/org-margin)
+;; (use-package org-margin
+;;   :init
+;;   (el-get-bundle rougier/org-margin)
 
-  :config
-  (setq org-margin--left-margin-width 30)
-  :hook
-  (org-mode . org-margin-mode-on)
-  )
+;;   :config
+;;   (setq org-margin--left-margin-width 30)
+;;   :hook
+;;   (org-mode . org-margin-mode-on)
+;;   )
 
 ;; 番茄钟
 ;; (use-package org-pomodoro
@@ -1169,12 +1186,12 @@
 ;;                     candidate))))
 
 ;; org 美化
-;; (use-package org-modern
-;;   :ensure t
-;;   :hook
-;;   (org-mode . org-modern-mode)
-;;   (org-agenda-finalize . org-modern-agenda)
-;;   )
+(use-package org-modern
+  :ensure t
+  :hook
+  (org-mode . org-modern-mode)
+  (org-agenda-finalize . org-modern-agenda)
+  )
 
 ;; 高亮当前行
 (use-package hl-line
@@ -1190,7 +1207,7 @@
         modus-themes-bold-constructs nil)
 
   (setq modus-themes-to-toggle '(modus-vivendi-tinted modus-operandi-tinted))
-  (load-theme 'modus-vivendi-tinted t)
+  (modus-themes-load-theme 'modus-vivendi-tinted)
   ;; Maybe define some palette overrides, such as by using our presets
   ;; (setq modus-themes-common-palette-overrides
   ;;       modus-themes-preset-overrides-intense)
