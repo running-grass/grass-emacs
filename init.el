@@ -63,7 +63,6 @@
 ;; 更改到缓存目录
 (setq package-user-dir (expand-emacs-cache "elpa"))
 
-;; 关闭原生编译警告
 (setq native-comp-async-report-warnings-errors nil)
 ;; 关闭启动画面
 (setq inhibit-startup-screen t)
@@ -116,8 +115,17 @@
 ;; 编程模式下，可以折叠代码块
 (add-hook 'prog-mode-hook #'hs-minor-mode)
 
-;; 关闭内置的包管理工具
-(setq package-enable-at-startup nil)
+;; 如果是nixos关闭内置的包管理工具
+(when *is-nix-module*
+  (setq package-enable-at-startup nil))
+
+;; 设置等宽字体
+(set-face-attribute 'default nil :family "Sarasa Term Slab SC" :height 140)
+;; 设置后备字体
+(set-fontset-font t nil "Sarasa Term SC" nil 'prepend)
+(set-fontset-font t nil "Iosevka" nil 'prepend)
+(set-fontset-font t nil "Source Han Sans HW" nil 'append)
+(set-fontset-font t nil "Unifont" nil 'append)
 
 ;; 调大 gc 的阈值
 (let ((normal-gc-cons-threshold (* 20 1024 1024))
@@ -1011,8 +1019,8 @@
                        (sequence "TODO(t)" "|" "DONE(d!)" "CANCELLED(c@)")
                        )
    org-clock-string-limit 5
-   org-log-refile 'time
-   org-log-done 'time
+   org-log-refile 'nil
+   org-log-done 'nil
    org-log-into-drawer "LOGBOOK"
    org-clock-stored-history t
    org-tag-alist '(

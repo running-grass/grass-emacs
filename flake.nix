@@ -25,12 +25,11 @@
         pkgs = import nixpkgs {
           inherit system;
           config.allowUnfree = true;
-          overlays = [
-             (import emacs-overlay) 
-          ];
+          overlays = [ (import emacs-overlay) ];
         };
         emacsWrap = import ./emacsWrap.nix { inherit pkgs; };
         packages = import ./packages.nix { inherit pkgs; };
+        fontPackages = import ./font-packages.nix { inherit pkgs; };
         env-vars = {
           # eaf
           QT_QPA_PLATFORM_PLUGIN_PATH =
@@ -43,7 +42,7 @@
     # Nixos 使用的模块
     // (let
       system = "x86_64-linux";
-      inherit (getEmacs system) emacsWrap packages env-vars;
+      inherit (getEmacs system) emacsWrap packages fontPackages env-vars;
     in {
       nixosModules.default = { config, ... }: {
         options = { };
@@ -51,6 +50,11 @@
           environment.systemPackages = packages ++ [ emacsWrap ];
           environment.variables =
             (env-vars // { GRASS_EMACS_ENV = "nix-module"; });
+          fonts = {
+            enableDefaultPackages = true;
+            fontDir.enable = true;
+            packages = fontPackages;
+          };
 
           # services.emacs = {
           #   enable = true;
@@ -71,18 +75,14 @@
           environment.systemPackages = packages;
           environment.variables =
             (env-vars // { GRASS_EMACS_ENV = "nix-module"; });
-          
+
           homebrew = {
             enable = true;
-            taps = [
-              "d12frosted/emacs-plus"
-            ];
+            taps = [ "d12frosted/emacs-plus" ];
 
-            brews = [
-              "emacs-plus@30"
-            ];
+            brews = [ "emacs-plus@30" ];
           };
-          
+
           # services.emacs = {
           #   enable = true;
           #   package = emacsWrap;
