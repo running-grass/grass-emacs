@@ -63,6 +63,7 @@
 ;; 更改到缓存目录
 (setq package-user-dir (expand-emacs-cache "elpa"))
 
+;; 关闭原生编译警告
 (setq native-comp-async-report-warnings-errors nil)
 ;; 关闭启动画面
 (setq inhibit-startup-screen t)
@@ -988,7 +989,7 @@
 ;; Org模式相关的，和GTD相关的
 (use-package org
   :config
-  (setq org-agenda-include-diary nil)
+  (setq org-agenda-include-diary t)
   (setq
    ;; Edit settings
    org-auto-align-tags t
@@ -1379,7 +1380,54 @@
 
   (dashboard-setup-startup-hook))
 
+(use-package cal-china-x
+  :ensure t
+  :config
+  (setq mark-holidays-in-calendar t)
+  (setq cal-china-x-important-holidays cal-china-x-chinese-holidays)
+  (setq cal-china-x-general-holidays '((holiday-lunar 1 15 "元宵节")))
+  (setq calendar-holidays
+        (append cal-china-x-important-holidays
+                cal-china-x-general-holidays
+                holiday-other-holidays))
+  )
+
+
+
+;; 在议程中自定义显示格式为阴历
+(setq org-agenda-format-date 'grass-emacs/org-agenda-format-date-aligned) 
+
+(defun grass-emacs/org-agenda-format-date-aligned (date) 
+  "Format a DATE string for display in the daily/weekly agenda, or timeline. 
+      This function makes sure that dates are aligned for easy reading." 
+  (require 'cal-iso) 
+  (let* ((dayname (aref cal-china-x-days 
+                        (calendar-day-of-week date))) 
+         (day (cadr date)) 
+         (month (car date)) 
+         (year (nth 2 date)) 
+         (cn-date (calendar-chinese-from-absolute (calendar-absolute-from-gregorian date))) 
+         (cn-month (cl-caddr cn-date)) 
+         (cn-day (cl-cadddr cn-date)) 
+         (cn-month-string (concat (aref cal-china-x-month-name 
+                                        (1- (floor cn-month))) 
+                                  (if (integerp cn-month) 
+                                      "" 
+                                    "(闰月)"))) 
+         (cn-day-string (aref cal-china-x-day-name 
+                              (1- cn-day)))) 
+    (format "%04d-%02d-%02d 周%s %s%s" year month 
+            day dayname cn-month-string cn-day-string)))
+
 (when (file-exists-p *custom-file*)
   (load *custom-file*))
+
+;; 计算中国农历的年份，用于org中
+(defun grass-emacs/calc-chinese-year (year)
+  (let* ((cycle (/ (+ year 2637) 60.0))
+         (year  (- (+ year 2637) (* 60 (truncate cycle)))))
+    (list  (+ 1 (floor cycle)) year))
+
+  )
 
 ;;; init.el ends here
