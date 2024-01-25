@@ -127,6 +127,7 @@
 (set-fontset-font t nil "Iosevka" nil 'prepend)
 (set-fontset-font t nil "Source Han Sans HW" nil 'append)
 (set-fontset-font t nil "Unifont" nil 'append)
+(set-fontset-font t nil "Symbols Nerd Font" nil 'append)
 
 ;; 调大 gc 的阈值
 (let ((normal-gc-cons-threshold (* 20 1024 1024))
@@ -1201,6 +1202,69 @@
   (org-agenda-finalize . org-modern-agenda)
   )
 
+(use-package org-caldav
+  :ensure t
+  :config
+  (setq org-caldav-url "https://carddav.grass.work:30443/grass"
+        org-caldav-calendar-id "34a7e558-4066-efe4-69f7-15ada01bc7b6"
+        org-caldav-inbox (expand-file-name "caldav.org" org-directory)
+        org-caldav-files (list (expand-file-name "task.org" org-directory) (expand-file-name "project.org" org-directory) )
+
+
+        org-caldav-sync-todo t
+        org-caldav-sync-direction 'twoway
+
+        ;; org-caldav-calendars
+        ;; '((:calendar-id "34a7e558-4066-efe4-69f7-15ada01bc7b6" :files ("~/org/task.org")
+        ;;                 :inbox "~/org/caldav.org")
+        ;;   (:calendar-id "0a33cefa-d8fb-307b-4a27-493a0a26ec9a"
+        ;;                 :files ("~/org/project.org" )
+        ;;                 :inbox "~/org/caldav.org"))
+
+        org-icalendar-include-todo 'all
+        org-icalendar-include-sexps nil
+        )
+  )
+
+(use-package cal-china-x
+  :ensure t
+  :config
+  (setq mark-holidays-in-calendar t)
+  (setq cal-china-x-important-holidays cal-china-x-chinese-holidays)
+  (setq cal-china-x-general-holidays '((holiday-lunar 1 15 "元宵节")))
+  (setq calendar-holidays
+        (append cal-china-x-important-holidays
+                cal-china-x-general-holidays
+                holiday-other-holidays))
+  )
+
+
+
+;; 在议程中自定义显示格式为阴历
+(setq org-agenda-format-date 'grass-emacs/org-agenda-format-date-aligned) 
+
+(defun grass-emacs/org-agenda-format-date-aligned (date) 
+  "Format a DATE string for display in the daily/weekly agenda, or timeline. 
+      This function makes sure that dates are aligned for easy reading." 
+  (require 'cal-iso) 
+  (let* ((dayname (aref cal-china-x-days 
+                        (calendar-day-of-week date))) 
+         (day (cadr date)) 
+         (month (car date)) 
+         (year (nth 2 date)) 
+         (cn-date (calendar-chinese-from-absolute (calendar-absolute-from-gregorian date))) 
+         (cn-month (cl-caddr cn-date)) 
+         (cn-day (cl-cadddr cn-date)) 
+         (cn-month-string (concat (aref cal-china-x-month-name 
+                                        (1- (floor cn-month))) 
+                                  (if (integerp cn-month) 
+                                      "" 
+                                    "(闰月)"))) 
+         (cn-day-string (aref cal-china-x-day-name 
+                              (1- cn-day)))) 
+    (format "%04d-%02d-%02d 周%s %s%s" year month 
+            day dayname cn-month-string cn-day-string)))
+
 ;; 高亮当前行
 (use-package hl-line
   :ensure nil
@@ -1378,45 +1442,6 @@
     (switch-to-buffer dashboard-buffer-name))
 
   (dashboard-setup-startup-hook))
-
-(use-package cal-china-x
-  :ensure t
-  :config
-  (setq mark-holidays-in-calendar t)
-  (setq cal-china-x-important-holidays cal-china-x-chinese-holidays)
-  (setq cal-china-x-general-holidays '((holiday-lunar 1 15 "元宵节")))
-  (setq calendar-holidays
-        (append cal-china-x-important-holidays
-                cal-china-x-general-holidays
-                holiday-other-holidays))
-  )
-
-
-
-;; 在议程中自定义显示格式为阴历
-(setq org-agenda-format-date 'grass-emacs/org-agenda-format-date-aligned) 
-
-(defun grass-emacs/org-agenda-format-date-aligned (date) 
-  "Format a DATE string for display in the daily/weekly agenda, or timeline. 
-      This function makes sure that dates are aligned for easy reading." 
-  (require 'cal-iso) 
-  (let* ((dayname (aref cal-china-x-days 
-                        (calendar-day-of-week date))) 
-         (day (cadr date)) 
-         (month (car date)) 
-         (year (nth 2 date)) 
-         (cn-date (calendar-chinese-from-absolute (calendar-absolute-from-gregorian date))) 
-         (cn-month (cl-caddr cn-date)) 
-         (cn-day (cl-cadddr cn-date)) 
-         (cn-month-string (concat (aref cal-china-x-month-name 
-                                        (1- (floor cn-month))) 
-                                  (if (integerp cn-month) 
-                                      "" 
-                                    "(闰月)"))) 
-         (cn-day-string (aref cal-china-x-day-name 
-                              (1- cn-day)))) 
-    (format "%04d-%02d-%02d 周%s %s%s" year month 
-            day dayname cn-month-string cn-day-string)))
 
 (when (file-exists-p *custom-file*)
   (load *custom-file*))
