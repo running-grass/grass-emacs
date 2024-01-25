@@ -88,9 +88,9 @@
           #   package = emacsWrap;
           # };
           home-manager.users.grass = {
-            # programs.zsh.shellAliases = {
-            #   emacsMac = "${emacsWrap}/Applications/Emacs.app/Contents/MacOS/Emacs";
-            # };
+             programs.zsh.shellAliases = {
+               emacsMac = "${emacsWrap}/Applications/Emacs.app/Contents/MacOS/Emacs";
+             };
           };
         };
       };

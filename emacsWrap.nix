@@ -1,6 +1,6 @@
 { pkgs, ... }:
 let
-  emacsBase = if pkgs.stdenv.isDarwin then pkgs.emacs-pgtk else pkgs.emacs-pgtk;
+  emacsBase = if pkgs.stdenv.isDarwin then pkgs.emacs-macport else pkgs.emacs-pgtk;
   emacsWrap = (pkgs.emacsWithPackagesFromUsePackage {
     package = emacsBase;
 
