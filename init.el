@@ -660,7 +660,6 @@
 
 (use-package mu4e
   :ensure t
-  :defer 5
   :config
   ;; 默认是motion模式
   (add-to-list 'meow-mode-state-list '(mu4e-view-mode . motion))
@@ -1068,9 +1067,9 @@
   (defun dynamic-agenda-files-advice (orig-val)
     (cl-union orig-val dynamic-agenda-files :test #'equal))
 
-  (advice-add 'org-agenda-files :filter-return #'dynamic-agenda-files-advice)
+  ;; (advice-add 'org-agenda-files :filter-return #'dynamic-agenda-files-advice)
   ;; 在org的todo状态变更时更新agenda列表
-  (add-to-list 'org-after-todo-state-change-hook 'update-dynamic-agenda-hook t)
+  ;; (add-to-list 'org-after-todo-state-change-hook 'update-dynamic-agenda-hook t)
 
   (defun my-org-agenda-skip-all-siblings-but-first ()
     "跳过除第一个未完成条目之外的所有条目。"
@@ -1107,9 +1106,9 @@
 
     (add-to-list 'org-capture-templates
                  '("h"
-                   "Hugo post"
+                   "Hugo draft"
                    entry
-                   (file+olp "~/workspace/blog/post.org" "Blog Ideas")
+                   (file+olp "~/workspace/blog.org" "Draft")
                    (function org-hugo-new-subtree-post-capture-template))))
 
   :bind
