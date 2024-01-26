@@ -38,7 +38,7 @@
   - [[#symbol-overlay][symbol-overlay]]
 - [[#meow---模态编辑][Meow - 模态编辑]]
 - [[#应用程序][应用程序]]
-  - [[#邮件][邮件]]
+  - [[#mu4e---邮件][mu4e - 邮件]]
   - [[#pocket][Pocket]]
   - [[#浏览器][浏览器]]
   - [[#rss][RSS]]
@@ -1005,14 +1005,16 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
     )
 #+end_src
 
-** 邮件
-
+** mu4e - 邮件
+收邮件方案是使用 offlineimap 进行邮件的同步，由 mu 对邮箱进行索引，前端使用 mu4e 进行管理。
+发邮件的方案是 使用 msmtp
 
 #+begin_src emacs-lisp 
   (use-package mu4e
     :ensure t
     :init
-    (run-with-timer (* 5 60) t 'mu4e-update-mail-and-index)
+    ;; 定时更新索引
+    (run-with-timer (* 5 60) t 'mu4e-update-index)
     :config
     ;; 默认是motion模式
     (add-to-list 'meow-mode-state-list '(mu4e-view-mode . motion))
@@ -1037,6 +1039,8 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
           mu4e-update-interval 300
           mu4e-notification-support t
           )
+    :autoload
+    (mu4e-update-index)
     :bind
     (:map application-keymap
           ("m" . mu4e)
@@ -1676,6 +1680,8 @@ Org-mode 相关的配置。
     (setq
      ;; 双向同步
      org-caldav-sync-direction 'twoway
+
+     org-caldav-exclude-tags '("daily")
      ;; 多个日历
      org-caldav-calendars (list (list
                                  :url (concat "https://grass:" (grass-emacs/get-bitwarden-password "carddav:grass") "@carddav.grass.work:30443/grass")
@@ -1687,6 +1693,13 @@ Org-mode 相关的配置。
                                  :calendar-id "593557a2-6721-38bf-0243-0cd18c9237ea" ; 家庭日历
                                  :files (list (expand-file-name "family.org" org-directory))
                                  :inbox "~/org/caldav-family.org"))
+
+     ;; 如果上一次异常，不询问
+     org-caldav-resume-aborted 'always
+
+     ;; 同步过程中自动删除条目，不再询问(我的本地org使用了git存储)
+     org-caldav-delete-org-entries 'always
+     org-caldav-delete-calendar-entries 'always
 
      ;; 不导出 VTODO
      org-caldav-sync-todo nil

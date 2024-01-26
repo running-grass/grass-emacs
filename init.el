@@ -679,7 +679,8 @@
 (use-package mu4e
   :ensure t
   :init
-  (run-with-timer (* 5 60) t 'mu4e-update-mail-and-index)
+  ;; 定时更新索引
+  (run-with-timer (* 5 60) t 'mu4e-update-index)
   :config
   ;; 默认是motion模式
   (add-to-list 'meow-mode-state-list '(mu4e-view-mode . motion))
@@ -704,6 +705,8 @@
         mu4e-update-interval 300
         mu4e-notification-support t
         )
+  :autoload
+  (mu4e-update-index)
   :bind
   (:map application-keymap
         ("m" . mu4e)
@@ -1227,39 +1230,48 @@
 (use-package org-caldav
   :ensure t
   :init
+  ;; 定时每5分钟同步
   (run-with-timer (* 5 60) t 'org-caldav-sync)
   :config
-  (setq org-caldav-url (concat "https://grass:" (grass-emacs/get-bitwarden-password "carddav:grass") "@carddav.grass.work:30443/grass")
-        ;; org-caldav-calendar-id "34a7e558-4066-efe4-69f7-15ada01bc7b6"
-        ;; org-caldav-inbox (expand-file-name "caldav.org" org-directory)
-        ;; org-caldav-files (list (expand-file-name "task.org" org-directory) (expand-file-name "project.org" org-directory) )
+  (setq
+   ;; 双向同步
+   org-caldav-sync-direction 'twoway
 
-        org-caldav-sync-todo nil
-        org-caldav-sync-direction 'twoway
+   org-caldav-exclude-tags '("daily")
+   ;; 多个日历
+   org-caldav-calendars (list (list
+                               :url (concat "https://grass:" (grass-emacs/get-bitwarden-password "carddav:grass") "@carddav.grass.work:30443/grass")
+                               :calendar-id "34a7e558-4066-efe4-69f7-15ada01bc7b6" ; 个人日历
+                               :files (list (expand-file-name "task.org" org-directory) (expand-file-name "project.org" org-directory) )
+                               :inbox "~/org/caldav-personal.org")
+                              (list
+                               :url (concat "https://family:" (grass-emacs/get-bitwarden-password "carddav:family") "@carddav.grass.work:30443/family")
+                               :calendar-id "593557a2-6721-38bf-0243-0cd18c9237ea" ; 家庭日历
+                               :files (list (expand-file-name "family.org" org-directory))
+                               :inbox "~/org/caldav-family.org"))
 
-        org-caldav-calendars
-        (list (list :calendar-id "34a7e558-4066-efe4-69f7-15ada01bc7b6" ; 个人日历
-                        :files (list (expand-file-name "task.org" org-directory) (expand-file-name "project.org" org-directory) )
-                        :inbox "~/org/caldav-personal.org")
-              (list
-               :url (concat "https://family:" (grass-emacs/get-bitwarden-password "carddav:family") "@carddav.grass.work:30443/family")
-               :calendar-id "593557a2-6721-38bf-0243-0cd18c9237ea" ; 家庭日历
-                        :files (list (expand-file-name "family.org" org-directory))
-                        :inbox "~/org/caldav-family.org"))
+   ;; 如果上一次异常，不询问
+   org-caldav-resume-aborted 'always
 
-        ;; 创建 VTODO 节点
-        org-icalendar-include-todo nil
+   ;; 同步过程中自动删除条目，不再询问(我的本地org使用了git存储)
+   org-caldav-delete-org-entries 'always
+   org-caldav-delete-calendar-entries 'always
 
-        ;; 如果是todo节点，会作为一个event
-        org-icalendar-use-scheduled '(event-if-todo-not-done event-if-not-todo todo-start)
+   ;; 不导出 VTODO
+   org-caldav-sync-todo nil
+   org-icalendar-include-todo nil
 
-        ;; 如果是todo节点，会作为一个event
-        org-icalendar-use-deadline '(event-if-todo-not-done event-if-not-todo todo-due)
+   ;; 如果是todo节点，会作为一个event
+   org-icalendar-use-scheduled '(event-if-todo-not-done event-if-not-todo todo-start)
 
-        ;; 避免报错
-        org-icalendar-include-sexps nil
-        )
-  (setq org-caldav-show-sync-results nil)
+   ;; 如果是todo节点，会作为一个event
+   org-icalendar-use-deadline '(event-if-todo-not-done event-if-not-todo todo-due)
+
+   ;; 不使用sexp
+   org-icalendar-include-sexps nil
+   ;; 后台导出，不显示同步结果
+   org-caldav-show-sync-results nil
+   )
   :bind
   (:map toggle-keymap
         ("c" . org-caldav-sync))
