@@ -1,16 +1,18 @@
 { pkgs, ... }:
-let 
+let
   python = import ./python.nix { inherit pkgs; };
 
-  onlyLinux = if pkgs.stdenv.isLinux then (with pkgs; [
-    # eaf
-    pkg-config
-    libinput
-    libevdev
-    xdotool
-  ]) else [];
-  onlyDarwin = if pkgs.stdenv.isDarwin then [
-  ] else [];
+  onlyLinux = if pkgs.stdenv.isLinux then
+    (with pkgs; [
+      # eaf
+      pkg-config
+      libinput
+      libevdev
+      xdotool
+    ])
+  else
+    [ ];
+  onlyDarwin = if pkgs.stdenv.isDarwin then [ ] else [ ];
 
 in with pkgs;
 [
@@ -43,7 +45,10 @@ in with pkgs;
   # jdk
   # graphviz-nox
 
-  # wakatime
+  wakatime
+
+  # bitwarden
+  rbw
 
   git
   nodejs

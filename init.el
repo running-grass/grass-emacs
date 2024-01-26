@@ -1036,6 +1036,7 @@
    org-refile-targets '(
                         ("~/org/task.org" :level . 1)
                         ("~/org/project.org" :maxlevel . 2)
+                        ("~/org/family.org" :maxlevel . 1)
                         )
    org-todo-keywords '(
                        (sequence "TODO(t)" "|" "DONE(d!)" "CANCELLED(c@)")
@@ -1229,21 +1230,32 @@
   (run-with-timer (* 5 60) t 'org-caldav-sync)
   :config
   (setq org-caldav-url (concat "https://grass:" (grass-emacs/get-bitwarden-password "carddav:grass") "@carddav.grass.work:30443/grass")
-        org-caldav-calendar-id "34a7e558-4066-efe4-69f7-15ada01bc7b6"
-        org-caldav-inbox (expand-file-name "caldav.org" org-directory)
-        org-caldav-files (list (expand-file-name "task.org" org-directory) (expand-file-name "project.org" org-directory) )
+        ;; org-caldav-calendar-id "34a7e558-4066-efe4-69f7-15ada01bc7b6"
+        ;; org-caldav-inbox (expand-file-name "caldav.org" org-directory)
+        ;; org-caldav-files (list (expand-file-name "task.org" org-directory) (expand-file-name "project.org" org-directory) )
 
-        org-caldav-sync-todo t
+        org-caldav-sync-todo nil
         org-caldav-sync-direction 'twoway
 
-        ;; org-caldav-calendars
-        ;; '((:calendar-id "34a7e558-4066-efe4-69f7-15ada01bc7b6" :files ("~/org/task.org")
-        ;;                 :inbox "~/org/caldav.org")
-        ;;   (:calendar-id "0a33cefa-d8fb-307b-4a27-493a0a26ec9a"
-        ;;                 :files ("~/org/project.org" )
-        ;;                 :inbox "~/org/caldav.org"))
+        org-caldav-calendars
+        (list (list :calendar-id "34a7e558-4066-efe4-69f7-15ada01bc7b6" ; 个人日历
+                        :files (list (expand-file-name "task.org" org-directory) (expand-file-name "project.org" org-directory) )
+                        :inbox "~/org/caldav-personal.org")
+              (list
+               :url (concat "https://family:" (grass-emacs/get-bitwarden-password "carddav:family") "@carddav.grass.work:30443/family")
+               :calendar-id "593557a2-6721-38bf-0243-0cd18c9237ea" ; 家庭日历
+                        :files (list (expand-file-name "family.org" org-directory))
+                        :inbox "~/org/caldav-family.org"))
 
-        org-icalendar-include-todo 'all
+        ;; 创建 VTODO 节点
+        org-icalendar-include-todo nil
+
+        ;; 如果是todo节点，会作为一个event
+        org-icalendar-use-scheduled '(event-if-todo-not-done event-if-not-todo todo-start)
+
+        ;; 如果是todo节点，会作为一个event
+        org-icalendar-use-deadline '(event-if-todo-not-done event-if-not-todo todo-due)
+
         ;; 避免报错
         org-icalendar-include-sexps nil
         )
