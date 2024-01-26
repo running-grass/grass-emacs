@@ -1254,8 +1254,8 @@
    org-caldav-resume-aborted 'always
 
    ;; 同步过程中自动删除条目，不再询问(我的本地org使用了git存储)
-   org-caldav-delete-org-entries 'always
-   org-caldav-delete-calendar-entries 'always
+   ;; org-caldav-delete-org-entries 'always
+   ;; org-caldav-delete-calendar-entries 'always
 
    ;; 不导出 VTODO
    org-caldav-sync-todo nil
