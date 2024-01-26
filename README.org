@@ -273,6 +273,10 @@
   ;; 自动补全括号
   (electric-pair-mode t)
 
+  ;; 打开自动保存
+  (auto-save-mode 1)
+  ;; 自动保存当前访问的文件buffer
+  (auto-save-visited-mode 1)
 
   ;; 编程模式下，光标在括号上时高亮另一个括号
   (add-hook 'prog-mode-hook #'show-paren-mode)
@@ -1475,12 +1479,11 @@ Org-mode 相关的配置。
 
      org-directory "~/org/"
      org-startup-folded 'content
-     ;; org-agenda-files (list "~/org/" "~/org/gtd")
-     org-agenda-files '("~/org")
+     org-agenda-files (list "~/org/gtd")
      org-refile-targets '(
-                          ("~/org/task.org" :level . 1)
-                          ("~/org/project.org" :maxlevel . 2)
-                          ("~/org/family.org" :maxlevel . 1)
+                          ("~/org/gtd/task.org" :level . 1)
+                          ("~/org/gtd/project.org" :maxlevel . 2)
+                          ("~/org/gtd/family.org" :maxlevel . 1)
                           )
      org-todo-keywords '(
                          (sequence "TODO(t)" "|" "DONE(d!)" "CANCELLED(c@)")
@@ -1686,13 +1689,13 @@ Org-mode 相关的配置。
      org-caldav-calendars (list (list
                                  :url (concat "https://grass:" (grass-emacs/get-bitwarden-password "carddav:grass") "@carddav.grass.work:30443/grass")
                                  :calendar-id "34a7e558-4066-efe4-69f7-15ada01bc7b6" ; 个人日历
-                                 :files (list (expand-file-name "task.org" org-directory) (expand-file-name "project.org" org-directory) )
-                                 :inbox "~/org/caldav-personal.org")
+                                 :files (list (expand-file-name "gtd/task.org" org-directory) (expand-file-name "gtd/project.org" org-directory) )
+                                 :inbox "~/org/gtd/caldav-personal.org")
                                 (list
                                  :url (concat "https://family:" (grass-emacs/get-bitwarden-password "carddav:family") "@carddav.grass.work:30443/family")
                                  :calendar-id "593557a2-6721-38bf-0243-0cd18c9237ea" ; 家庭日历
-                                 :files (list (expand-file-name "family.org" org-directory))
-                                 :inbox "~/org/caldav-family.org"))
+                                 :files (list (expand-file-name "gtd/family.org" org-directory))
+                                 :inbox "~/org/gtd/caldav-family.org"))
 
      ;; 如果上一次异常，不询问
      org-caldav-resume-aborted 'always

@@ -1,4 +1,4 @@
-{ pkgs, vars, packages, emacsWrap, env-vars, ... }:
+{ pkgs, vars, packages, emacsWrap, env-vars, system,... }:
 let
   dev-emacs = pkgs.writeShellScriptBin "dev-emacs" "${emacsWrap}/bin/emacs";
 in
@@ -13,5 +13,5 @@ pkgs.mkShell {
 
   buildInputs = packages ++ [ emacsWrap dev-emacs ];
 
-  shellHook = "";
+  shellHook = "echo hello ${system}";
 }
