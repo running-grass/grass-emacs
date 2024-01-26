@@ -72,25 +72,25 @@
       darwinModules.default = { config, ... }: {
         options = { };
         config = {
-          environment.systemPackages = packages;
+          environment.systemPackages = packages ++ [ emacsWrap ];
           environment.variables =
             (env-vars // { GRASS_EMACS_ENV = "nix-module"; });
 
-          homebrew = {
-            enable = true;
-            taps = [ "d12frosted/emacs-plus" ];
-
-            brews = [ "emacs-plus@30" ];
-          };
-
-          # services.emacs = {
+          # homebrew = {
           #   enable = true;
-          #   package = emacsWrap;
+          #   taps = [ "d12frosted/emacs-plus" ];
+
+          #   brews = [ "emacs-plus@30" ];
           # };
+
+          #  services.emacs = {
+          #    enable = true;
+          #    package = emacsWrap;
+          #  };
           home-manager.users.grass = {
-             programs.zsh.shellAliases = {
-               emacsMac = "${emacsWrap}/Applications/Emacs.app/Contents/MacOS/Emacs";
-             };
+            #  programs.zsh.shellAliases = {
+            #    emacsMac = "${emacsWrap}/Applications/Emacs.app/Contents/MacOS/Emacs";
+            #  };
           };
         };
       };
