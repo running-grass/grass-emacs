@@ -1,4 +1,4 @@
-{ pkgs, vars, packages, emacsWrap, env-vars, system,... }:
+{ pkgs, vars, packages, emacsWrap, env-vars, ... }:
 let
   dev-emacs = pkgs.writeShellScriptBin "dev-emacs" "${emacsWrap}/bin/emacs";
 in
@@ -12,6 +12,4 @@ pkgs.mkShell {
   inherit (env-vars) QT_QPA_PLATFORM_PLUGIN_PATH;
 
   buildInputs = packages ++ [ emacsWrap dev-emacs ];
-
-  shellHook = "echo hello ${system}";
 }
