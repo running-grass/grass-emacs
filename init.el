@@ -23,6 +23,23 @@
 ;; 是否是 nixos/darwin 模块 使用
 (defconst *is-nix-module* (equal (getenv "GRASS_EMACS_ENV") "nix-module"))
 
+;; 计算中国农历的年份，用于org中
+(defun grass-emacs/calc-chinese-year (year)
+  (let* ((cycle (/ (+ year 2637) 60.0))
+         (year  (- (+ year 2637) (* 60 (truncate cycle)))))
+    (list  (+ 1 (floor cycle)) year))
+
+  )
+
+;; 从 Bitwarden 中读取密码
+(defun grass-emacs/get-bitwarden-password (name)
+  "根据name从rbw（Bitwarden 非官方 cli 客户端） 中读取密码"
+  (let (
+        (out (shell-command-to-string (concat "echo -n `rbw get " name "`")))
+        )
+    (if (string-prefix-p "rbw get: couldn't find entry for" out) (error "没找到对应的密码") out)
+    ))
+
 (require 'xdg)
 
 (defun expand-emacs-config (filename)
@@ -661,6 +678,8 @@
 
 (use-package mu4e
   :ensure t
+  :init
+  (run-with-timer (* 5 60) t 'mu4e-update-mail-and-index)
   :config
   ;; 默认是motion模式
   (add-to-list 'meow-mode-state-list '(mu4e-view-mode . motion))
@@ -689,6 +708,8 @@
   (:map application-keymap
         ("m" . mu4e)
         )
+  (:map toggle-keymap
+        ("m" . mu4e-update-mail-and-index))
   )
 
 (use-package pocket-reader
@@ -729,7 +750,7 @@
         '(
           ("fever+https://grass@rss.grass.work:30443"
            :api-url "https://grass@rss.grass.work:30443/fever/"
-           :password  (shell-command-to-string "echo -n `rbw get miniflux-fever`"))
+           :password  (grass-emacs/get-bitwarden-password "miniflux-fever"))
           ))
 
   ;; enable elfeed-protocol
@@ -1204,12 +1225,13 @@
 
 (use-package org-caldav
   :ensure t
+  :init
+  (run-with-timer (* 5 60) t 'org-caldav-sync)
   :config
-  (setq org-caldav-url "https://carddav.grass.work:30443/grass"
+  (setq org-caldav-url (concat "https://grass:" (grass-emacs/get-bitwarden-password "carddav:grass") "@carddav.grass.work:30443/grass")
         org-caldav-calendar-id "34a7e558-4066-efe4-69f7-15ada01bc7b6"
         org-caldav-inbox (expand-file-name "caldav.org" org-directory)
         org-caldav-files (list (expand-file-name "task.org" org-directory) (expand-file-name "project.org" org-directory) )
-
 
         org-caldav-sync-todo t
         org-caldav-sync-direction 'twoway
@@ -1222,8 +1244,13 @@
         ;;                 :inbox "~/org/caldav.org"))
 
         org-icalendar-include-todo 'all
+        ;; 避免报错
         org-icalendar-include-sexps nil
         )
+  (setq org-caldav-show-sync-results nil)
+  :bind
+  (:map toggle-keymap
+        ("c" . org-caldav-sync))
   )
 
 (use-package cal-china-x
@@ -1287,7 +1314,7 @@
   :bind
   ("<f5>" . modus-themes-toggle)
   (:map toggle-keymap
-        ("m" . modus-themes-toggle)
+        ("t" . modus-themes-toggle)
         )
   )
 
@@ -1445,13 +1472,5 @@
 
 (when (file-exists-p *custom-file*)
   (load *custom-file*))
-
-;; 计算中国农历的年份，用于org中
-(defun grass-emacs/calc-chinese-year (year)
-  (let* ((cycle (/ (+ year 2637) 60.0))
-         (year  (- (+ year 2637) (* 60 (truncate cycle)))))
-    (list  (+ 1 (floor cycle)) year))
-
-  )
 
 ;;; init.el ends here

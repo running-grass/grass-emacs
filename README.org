@@ -14,6 +14,7 @@
 - [[#全局配置][全局配置]]
   - [[#emacs-版本判断][Emacs 版本判断]]
   - [[#定义常量][定义常量]]
+  - [[#常用工具函数][常用工具函数]]
   - [[#定义常用目录][定义常用目录]]
   - [[#修改默认配置][修改默认配置]]
   - [[#性能优化][性能优化]]
@@ -60,7 +61,6 @@
   - [[#小功能][小功能]]
   - [[#仪表盘][仪表盘]]
 - [[#加载自定义文件][加载自定义文件]]
-- [[#常用工具函数][常用工具函数]]
 - [[#footer][Footer]]
 
 * 如何使用
@@ -162,6 +162,25 @@
 
 #+end_src
 
+** 常用工具函数
+#+begin_src emacs-lisp
+  ;; 计算中国农历的年份，用于org中
+  (defun grass-emacs/calc-chinese-year (year)
+    (let* ((cycle (/ (+ year 2637) 60.0))
+           (year  (- (+ year 2637) (* 60 (truncate cycle)))))
+      (list  (+ 1 (floor cycle)) year))
+
+    )
+
+  ;; 从 Bitwarden 中读取密码
+  (defun grass-emacs/get-bitwarden-password (name)
+    "根据name从rbw（Bitwarden 非官方 cli 客户端） 中读取密码"
+    (let (
+          (out (shell-command-to-string (concat "echo -n `rbw get " name "`")))
+          )
+      (if (string-prefix-p "rbw get: couldn't find entry for" out) (error "没找到对应的密码") out)
+      ))
+#+end_src
 ** 定义常用目录
 
 这里定义了四个 =Emacs= 使用过程中的目录， 配置、数据、状态、缓存
@@ -992,6 +1011,8 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
 #+begin_src emacs-lisp 
   (use-package mu4e
     :ensure t
+    :init
+    (run-with-timer (* 5 60) t 'mu4e-update-mail-and-index)
     :config
     ;; 默认是motion模式
     (add-to-list 'meow-mode-state-list '(mu4e-view-mode . motion))
@@ -1020,6 +1041,8 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
     (:map application-keymap
           ("m" . mu4e)
           )
+    (:map toggle-keymap
+          ("m" . mu4e-update-mail-and-index))
     )
 #+end_src
 
@@ -1075,7 +1098,7 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
           '(
             ("fever+https://grass@rss.grass.work:30443"
              :api-url "https://grass@rss.grass.work:30443/fever/"
-             :password  (shell-command-to-string "echo -n `rbw get miniflux-fever`"))
+             :password  (grass-emacs/get-bitwarden-password "miniflux-fever"))
             ))
 
     ;; enable elfeed-protocol
@@ -1645,12 +1668,13 @@ Org-mode 相关的配置。
 #+begin_src emacs-lisp
   (use-package org-caldav
     :ensure t
+    :init
+    (run-with-timer (* 5 60) t 'org-caldav-sync)
     :config
-    (setq org-caldav-url "https://carddav.grass.work:30443/grass"
+    (setq org-caldav-url (concat "https://grass:" (grass-emacs/get-bitwarden-password "carddav:grass") "@carddav.grass.work:30443/grass")
           org-caldav-calendar-id "34a7e558-4066-efe4-69f7-15ada01bc7b6"
           org-caldav-inbox (expand-file-name "caldav.org" org-directory)
           org-caldav-files (list (expand-file-name "task.org" org-directory) (expand-file-name "project.org" org-directory) )
-
 
           org-caldav-sync-todo t
           org-caldav-sync-direction 'twoway
@@ -1663,8 +1687,13 @@ Org-mode 相关的配置。
           ;;                 :inbox "~/org/caldav.org"))
 
           org-icalendar-include-todo 'all
+          ;; 避免报错
           org-icalendar-include-sexps nil
           )
+    (setq org-caldav-show-sync-results nil)
+    :bind
+    (:map toggle-keymap
+          ("c" . org-caldav-sync))
     )
 #+end_src
 ** 农历
@@ -1732,7 +1761,7 @@ Org-mode 相关的配置。
     :bind
     ("<f5>" . modus-themes-toggle)
     (:map toggle-keymap
-          ("m" . modus-themes-toggle)
+          ("t" . modus-themes-toggle)
           )
     )
 
@@ -1915,16 +1944,6 @@ Org-mode 相关的配置。
     (load *custom-file*))
 #+end_src
 
-* 常用工具函数
-#+begin_src emacs-lisp
-  ;; 计算中国农历的年份，用于org中
-  (defun grass-emacs/calc-chinese-year (year)
-    (let* ((cycle (/ (+ year 2637) 60.0))
-           (year  (- (+ year 2637) (* 60 (truncate cycle)))))
-      (list  (+ 1 (floor cycle)) year))
-
-    )
-#+end_src
 * Footer
 #+begin_src emacs-lisp
   ;;; init.el ends here
