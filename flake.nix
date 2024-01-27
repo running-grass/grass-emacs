@@ -67,7 +67,7 @@
     # Macos 使用的模块
     // (let
       system = "x86_64-darwin";
-      inherit (getEmacs system) emacsWrap packages env-vars;
+      inherit (getEmacs system) emacsWrap packages fontPackages env-vars;
     in {
       darwinModules.default = { config, ... }: {
         options = { };
@@ -75,6 +75,10 @@
           environment.systemPackages = packages ++ [ emacsWrap ];
           environment.variables =
             (env-vars // { GRASS_EMACS_ENV = "nix-module"; });
+          fonts = {
+            fontDir.enable = true;
+            fonts = fontPackages;
+          };
 
           # homebrew = {
           #   enable = true;
