@@ -119,6 +119,10 @@
 ;; 自动补全括号
 (electric-pair-mode t)
 
+;; 打开自动保存
+(auto-save-mode 1)
+;; 自动保存当前访问的文件buffer
+(auto-save-visited-mode 1)
 
 ;; 编程模式下，光标在括号上时高亮另一个括号
 (add-hook 'prog-mode-hook #'show-paren-mode)
@@ -1034,12 +1038,11 @@
 
    org-directory "~/org/"
    org-startup-folded 'content
-   ;; org-agenda-files (list "~/org/" "~/org/gtd")
-   org-agenda-files '("~/org")
+   org-agenda-files (list "~/org/gtd" "~/org/sync" "~/org/inbox")
    org-refile-targets '(
-                        ("~/org/task.org" :level . 1)
-                        ("~/org/project.org" :maxlevel . 2)
-                        ("~/org/family.org" :maxlevel . 1)
+                        ("~/org/gtd/personal.org" :level . 1)
+                        ("~/org/gtd/mugeda.org" :maxlevel . 1)
+                        ("~/org/gtd/family.org" :maxlevel . 1)
                         )
    org-todo-keywords '(
                        (sequence "TODO(t)" "|" "DONE(d!)" "CANCELLED(c@)")
@@ -1051,11 +1054,14 @@
    org-clock-stored-history t
    org-tag-alist '(
                    (:startgroup . nil)
-                   ("@office" . ?o)
-                   ("@home" . ?h)
+                   ("personal" . ?p)
+                   ("family" . ?f)
+                   ("work" . ?w)
                    (:endgroup . nil)
+                   ("task" . ?t)
+                   ("event" . ?e)
                    )
-   org-capture-templates '(("t" "Todo" entry (file "~/org/inbox.org") "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:")
+   org-capture-templates '(("t" "Todo" entry (file "~/org/inbox/emacs.org") "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:")
                            ("j" "日记" entry (file+datetree "~/org/journal.org" "Journal") "* %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:"))
 
    org-agenda-custom-commands '(("p" "At the office" tags-todo "project"
@@ -1237,18 +1243,18 @@
    ;; 双向同步
    org-caldav-sync-direction 'twoway
 
-   org-caldav-exclude-tags '("daily")
+   ;; org-caldav-exclude-tags '("daily")
    ;; 多个日历
    org-caldav-calendars (list (list
                                :url (concat "https://grass:" (grass-emacs/get-bitwarden-password "carddav:grass") "@carddav.grass.work:30443/grass")
                                :calendar-id "34a7e558-4066-efe4-69f7-15ada01bc7b6" ; 个人日历
-                               :files (list (expand-file-name "task.org" org-directory) (expand-file-name "project.org" org-directory) )
-                               :inbox "~/org/caldav-personal.org")
+                               :files (list (expand-file-name "gtd/personal.org" org-directory) (expand-file-name "gtd/mugeda.org" org-directory) )
+                               :inbox "~/org/inbox/caldav-personal.org")
                               (list
                                :url (concat "https://family:" (grass-emacs/get-bitwarden-password "carddav:family") "@carddav.grass.work:30443/family")
                                :calendar-id "593557a2-6721-38bf-0243-0cd18c9237ea" ; 家庭日历
-                               :files (list (expand-file-name "family.org" org-directory))
-                               :inbox "~/org/caldav-family.org"))
+                               :files (list (expand-file-name "gtd/family.org" org-directory))
+                               :inbox "~/org/inbox/caldav-family.org"))
 
    ;; 如果上一次异常，不询问
    org-caldav-resume-aborted 'always
@@ -1258,14 +1264,14 @@
    ;; org-caldav-delete-calendar-entries 'always
 
    ;; 不导出 VTODO
-   org-caldav-sync-todo nil
-   org-icalendar-include-todo nil
+   org-caldav-sync-todo t
+   org-icalendar-include-todo t
 
    ;; 如果是todo节点，会作为一个event
-   org-icalendar-use-scheduled '(event-if-todo-not-done event-if-not-todo todo-start)
+   org-icalendar-use-scheduled '(event-if-not-todo todo-start)
 
    ;; 如果是todo节点，会作为一个event
-   org-icalendar-use-deadline '(event-if-todo-not-done event-if-not-todo todo-due)
+   org-icalendar-use-deadline '(event-if-not-todo todo-due)
 
    ;; 不使用sexp
    org-icalendar-include-sexps nil
