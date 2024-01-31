@@ -1,7 +1,1 @@
-*
-!.gitignore
-!README.org
-!*.nix
-!flake.lock
-!.envrc
-!*.el
+.direnv

@@ -1375,10 +1375,11 @@
 
 (use-package wakatime-mode
   :ensure t
+  :config
+  (setq wakatime-cli-path "wakatime-cli")
   :hook
   (after-init . global-wakatime-mode)
   )
-
 
 ;; 快速选择工具
 ;; (use-package expand-region

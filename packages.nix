@@ -47,9 +47,6 @@ in with pkgs;
 
   wakatime
 
-  # bitwarden
-  rbw
-
   git
   nodejs
   wmctrl

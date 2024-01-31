@@ -67,11 +67,12 @@
     # Macos 使用的模块
     // (let
       system = "x86_64-darwin";
-      inherit (getEmacs system) emacsWrap packages fontPackages env-vars;
+      inherit (getEmacs system) emacsWrap packages fontPackages env-vars pkgs;
     in {
       darwinModules.default = { config, ... }: {
         options = { };
         config = {
+
           environment.systemPackages = packages ++ [ emacsWrap ];
           environment.variables =
             (env-vars // { GRASS_EMACS_ENV = "nix-module"; });
@@ -91,10 +92,14 @@
           #    enable = true;
           #    package = emacsWrap;
           #  };
+          home-manager.extraSpecialArgs = { inherit pkgs; };
+
           home-manager.users.grass = {
-            #  programs.zsh.shellAliases = {
-            #    emacsMac = "${emacsWrap}/Applications/Emacs.app/Contents/MacOS/Emacs";
-            #  };
+            imports = [ ./modules/rbw.nix ];
+            programs.zsh.shellAliases = {
+              emacsMac =
+                "${emacsWrap}/Applications/Emacs.app/Contents/MacOS/Emacs";
+            };
           };
         };
       };
