@@ -58,4 +58,6 @@ in with pkgs;
   # eaf-file-manager
   fd
 
+  # hugo
+  hugo
 ] ++ [ python ] ++ onlyDarwin ++ onlyLinux

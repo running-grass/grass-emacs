@@ -120,9 +120,9 @@
 (electric-pair-mode t)
 
 ;; 打开自动保存
-(auto-save-mode 1)
+;; (auto-save-mode 1)
 ;; 自动保存当前访问的文件buffer
-(auto-save-visited-mode 1)
+;; (auto-save-visited-mode 1)
 
 ;; 编程模式下，光标在括号上时高亮另一个括号
 (add-hook 'prog-mode-hook #'show-paren-mode)
@@ -684,7 +684,7 @@
   :ensure t
   :init
   ;; 定时更新索引
-  (run-with-timer (* 5 60) t 'mu4e-update-index)
+  (run-with-idle-timer (* 5 60) t 'mu4e-update-index)
   :config
   ;; 默认是motion模式
   (add-to-list 'meow-mode-state-list '(mu4e-view-mode . motion))
@@ -904,7 +904,7 @@
 
 (use-package yaml-ts-mode
   :ensure nil
-  :mode "\\.yml\\'"
+  :mode ("\\.yml\\'" "\\.yaml\\'")
   :config
   (setq-default format-all-formatters '(("YAML" (prettier)))))
 
@@ -1031,12 +1031,15 @@
    org-startup-folded 'content
    org-agenda-files (list "~/org/gtd" "~/org/sync" "~/org/inbox")
    org-refile-targets '(
+                        (nil . (:level . 1)) ;当前文件的level1
+                        (nil . (:tag . "project"))
                         ("~/org/gtd/personal.org" :level . 1)
-                        ("~/org/gtd/mugeda.org" :maxlevel . 1)
-                        ("~/org/gtd/family.org" :maxlevel . 1)
+                        ("~/org/gtd/mugeda.org" :level . 1)
+                        ("~/org/gtd/family.org" :level . 1)
                         )
    org-todo-keywords '(
-                       (sequence "TODO(t)" "|" "DONE(d!)" "CANCELLED(c@)")
+                       (sequence "TODO(t)" "WAITING(w@)" "|" "DONE(d!)" "CANCELLED(c@)")
+                       (sequence "UNSTARTED(u)" "INPROGRESS(i!)" "SUSPEND(s@)" "|" "FINISHED(f!)" "ABORT(a@)")
                        )
    org-clock-string-limit 5
    org-log-refile 'nil
@@ -1045,11 +1048,12 @@
    org-clock-stored-history t
    org-tag-alist '(
                    (:startgroup . nil)
-                   ("personal" . ?p)
-                   ("family" . ?f)
-                   ("work" . ?w)
+                   ("personal")
+                   ("family")
+                   ("work")
                    (:endgroup . nil)
                    ("task" . ?t)
+                   ("project" . ?p)
                    ("event" . ?e)
                    )
    org-capture-templates '(("t" "Todo" entry (file "~/org/inbox/emacs.org") "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:")
@@ -1122,6 +1126,13 @@
 ;;         ("C-c C-x C-p" . org-pomodoro))
 ;;   )
 
+(use-package org-habit
+  :ensure nil
+  :after org
+  :config
+  (setq org-habit-show-habits t)
+  )
+
 (use-package org-roam
   :ensure t
   :after org
@@ -1146,8 +1157,8 @@
 
 (use-package ox-hugo
   :ensure t
-  :after org
-  :hook (org . org-hugo-auto-export-mode)
+  :after ox
+  ;; :hook (org . org-hugo-auto-export-mode)
 
   :config
   (setq org-hugo-section "post"
@@ -1158,7 +1169,7 @@
                '("h"
                  "Hugo draft"
                  entry
-                 (file+olp "~/workspace/blog.org" "Draft")
+                 (file+olp "~/org/blog/draft.org" "Draft")
                  (function org-hugo-new-subtree-post-capture-template)))
 
   )
@@ -1195,7 +1206,7 @@
   :ensure t
   :init
   ;; 定时每5分钟同步
-  (run-with-timer (* 5 60) t 'org-caldav-sync)
+  ;; (run-with-idle-timer (* 3 60) t 'org-caldav-sync)
   :config
   (setq
    ;; 双向同步
@@ -1214,9 +1225,18 @@
                                :files (list (expand-file-name "gtd/family.org" org-directory))
                                :inbox "~/org/inbox/caldav-family.org"))
 
+   org-caldav-todo-percent-states  '(
+                                     (0 "TODO")
+                                     (50 "WAITING")
+                                     (100 "DONE")
+                                     (94 "CANCELLED")
+                                     (1 "UNSTARTED")
+                                     (2 "INPROGESS")
+                                     (10 "SUSPEND")
+                                     (99 "FINISHED")
+                                     (95 "ABORT")
+                                     )
 
-
-   org-caldav-todo-percent-states  '((0 "TODO") (100 "CANCELLED") (100 "DONE"))
    ;; 如果上一次异常，不询问
    org-caldav-resume-aborted 'always
 
@@ -1259,28 +1279,28 @@
 
 
 ;; 在议程中自定义显示格式为阴历
-(setq org-agenda-format-date 'grass-emacs/org-agenda-format-date-aligned) 
+(setq org-agenda-format-date 'grass-emacs/org-agenda-format-date-aligned)
 
-(defun grass-emacs/org-agenda-format-date-aligned (date) 
-  "Format a DATE string for display in the daily/weekly agenda, or timeline. 
-      This function makes sure that dates are aligned for easy reading." 
-  (require 'cal-iso) 
-  (let* ((dayname (aref cal-china-x-days 
-                        (calendar-day-of-week date))) 
-         (day (cadr date)) 
-         (month (car date)) 
-         (year (nth 2 date)) 
-         (cn-date (calendar-chinese-from-absolute (calendar-absolute-from-gregorian date))) 
-         (cn-month (cl-caddr cn-date)) 
-         (cn-day (cl-cadddr cn-date)) 
-         (cn-month-string (concat (aref cal-china-x-month-name 
-                                        (1- (floor cn-month))) 
-                                  (if (integerp cn-month) 
-                                      "" 
-                                    "(闰月)"))) 
-         (cn-day-string (aref cal-china-x-day-name 
-                              (1- cn-day)))) 
-    (format "%04d-%02d-%02d 周%s %s%s" year month 
+(defun grass-emacs/org-agenda-format-date-aligned (date)
+  "Format a DATE string for display in the daily/weekly agenda, or timeline.
+      This function makes sure that dates are aligned for easy reading."
+  (require 'cal-iso)
+  (let* ((dayname (aref cal-china-x-days
+                        (calendar-day-of-week date)))
+         (day (cadr date))
+         (month (car date))
+         (year (nth 2 date))
+         (cn-date (calendar-chinese-from-absolute (calendar-absolute-from-gregorian date)))
+         (cn-month (cl-caddr cn-date))
+         (cn-day (cl-cadddr cn-date))
+         (cn-month-string (concat (aref cal-china-x-month-name
+                                        (1- (floor cn-month)))
+                                  (if (integerp cn-month)
+                                      ""
+                                    "(闰月)")))
+         (cn-day-string (aref cal-china-x-day-name
+                              (1- cn-day))))
+    (format "%04d-%02d-%02d 周%s %s%s" year month
             day dayname cn-month-string cn-day-string)))
 
 ;; 高亮当前行
@@ -1329,12 +1349,6 @@
   :config
   (nerd-icons-completion-mode)
   (add-hook 'marginalia-mode-hook #'nerd-icons-completion-marginalia-setup))
-;; 自动保存
-;; (use-package super-save
-;;   :ensure t
-;;   :demand t
-;;   :config
-;;   (super-save-mode +1))
 
 (use-package vundo
   :ensure t
@@ -1460,6 +1474,27 @@
     (switch-to-buffer dashboard-buffer-name))
 
   (dashboard-setup-startup-hook))
+
+(use-package auto-save
+  :init
+  (el-get-bundle manateelazycat/auto-save)
+  :config
+  ;; (auto-save-enable)
+
+  (setq auto-save-silent t)   ; quietly save
+  (setq auto-save-delete-trailing-whitespace t)  ; automatically delete spaces at the end of the line when saving
+
+;;; custom predicates if you don't want auto save.
+;;; disable auto save mode when current filetype is an gpg file.
+  (setq auto-save-disable-predicates
+        '((lambda ()
+            (string-suffix-p
+             "gpg"
+             (file-name-extension (buffer-name)) t))))
+
+  :hook
+  (after-init . auto-save-enable)
+  )
 
 (when (file-exists-p *custom-file*)
   (load *custom-file*))

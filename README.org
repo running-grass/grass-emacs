@@ -54,6 +54,7 @@
 - [[#项目工程][项目工程]]
 - [[#org][Org]]
   - [[#org-base][Org base]]
+  - [[#org-habit][Org Habit]]
   - [[#org-roam][Org-roam]]
   - [[#org-mordern][Org-Mordern]]
   - [[#ox-hugo][Ox-hugo]]
@@ -65,6 +66,7 @@
   - [[#undoredo][Undo/Redo]]
   - [[#小功能][小功能]]
   - [[#仪表盘][仪表盘]]
+  - [[#auto-save][Auto save]]
 - [[#加载自定义文件][加载自定义文件]]
 - [[#footer][Footer]]
 
@@ -79,7 +81,7 @@
   {
     inputs.grass-emacs.url = "github:running-grass/grass-emacs";
 
-    # 在主机配置中导入模块 
+    # 在主机配置中导入模块
     nixosConfigurations.galaxy =
       lib.nixosSystem { modules = [ inputs.grass-emacs.nixosModules.default ]; };
   }
@@ -97,7 +99,7 @@
   {
     inputs.grass-emacs.url = "github:running-grass/grass-emacs";
 
-    # 在主机配置中导入模块 
+    # 在主机配置中导入模块
     darwinConfigurations.galaxy = inputs.nix-darwin.lib.darwinSystem {
       modules = [ inputs.grass-emacs.nixosModules.default ];
     };
@@ -124,7 +126,7 @@
   git clone git@github.com:running-grass/grass-emacs.git ~/.config/emacs
 #+end_src
 
-修改配置以后就可以使用 =SPC r= 来重新加载配置了。  
+修改配置以后就可以使用 =SPC r= 来重新加载配置了。
 
 
 
@@ -195,7 +197,7 @@
 状态： 在多次启动运行之间共享的状态，例如 最近打开的文件，搜索历史等， 不可以跨机器和跨用户使用。
 缓存： 使用过程中的缓存文件，可以被安全的删除，必须可以被重建。
 
-#+begin_src emacs-lisp 
+#+begin_src emacs-lisp
   (require 'xdg)
 
   (defun expand-emacs-config (filename)
@@ -279,9 +281,9 @@
   (electric-pair-mode t)
 
   ;; 打开自动保存
-  (auto-save-mode 1)
+  ;; (auto-save-mode 1)
   ;; 自动保存当前访问的文件buffer
-  (auto-save-visited-mode 1)
+  ;; (auto-save-visited-mode 1)
 
   ;; 编程模式下，光标在括号上时高亮另一个括号
   (add-hook 'prog-mode-hook #'show-paren-mode)
@@ -333,7 +335,7 @@
 
 会被绑定到 =meow= 的 =leader= 键位图中
 
-#+begin_src emacs-lisp 
+#+begin_src emacs-lisp
   (defvar application-keymap (make-sparse-keymap) "applications")
   (defalias 'application-keymap application-keymap)
 
@@ -440,7 +442,7 @@
 
 
 ** el-get
-因为我使用的是 =NixOS= ，有些包直接使用 =NixPkgs= 管理，其余的使用 =el-get= 
+因为我使用的是 =NixOS= ，有些包直接使用 =NixPkgs= 管理，其余的使用 =el-get=
 
 #+begin_src emacs-lisp
   (use-package el-get
@@ -974,7 +976,7 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
 1. 克隆到指定的目录
 2. 使用 =nix-shell -p pkg-config libinput libevdev= 进入编译环境
 3. 使用 =./install-eaf.py --ignore-core-deps= 安装所需依赖
-   
+
 #+begin_src emacs-lisp
   (use-package eaf
     :demand t
@@ -1018,12 +1020,12 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
 收邮件方案是使用 offlineimap 进行邮件的同步，由 mu 对邮箱进行索引，前端使用 mu4e 进行管理。
 发邮件的方案是 使用 msmtp
 
-#+begin_src emacs-lisp 
+#+begin_src emacs-lisp
   (use-package mu4e
     :ensure t
     :init
     ;; 定时更新索引
-    (run-with-timer (* 5 60) t 'mu4e-update-index)
+    (run-with-idle-timer (* 5 60) t 'mu4e-update-index)
     :config
     ;; 默认是motion模式
     (add-to-list 'meow-mode-state-list '(mu4e-view-mode . motion))
@@ -1149,7 +1151,7 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
 
 一些不区分语言的功能，例如重命名，简单重构等
 
-*** 格式化 
+*** 格式化
 
 #+begin_src emacs-lisp
   (use-package format-all
@@ -1173,7 +1175,7 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
 
     )
 
-  
+
 #+end_src
 
 *** 代码自动补全
@@ -1315,7 +1317,7 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
 #+begin_src emacs-lisp
   (use-package yaml-ts-mode
     :ensure nil
-    :mode "\\.yml\\'"
+    :mode ("\\.yml\\'" "\\.yaml\\'")
     :config
     (setq-default format-all-formatters '(("YAML" (prettier)))))
 #+end_src
@@ -1440,7 +1442,7 @@ Org-mode 相关的配置。
 
 我目前只使用 =Org-mode= 来管理我的 =Emacs= 配置。后续再逐步用于任务管理，项目管理，笔记管理等用途。
 
-** Org base 
+** Org base
 #+begin_src emacs-lisp
   ;; 保存是自动更新具有 :TOC: 的标题为目录
   (use-package toc-org
@@ -1478,12 +1480,15 @@ Org-mode 相关的配置。
      org-startup-folded 'content
      org-agenda-files (list "~/org/gtd" "~/org/sync" "~/org/inbox")
      org-refile-targets '(
+                          (nil . (:level . 1)) ;当前文件的level1
+                          (nil . (:tag . "project"))
                           ("~/org/gtd/personal.org" :level . 1)
-                          ("~/org/gtd/mugeda.org" :maxlevel . 1)
-                          ("~/org/gtd/family.org" :maxlevel . 1)
+                          ("~/org/gtd/mugeda.org" :level . 1)
+                          ("~/org/gtd/family.org" :level . 1)
                           )
      org-todo-keywords '(
-                         (sequence "TODO(t)" "|" "DONE(d!)" "CANCELLED(c@)")
+                         (sequence "TODO(t)" "WAITING(w@)" "|" "DONE(d!)" "CANCELLED(c@)")
+                         (sequence "UNSTARTED(u)" "INPROGRESS(i!)" "SUSPEND(s@)" "|" "FINISHED(f!)" "ABORT(a@)")
                          )
      org-clock-string-limit 5
      org-log-refile 'nil
@@ -1492,11 +1497,12 @@ Org-mode 相关的配置。
      org-clock-stored-history t
      org-tag-alist '(
                      (:startgroup . nil)
-                     ("personal" . ?p)
-                     ("family" . ?f)
-                     ("work" . ?w)
+                     ("personal")
+                     ("family")
+                     ("work")
                      (:endgroup . nil)
                      ("task" . ?t)
+                     ("project" . ?p)
                      ("event" . ?e)
                      )
      org-capture-templates '(("t" "Todo" entry (file "~/org/inbox/emacs.org") "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:")
@@ -1570,6 +1576,16 @@ Org-mode 相关的配置。
   ;;   )
 #+end_src
 
+** Org Habit
+#+begin_src emacs-lisp
+  (use-package org-habit
+    :ensure nil
+    :after org
+    :config
+    (setq org-habit-show-habits t)
+    )
+
+#+end_src
 ** Org-roam
 #+begin_src emacs-lisp
     (use-package org-roam
@@ -1600,8 +1616,8 @@ Org-mode 相关的配置。
 #+begin_src emacs-lisp
   (use-package ox-hugo
     :ensure t
-    :after org
-    :hook (org . org-hugo-auto-export-mode)
+    :after ox
+    ;; :hook (org . org-hugo-auto-export-mode)
 
     :config
     (setq org-hugo-section "post"
@@ -1612,7 +1628,7 @@ Org-mode 相关的配置。
                  '("h"
                    "Hugo draft"
                    entry
-                   (file+olp "~/workspace/blog.org" "Draft")
+                   (file+olp "~/org/blog/draft.org" "Draft")
                    (function org-hugo-new-subtree-post-capture-template)))
 
     )
@@ -1653,7 +1669,7 @@ Org-mode 相关的配置。
     :ensure t
     :init
     ;; 定时每5分钟同步
-    (run-with-timer (* 5 60) t 'org-caldav-sync)
+    ;; (run-with-idle-timer (* 3 60) t 'org-caldav-sync)
     :config
     (setq
      ;; 双向同步
@@ -1672,9 +1688,18 @@ Org-mode 相关的配置。
                                  :files (list (expand-file-name "gtd/family.org" org-directory))
                                  :inbox "~/org/inbox/caldav-family.org"))
 
+     org-caldav-todo-percent-states  '(
+                                       (0 "TODO")
+                                       (50 "WAITING")
+                                       (100 "DONE")
+                                       (94 "CANCELLED")
+                                       (1 "UNSTARTED")
+                                       (2 "INPROGESS")
+                                       (10 "SUSPEND")
+                                       (99 "FINISHED")
+                                       (95 "ABORT")
+                                       )
 
-
-     org-caldav-todo-percent-states  '((0 "TODO") (100 "CANCELLED") (100 "DONE"))
      ;; 如果上一次异常，不询问
      org-caldav-resume-aborted 'always
 
@@ -1719,32 +1744,32 @@ Org-mode 相关的配置。
 
 
   ;; 在议程中自定义显示格式为阴历
-  (setq org-agenda-format-date 'grass-emacs/org-agenda-format-date-aligned) 
+  (setq org-agenda-format-date 'grass-emacs/org-agenda-format-date-aligned)
 
-  (defun grass-emacs/org-agenda-format-date-aligned (date) 
-    "Format a DATE string for display in the daily/weekly agenda, or timeline. 
-        This function makes sure that dates are aligned for easy reading." 
-    (require 'cal-iso) 
-    (let* ((dayname (aref cal-china-x-days 
-                          (calendar-day-of-week date))) 
-           (day (cadr date)) 
-           (month (car date)) 
-           (year (nth 2 date)) 
-           (cn-date (calendar-chinese-from-absolute (calendar-absolute-from-gregorian date))) 
-           (cn-month (cl-caddr cn-date)) 
-           (cn-day (cl-cadddr cn-date)) 
-           (cn-month-string (concat (aref cal-china-x-month-name 
-                                          (1- (floor cn-month))) 
-                                    (if (integerp cn-month) 
-                                        "" 
-                                      "(闰月)"))) 
-           (cn-day-string (aref cal-china-x-day-name 
-                                (1- cn-day)))) 
-      (format "%04d-%02d-%02d 周%s %s%s" year month 
-              day dayname cn-month-string cn-day-string))) 
+  (defun grass-emacs/org-agenda-format-date-aligned (date)
+    "Format a DATE string for display in the daily/weekly agenda, or timeline.
+        This function makes sure that dates are aligned for easy reading."
+    (require 'cal-iso)
+    (let* ((dayname (aref cal-china-x-days
+                          (calendar-day-of-week date)))
+           (day (cadr date))
+           (month (car date))
+           (year (nth 2 date))
+           (cn-date (calendar-chinese-from-absolute (calendar-absolute-from-gregorian date)))
+           (cn-month (cl-caddr cn-date))
+           (cn-day (cl-cadddr cn-date))
+           (cn-month-string (concat (aref cal-china-x-month-name
+                                          (1- (floor cn-month)))
+                                    (if (integerp cn-month)
+                                        ""
+                                      "(闰月)")))
+           (cn-day-string (aref cal-china-x-day-name
+                                (1- cn-day))))
+      (format "%04d-%02d-%02d 周%s %s%s" year month
+              day dayname cn-month-string cn-day-string)))
 #+end_src
 * 样式
-#+begin_src emacs-lisp 
+#+begin_src emacs-lisp
   ;; 高亮当前行
   (use-package hl-line
     :ensure nil
@@ -1791,12 +1816,6 @@ Org-mode 相关的配置。
     :config
     (nerd-icons-completion-mode)
     (add-hook 'marginalia-mode-hook #'nerd-icons-completion-marginalia-setup))
-  ;; 自动保存
-  ;; (use-package super-save
-  ;;   :ensure t
-  ;;   :demand t
-  ;;   :config
-  ;;   (super-save-mode +1))
 #+end_src
 
 
@@ -1810,7 +1829,7 @@ Org-mode 相关的配置。
     :bind
     ("C-c u" . vundo)
     )
- 
+
 #+end_src
 ** 小功能
 #+begin_src emacs-lisp
@@ -1873,7 +1892,7 @@ Org-mode 相关的配置。
     (dired-mode . (dirvish-override-dired-mode))
     )
 
-  
+
 
 #+end_src
 
@@ -1944,6 +1963,29 @@ Org-mode 相关的配置。
 
 
 
+** Auto save
+#+begin_src emacs-lisp
+  (use-package auto-save
+    :init
+    (el-get-bundle manateelazycat/auto-save)
+    :config
+    ;; (auto-save-enable)
+
+    (setq auto-save-silent t)   ; quietly save
+    (setq auto-save-delete-trailing-whitespace t)  ; automatically delete spaces at the end of the line when saving
+
+  ;;; custom predicates if you don't want auto save.
+  ;;; disable auto save mode when current filetype is an gpg file.
+    (setq auto-save-disable-predicates
+          '((lambda ()
+              (string-suffix-p
+               "gpg"
+               (file-name-extension (buffer-name)) t))))
+
+    :hook
+    (after-init . auto-save-enable)
+    )
+#+end_src
 * 加载自定义文件
 #+begin_src emacs-lisp
   (when (file-exists-p *custom-file*)
