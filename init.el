@@ -190,6 +190,7 @@
 
 
 (use-package emacs
+  :ensure nil
   :init
   ;; 默认查找目录为home目录
   (setq command-line-default-directory "~")
@@ -251,14 +252,12 @@
   (setq enable-recursive-minibuffers t)
   )
 
-(use-package use-package-ensure-system-package
-  :ensure t
-  :defer t)
-
-(use-package editorconfig
-  :ensure t
-  :config
-  (editorconfig-mode 1))
+(unless *is-nix-module*
+  (setq package-archives '(("gnu" . "https://mirrors.ustc.edu.cn/elpa/gnu/")
+                           ("melpa" . "https://mirrors.ustc.edu.cn/elpa/melpa/")
+                           ("nongnu" . "https://mirrors.ustc.edu.cn/elpa/nongnu/")))
+  (package-initialize)
+  )
 
 (use-package el-get
   :ensure t
@@ -841,6 +840,15 @@
   ;; :requires (acm yasnippet lsp-bridge)
   :when *is-tui*
   )
+
+(use-package use-package-ensure-system-package
+  :ensure t
+  :defer t)
+
+(use-package editorconfig
+  :ensure t
+  :config
+  (editorconfig-mode 1))
 
 (use-package nix-mode
   :ensure t

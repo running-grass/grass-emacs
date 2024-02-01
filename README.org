@@ -6,11 +6,11 @@
 本仓库是我的个人 =Emacs= 配置，主打一个满足个人日常使用。如果里面的一些代码对你有帮助，欢迎拿走。
 
 * 目录                                                                  :TOC:
+- [[#header][Header]]
 - [[#如何使用][如何使用]]
   - [[#nixos-用户][NixOS 用户]]
   - [[#nix-darwin-用户][Nix-Darwin 用户]]
   - [[#非-nixos-用户][非 NixOS 用户]]
-- [[#header][Header]]
 - [[#全局配置][全局配置]]
   - [[#emacs-版本判断][Emacs 版本判断]]
   - [[#定义常量][定义常量]]
@@ -20,6 +20,7 @@
   - [[#性能优化][性能优化]]
   - [[#定义用户级别的键位映射图][定义用户级别的键位映射图]]
   - [[#emacs-的默认配置][Emacs 的默认配置]]
+  - [[#包管理][包管理]]
   - [[#el-get][el-get]]
 - [[#内置包的配置][内置包的配置]]
 - [[#功能增强][功能增强]]
@@ -69,6 +70,16 @@
   - [[#auto-save][Auto save]]
 - [[#加载自定义文件][加载自定义文件]]
 - [[#footer][Footer]]
+
+* Header
+#+begin_src emacs-lisp
+;;; init.el --- Load the full configuration -*- lexical-binding: t -*-
+;;; Commentary:
+
+;; This file bootstraps the full configuration
+
+;;; Code:
+#+end_src
 
 * 如何使用
 ** NixOS 用户
@@ -127,19 +138,6 @@
 #+end_src
 
 修改配置以后就可以使用 =SPC r= 来重新加载配置了。
-
-
-
-* Header
-#+begin_src emacs-lisp
-;;; init.el --- Load the full configuration -*- lexical-binding: t -*-
-;;; Commentary:
-
-;; This file bootstraps the full configuration
-
-;;; Code:
-#+end_src
-
 * 全局配置
 
 ** Emacs 版本判断
@@ -369,6 +367,7 @@
 
 
   (use-package emacs
+    :ensure nil
     :init
     ;; 默认查找目录为home目录
     (setq command-line-default-directory "~")
@@ -430,17 +429,18 @@
     (setq enable-recursive-minibuffers t)
     )
 
-  (use-package use-package-ensure-system-package
-    :ensure t
-    :defer t)
-
-  (use-package editorconfig
-    :ensure t
-    :config
-    (editorconfig-mode 1))
 #+end_src
 
 
+** 包管理
+#+begin_src emacs-lisp
+  (unless *is-nix-module*
+    (setq package-archives '(("gnu" . "https://mirrors.ustc.edu.cn/elpa/gnu/")
+                             ("melpa" . "https://mirrors.ustc.edu.cn/elpa/melpa/")
+                             ("nongnu" . "https://mirrors.ustc.edu.cn/elpa/nongnu/")))
+    (package-initialize)
+    )
+#+end_src
 ** el-get
 因为我使用的是 =NixOS= ，有些包直接使用 =NixPkgs= 管理，其余的使用 =el-get=
 
@@ -1231,6 +1231,18 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
     :when *is-tui*
     )
 
+#+end_src
+
+***** 杂项
+#+begin_src emacs-lisp
+  (use-package use-package-ensure-system-package
+    :ensure t
+    :defer t)
+
+  (use-package editorconfig
+    :ensure t
+    :config
+    (editorconfig-mode 1))
 #+end_src
 ** Nix
 #+begin_src emacs-lisp
