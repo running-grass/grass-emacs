@@ -19,9 +19,12 @@ in with pkgs;
   # lsp
   rnix-lsp # nix
   phpactor # php
+
+  typescript
   vscode-langservers-extracted
   nodePackages.typescript-language-server # ts
   nodePackages.volar # vue
+  emmet-ls
   yaml-language-server
 
   # mardown

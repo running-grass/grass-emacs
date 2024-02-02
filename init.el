@@ -1139,6 +1139,8 @@
   :after org
   :config
   (setq org-habit-show-habits t)
+  (setq org-habit-following-days 2)
+  (setq org-habit-preceding-days 7)
   )
 
 (use-package org-roam
@@ -1491,6 +1493,7 @@
   ;; (auto-save-enable)
 
   (setq auto-save-silent t)   ; quietly save
+  (setq auto-save-idle 10)
   (setq auto-save-delete-trailing-whitespace t)  ; automatically delete spaces at the end of the line when saving
 
 ;;; custom predicates if you don't want auto save.

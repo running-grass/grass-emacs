@@ -1595,8 +1595,9 @@ Org-mode 相关的配置。
     :after org
     :config
     (setq org-habit-show-habits t)
+    (setq org-habit-following-days 2)
+    (setq org-habit-preceding-days 7)
     )
-
 #+end_src
 ** Org-roam
 #+begin_src emacs-lisp
@@ -1985,6 +1986,7 @@ Org-mode 相关的配置。
     ;; (auto-save-enable)
 
     (setq auto-save-silent t)   ; quietly save
+    (setq auto-save-idle 10)
     (setq auto-save-delete-trailing-whitespace t)  ; automatically delete spaces at the end of the line when saving
 
   ;;; custom predicates if you don't want auto save.
