@@ -150,6 +150,9 @@
 (set-fontset-font t nil "Unifont" nil 'append)
 (set-fontset-font t nil "Symbols Nerd Font" nil 'append)
 
+;; 设置自动折行
+(setq truncate-lines nil)
+
 ;; 调大 gc 的阈值
 (let ((normal-gc-cons-threshold (* 20 1024 1024))
       (init-gc-cons-threshold (* 128 1024 1024)))
@@ -1067,9 +1070,13 @@
    org-capture-templates '(("t" "Todo" entry (file "~/org/inbox/emacs.org") "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:")
                            )
 
-   org-agenda-custom-commands '(("p" "At the office" tags-todo "project"
+   org-agenda-custom-commands '(
+                                ("p" "At the office" tags-todo "project"
                                  ((org-agenda-overriding-header "Office")
-                                  )))
+                                  ))
+                                ("ji" "所有待细化的项目" tags "inbox")
+                                ("jw" "所有等待中的项目" todo "WAITING")
+                                )
    )
 
 

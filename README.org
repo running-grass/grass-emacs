@@ -308,6 +308,9 @@
   (set-fontset-font t nil "Source Han Sans HW" nil 'append)
   (set-fontset-font t nil "Unifont" nil 'append)
   (set-fontset-font t nil "Symbols Nerd Font" nil 'append)
+
+  ;; 设置自动折行
+  (setq truncate-lines nil)
 #+End_src
 
 
@@ -1024,6 +1027,9 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
   (use-package mu4e
     :ensure t
     :init
+    (unless *is-nix-module*
+      (el-get-bundle mu4e :features mu4e)
+      )
     ;; 定时更新索引
     (run-with-idle-timer (* 5 60) t 'mu4e-update-index)
     :config
@@ -1520,9 +1526,13 @@ Org-mode 相关的配置。
      org-capture-templates '(("t" "Todo" entry (file "~/org/inbox/emacs.org") "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:")
                              )
 
-     org-agenda-custom-commands '(("p" "At the office" tags-todo "project"
+     org-agenda-custom-commands '(
+                                  ("p" "At the office" tags-todo "project"
                                    ((org-agenda-overriding-header "Office")
-                                    )))
+                                    ))
+                                  ("ji" "所有待细化的项目" tags "inbox")
+                                  ("jw" "所有等待中的项目" todo "WAITING")
+                                  )
      )
 
 

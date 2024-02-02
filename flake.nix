@@ -73,33 +73,26 @@
         options = { };
         config = {
 
-          environment.systemPackages = packages ++ [ emacsWrap ];
-          environment.variables =
-            (env-vars // { GRASS_EMACS_ENV = "nix-module"; });
+          environment.systemPackages = packages; # ++ [ emacsWrap ];
+          # environment.variables =
+          #   (env-vars // { GRASS_EMACS_ENV = "nix-module"; });
           fonts = {
             fontDir.enable = true;
             fonts = fontPackages;
           };
 
-          # homebrew = {
-          #   enable = true;
-          #   taps = [ "d12frosted/emacs-plus" ];
+          homebrew = {
+            enable = true;
+            taps = [ "d12frosted/emacs-plus" ];
 
-          #   brews = [ "emacs-plus@30" ];
-          # };
+            brews = [ "emacs-plus@30" ];
+          };
 
-          #  services.emacs = {
-          #    enable = true;
-          #    package = emacsWrap;
-          #  };
           home-manager.extraSpecialArgs = { inherit pkgs; };
 
           home-manager.users.grass = {
             imports = [ ./modules/rbw.nix ];
-            programs.zsh.shellAliases = {
-              emacsMac =
-                "${emacsWrap}/Applications/Emacs.app/Contents/MacOS/Emacs";
-            };
+            programs.zsh.shellAliases = { };
           };
         };
       };
