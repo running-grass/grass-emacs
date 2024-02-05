@@ -684,6 +684,7 @@
 
 (use-package mu4e
   :ensure t
+  :when *is-nix-module*
   :init
   ;; 定时更新索引
   (run-with-idle-timer (* 5 60) t 'mu4e-update-index)
@@ -802,6 +803,7 @@
 
 (use-package lsp-bridge
   :ensure t
+  :when *is-nix-module*
   :config
   ;; (setq lsp-bridge-enable-log nil)
   (setq
@@ -840,8 +842,7 @@
 (use-package acm-terminal
   :ensure t
   :after (yasnippet lsp-bridge acm)
-  ;; :requires (acm yasnippet lsp-bridge)
-  :when *is-tui*
+  :when (and *is-tui* *is-nix-module*)
   )
 
 (use-package use-package-ensure-system-package

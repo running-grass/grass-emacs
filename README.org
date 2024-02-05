@@ -1023,13 +1023,13 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
 收邮件方案是使用 offlineimap 进行邮件的同步，由 mu 对邮箱进行索引，前端使用 mu4e 进行管理。
 发邮件的方案是 使用 msmtp
 
+目前只在 nix 相关的环境下可用
+
 #+begin_src emacs-lisp
   (use-package mu4e
     :ensure t
+    :when *is-nix-module*
     :init
-    (unless *is-nix-module*
-      (el-get-bundle mu4e :features mu4e)
-      )
     ;; 定时更新索引
     (run-with-idle-timer (* 5 60) t 'mu4e-update-index)
     :config
@@ -1190,6 +1190,7 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
 #+begin_src emacs-lisp
   (use-package lsp-bridge
     :ensure t
+    :when *is-nix-module*
     :config
     ;; (setq lsp-bridge-enable-log nil)
     (setq
@@ -1233,8 +1234,7 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
   (use-package acm-terminal
     :ensure t
     :after (yasnippet lsp-bridge acm)
-    ;; :requires (acm yasnippet lsp-bridge)
-    :when *is-tui*
+    :when (and *is-tui* *is-nix-module*)
     )
 
 #+end_src
