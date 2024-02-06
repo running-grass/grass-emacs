@@ -1050,8 +1050,8 @@
                         ("~/org/gtd/family.org" :level . 1)
                         )
    org-todo-keywords '(
-                       (sequence "TODO(t)" "WAITING(w@)" "|" "DONE(d!)" "CANCELLED(c@)")
-                       (sequence "UNSTARTED(u)" "INPROGRESS(i!)" "SUSPEND(s@)" "|" "FINISHED(f!)" "ABORT(a@)")
+                       (sequence "TODO(t)" "NEXT(n)" "WAITING(w@)" "SOMEDAY(s)" "|" "DONE(d!)" "CANCELLED(c@)")
+                       (sequence "UNSTARTED(u)" "INPROGRESS(i!)" "SUSPEND(e@)" "|" "FINISHED(f!)" "ABORT(a@)")
                        )
    org-clock-string-limit 5
    org-log-refile 'nil
@@ -1072,11 +1072,13 @@
                            )
 
    org-agenda-custom-commands '(
-                                ("p" "At the office" tags-todo "project"
-                                 ((org-agenda-overriding-header "Office")
-                                  ))
+                                ("w" . "每周回顾")
+                                ("j" . "日常使用")
                                 ("ji" "所有待细化的项目" tags "inbox")
-                                ("jw" "所有等待中的项目" todo "WAITING")
+                                ("jw" "所有等待中的项目" ((todo "WAITING")))
+                                ("wp" "每周项目回顾" tags "+project" ((org-use-tag-inheritance nil)))
+                                ("wt" "每周TODO回顾" todo "TODO")
+                                ("ws" "每周SOMEDAY回顾" todo "SOMEDAY")
                                 )
    )
 
@@ -1245,11 +1247,13 @@
 
    org-caldav-todo-percent-states  '(
                                      (0 "TODO")
+                                     (9 "NEXT")
                                      (50 "WAITING")
+                                     (60 "SOMEDAY")
                                      (100 "DONE")
                                      (94 "CANCELLED")
                                      (1 "UNSTARTED")
-                                     (2 "INPROGESS")
+                                     (2 "INPROGRESS")
                                      (10 "SUSPEND")
                                      (99 "FINISHED")
                                      (95 "ABORT")
