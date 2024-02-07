@@ -920,6 +920,16 @@
   :config
   (setq-default format-all-formatters '(("YAML" (prettier)))))
 
+(use-package just-mode
+  :ensure t
+  )
+(use-package justl
+  :ensure t
+  :bind
+  (:map project-keymap
+        ("r" . justl-exec-recipe-in-dir))
+  )
+
 (use-package magit
   :ensure t
   :bind
@@ -1151,6 +1161,8 @@
   (setq org-habit-show-habits t)
   (setq org-habit-following-days 2)
   (setq org-habit-preceding-days 7)
+  (setq org-habit-graph-column 60)
+  (setq org-agenda-align-tags-to-column 60)
   )
 
 (use-package org-roam
@@ -1173,6 +1185,15 @@
   :hook
   (org-mode . org-modern-mode)
   (org-agenda-finalize . org-modern-agenda)
+  :config
+  (setq org-modern-todo-faces
+         '(
+                ("NEXT" :background "red"
+                 :foreground "white")
+                ("SOMEDAY" :background "gray"
+                 :foreground "black")
+                ))
+
   )
 
 (use-package ox-hugo
