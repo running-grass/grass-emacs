@@ -116,13 +116,8 @@
 ;; 关闭emacs自带的退出确认
 (setq confirm-kill-emacs #'yes-or-no-p)
 
-;; 自动补全括号
-(electric-pair-mode t)
-
-;; 打开自动保存
-;; (auto-save-mode 1)
-;; 自动保存当前访问的文件buffer
-;; (auto-save-visited-mode 1)
+;; 自动补全括号(关闭，有时候很烦人))
+(electric-pair-mode nil)
 
 ;; 编程模式下，光标在括号上时高亮另一个括号
 (add-hook 'prog-mode-hook #'show-paren-mode)
@@ -152,6 +147,30 @@
 
 ;; 设置自动折行
 (setq truncate-lines nil)
+
+;; 默认查找目录为home目录
+(setq command-line-default-directory "~")
+(setq nerd-icons-font-names '("SymbolsNerdFontMono-Regular.ttf")) ;
+
+;; 设置2个空格
+(setq-default indent-tabs-mode nil)
+(setq-default tab-width 2)
+(setq-default default-tab-width 2)
+(setq-default js-indent-level 2)
+
+;; 使用短的 y-or-n
+(setopt use-short-answers t)
+
+;; 禁用外部程序的粘贴板，避免扰乱emacs 内部的 kill-ring
+(setq select-enable-clipboard nil)
+
+;; 为外部剪切板增加绑定
+(keymap-global-set "C-S-y" 'clipboard-yank)
+(keymap-global-set "C-S-s" 'clipboard-save)
+(keymap-global-unset  "C-h C-f")
+
+(setq bookmark-default-file (expand-emacs-data "bookmarks"))
+(setq auto-save-list-file-prefix (expand-emacs-state "auto-save-list/.saves-"))
 
 ;; 调大 gc 的阈值
 (let ((normal-gc-cons-threshold (* 20 1024 1024))
@@ -186,68 +205,6 @@
 (defvar toggle-keymap (make-sparse-keymap) "一些开关按键")
 (defalias 'toggle-keymap toggle-keymap)
 
-(use-package emacs
-  :init
-  ;; 默认查找目录为home目录
-  (setq command-line-default-directory "~")
-  (setq nerd-icons-font-names '("SymbolsNerdFontMono-Regular.ttf")) ;
-
-  ;; 设置2个空格
-  (setq-default indent-tabs-mode nil)
-  (setq-default tab-width 2)
-  (setq-default default-tab-width 2)
-  (setq-default js-indent-level 2)
-
-  ;; 使用短的 y-or-n
-  (setopt use-short-answers t)
-
-  ;; 禁用外部程序的粘贴板，避免扰乱emacs 内部的 kill-ring
-  (setq select-enable-clipboard nil)
-  ;; 为外部剪切板增加绑定
-  (keymap-global-set "C-S-y" 'meow-clipboard-yank)
-  (keymap-global-set "C-S-s" 'meow-clipboard-save)
-  (keymap-global-unset  "C-h C-f")
-
-  (setq bookmark-default-file (expand-emacs-data "bookmarks"))
-  (setq auto-save-list-file-prefix (expand-emacs-state "auto-save-list/.saves-"))
-
-  ;; TAB cycle if there are only few candidates
-  (setq completion-cycle-threshold 3)
-
-  ;; Emacs 28: Hide commands in M-x which do not apply to the current mode.
-  ;; Corfu commands are hidden, since they are not supposed to be used via M-x.
-  ;; (setq read-extended-command-predicate
-  ;;       #'command-completion-default-include-p)
-
-  ;; Enable indentation+completion using the TAB key.
-  ;; `completion-at-point' is often bound to M-TAB.
-  (setq tab-always-indent 'complete)
-
-  ;; Add prompt indicator to `completing-read-multiple'.
-  ;; We display [CRM<separator>], e.g., [CRM,] if the separator is a comma.
-  (defun crm-indicator (args)
-    (cons (format "[CRM%s] %s"
-                  (replace-regexp-in-string
-                   "\\`\\[.*?]\\*\\|\\[.*?]\\*\\'" ""
-                   crm-separator)
-                  (car args))
-          (cdr args)))
-  (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
-
-  ;; Do not allow the cursor in the minibuffer prompt
-  (setq minibuffer-prompt-properties
-        '(read-only t cursor-intangible t face minibuffer-prompt))
-  (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
-
-  ;; Emacs 28: Hide commands in M-x which do not work in the current mode.
-  ;; Vertico commands are hidden in normal buffers.
-  ;; (setq read-extended-command-predicate
-  ;;       #'command-completion-default-include-p)
-
-  ;; Enable recursive minibuffers
-  (setq enable-recursive-minibuffers t)
-  )
-
 (defvar bootstrap-version)
 (setq straight-base-dir (expand-emacs-state ""))
 (let ((bootstrap-file
@@ -265,118 +222,104 @@
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 
-;; 保存了上一次打开文件时的光标位置
-(use-package saveplace
-  :straight nil
-  :init
-  (setq save-place-file (expand-emacs-state "places"))
-  :hook (after-init . save-place-mode))
+(straight-use-package 'leaf)
+(straight-use-package 'leaf-keywords)
+(leaf leaf-keywords
+    :config
+    ;; initialize leaf-keywords.el
+    (leaf-keywords-init))
 
-;; Persist history over Emacs restarts. Vertico sorts by history position.
-(use-package savehist
-  :straight nil
-  :config
-  (setq savehist-file (expand-emacs-state "history"))
-  :hook
-  (after-init . savehist-mode)
+;; 保存了上一次打开文件时的光标位置
+(leaf saveplace
+  :global-minor-mode save-place-mode
+  :custom
+  `(save-place-file . ,(expand-emacs-state "places"))
   )
 
-(use-package dabbrev
+;; Persist history over Emacs restarts. Vertico sorts by history position.
+(leaf savehist
+  :global-minor-mode t
+  :custom
+  `(savehist-file . ,(expand-emacs-state "history"))
+  )
+
+(leaf dabbrev
   ;; Swap M-/ and C-M-/
   :bind (("M-/" . dabbrev-completion)
          ("C-M-/" . dabbrev-expand))
   ;; Other useful Dabbrev configurations.
   :custom
-  (dabbrev-ignored-buffer-regexps '("\\.\\(?:pdf\\|jpe?g\\|png\\)\\'")))
+  (dabbrev-ignored-buffer-regexps . '("\\.\\(?:pdf\\|jpe?g\\|png\\)\\'")))
 
 
 ;; 配置 tramp -- 远程编辑
-(use-package tramp
-  :config
-  (setq tramp-default-method "ssh")
-  (setq tramp-persistency-file-name (expand-emacs-state "tramp")))
+(leaf tramp
+  :custom
+  (tramp-default-method . "ssh")
+  `(tramp-persistency-file-name . ,(expand-emacs-state "tramp")))
 
 
 ;; 文件被外部程序修改后，重新载入buffer
-(use-package autorevert
-  :hook (after-init . global-auto-revert-mode)
+(leaf autorevert
+  :global-minor-mode global-auto-revert-mode
   )
 
 ;; 最近打开的文件
-(use-package recentf
-  :init
-  (setq
-   recentf-save-file (expand-emacs-state "recentf")
-   recentf-max-saved-items 2000
-   recentf-max-menu-items 150)
-  :hook (after-init . recentf-mode)
+(leaf recentf
+  :global-minor-mode t
+  :custom
+  `(recentf-save-file . ,(expand-emacs-state "recentf"))
+  (recentf-max-saved-items . 2000)
+  (recentf-max-menu-items . 150)
   )
 
-(use-package exec-path-from-shell
+(leaf ace-window
   :straight t
-  :if (memq window-system '(mac ns))
-  :config
-  (exec-path-from-shell-initialize))
+  :bind (("C-x o" . ace-window)))
 
-
-;; 当某个文件的某一行特别长的时候，自动优化性能
-(use-package so-long
-  :straight t
-  :hook
-  (after-init . global-so-long-mode)
-  )
-
-(use-package ace-window
-  :straight t
-  :bind (("C-x o" . 'ace-window)))
-
-(use-package mwim
+(leaf mwim
   :straight t
   :bind
   ("C-a" . mwim-beginning-of-code-or-line)
   ("C-e" . mwim-end-of-code-or-line))
 
-;; 美化modeline
-(use-package doom-modeline
+(leaf doom-modeline
   :straight t
-  :config
-  (setq doom-modeline-modal-icon t)
-  :hook
-  (after-init . doom-modeline-mode))
-
-(use-package good-scroll
-  :straight t
-  :when *is-gui*          ; 在图形化界面时才使用这个插件
-  :hook
-  (after-init . good-scroll-mode)
+  :global-minor-mode t
+  :custom
+  (doom-modeline-modal-icon . t)
   )
 
-(use-package which-key
+(leaf good-scroll
   :straight t
-  :hook
-  (after-init . which-key-mode))
+  :global-minor-mode t
+  :when *is-gui*          ; 在图形化界面时才使用这个插件
+  )
 
-(use-package avy
+(leaf which-key
+  :straight t
+  :global-minor-mode t
+  )
+
+(leaf avy
   :straight t
   :bind
-  (:map jump-keymap
+  (:jump-keymap
         ("j" . avy-goto-char-timer)
         ("l" . avy-goto-line)
         )
   )
 
 ;; Enable rich annotations using the Marginalia package
-(use-package marginalia
+(leaf marginalia
   :straight t
+  :global-minor-mode t
   ;; Bind `marginalia-cycle' locally in the minibuffer.  To make the binding
   ;; available in the *Completions* buffer, add it to the
   ;; `completion-list-mode-map'.
-  :bind (:map minibuffer-local-map
+  :bind
+  (:minibuffer-local-map
               ("M-A" . marginalia-cycle))
-
-  ;; The :init section is always executed.
-  :hook
-  (after-init . marginalia-mode)
   )
 
 (defun delete-current-file ()
@@ -388,49 +331,51 @@
       (when currentFile (delete-file currentFile)))))
 
 ;; Example configuration for Consult
-(use-package consult
+(leaf consult
   :straight t
-  :demand t
   ;; Replace bindings. Lazily loaded due by `use-package'.
   ;; :config
   ;; (meow-leader-define-key '("l" . consult-mode-command))
 
-  :bind (
-         :map project-keymap
-         ("s" . consult-ripgrep)
+  :bind
+  (:project-keymap
+   ("s" . consult-ripgrep))
 
-         :map file-keymap
-         ("f" . find-file)
-         ("d" . delete-current-file)
-         ("e" . consult-recent-file)
-         :map buffer-keymap
-         ("b" . consult-buffer)
-         :map jump-keymap
-         ("g" . consult-goto-line)             ;; orig. goto-line
-         ("m" . consult-imenu)
-         ("s" . consult-line)
-         )                ;; orig. previous-matching-history-element
+  (:file-keymap
+   ("f" . find-file)
+   ("d" . delete-current-file)
+   ("e" . consult-recent-file))
+  (:buffer-keymap
+   ("b" . consult-buffer))
+  (:jump-keymap
+   ("g" . consult-goto-line)            ;; orig. goto-line
+   ("m" . consult-imenu)
+   ("s" . consult-line))                ;; orig. previous-matching-history-element
 
   ;; Enable automatic preview at point in the *Completions* buffer. This is
   ;; relevant when you use the default completion UI.
-  :hook (completion-list-mode . consult-preview-at-point-mode)
+  :hook
+  (completion-list-mode-hook . consult-preview-at-point-mode)
 
   ;; The :init configuration is always executed (Not lazy)
-  :init
+  :custom
 
   ;; Optionally configure the register formatting. This improves the register
   ;; preview for `consult-register', `consult-register-load',
   ;; `consult-register-store' and the Emacs built-ins.
-  (setq register-preview-delay 0.5
-        register-preview-function #'consult-register-format)
+  (register-preview-delay . 0.5)
+  (register-preview-function . #'consult-register-format)
+  ;; Use Consult to select xref locations with preview
+  (xref-show-xrefs-function . #'consult-xref)
+  (xref-show-definitions-function . #'consult-xref)
+  ;; Optionally configure the narrowing key.
+  ;; Both < and C-+ work reasonably well.
+  (consult-narrow-key . "<") ;; "C-+"
 
   ;; Optionally tweak the register preview window.
   ;; This adds thin lines, sorting and hides the mode line of the window.
+  :init
   (advice-add #'register-preview :override #'consult-register-window)
-
-  ;; Use Consult to select xref locations with preview
-  (setq xref-show-xrefs-function #'consult-xref
-        xref-show-definitions-function #'consult-xref)
 
   ;; Configure other variables and modes in the :config section,
   ;; after lazily loading the package.
@@ -453,9 +398,6 @@
    ;; :preview-key "M-."
    :preview-key '(:debounce 0.4 any))
 
-  ;; Optionally configure the narrowing key.
-  ;; Both < and C-+ work reasonably well.
-  (setq consult-narrow-key "<") ;; "C-+"
 
   ;; Optionally make narrowing help available in the minibuffer.
   ;; You may want to use `embark-prefix-help-command' or which-key instead.
@@ -476,33 +418,31 @@
   ;; (setq consult-project-function nil)
   )
 
-;; Enable vertico
-(use-package vertico
+(leaf vertico
   :straight t
-  :config
+  :global-minor-mode t
+  :custom
   ;; Show more candidates
-  (setq vertico-count 20)
+  (vertico-count . 20)
 
   ;; Grow and shrink the Vertico minibuffer
-  ;; (setq vertico-resize t)
+  (vertico-resize . t)
 
   ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
-  ;; (setq vertico-cycle t)
-  :hook
-  (after-init . vertico-mode)
+  (vertico-cycle . t)
   )
 
-(use-package embark
+(leaf embark
   :straight t
   :bind
   (("C-." . embark-act)         ;; pick some comfortable binding
    ("C-;" . embark-dwim)        ;; good alternative: M-.
    ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
 
-  :init
+  :custom
 
   ;; Optionally replace the key help with a completing-read interface
-  (setq prefix-help-command #'embark-prefix-help-command)
+  (prefix-help-command . #'embark-prefix-help-command)
 
   ;; Show the Embark target at point via Eldoc. You may adjust the
   ;; Eldoc strategy, if you want to see the documentation from
@@ -522,37 +462,28 @@
                  (window-parameters (mode-line-format . none)))))
 
 ;; Consult users will also want the embark-consult package.
-(use-package embark-consult
+(leaf embark-consult
   :straight t ; only need to install it, embark loads it after consult if found
   :after (consult embark)
   :hook
-  (embark-collect-mode . consult-preview-at-point-mode))
+  (embark-collect-mode-hook . consult-preview-at-point-mode))
 
-(use-package orderless
+(leaf orderless
   :straight t
-  :config
+  :custom
   ;; Configure a custom style dispatcher (see the Consult wiki)
   ;; (setq orderless-style-dispatchers '(+orderless-consult-dispatch orderless-affix-dispatch)
   ;;       orderless-component-separator #'orderless-escapable-split-on-space)
-  (setq completion-styles '(orderless basic)
-        completion-category-defaults nil
-        completion-category-overrides '((file (styles partial-completion))))
-
+  (completion-styles . '(orderless basic))
+  (completion-category-defaults . nil)
+  (completion-category-overrides . '((file (styles partial-completion))))
   )
 
 ;; 括号的多色彩
-(use-package rainbow-delimiters
+(leaf rainbow-delimiters
   :straight t
-  :defer t
   :hook
-  (prog-mode . rainbow-delimiters-mode)
-  )
-
-(use-package symbol-overlay
-  :straight t
-  :bind
-  (:map jump-keymap
-        ("i" . symbol-overlay-put))
+  (prog-mode-hook . rainbow-delimiters-mode)
   )
 
 (defun reload-config ()
@@ -668,50 +599,47 @@
    '("'" . repeat)
    '("<escape>" . ignore))
   )
-(use-package meow
+(leaf meow
   :straight t
-  :demand t
   :config
   (meow-setup)
   (meow-global-mode 1)
   (add-to-list 'meow-mode-state-list '(minibuffer-mode . insert))
   )
 
-(use-package pocket-reader
+(leaf pocket-reader
   :straight t
-  :defer 10
-  :config
-  (setq pocket-reader-open-url-default-function #'eww)
+  :custom
+  (pocket-reader-open-url-default-function . #'eww)
 
   :bind
-  (:map application-keymap
+  (:application-keymap
         ("p" . pocket-reader)
         )
-  (:map elfeed-search-mode-map
+  (:elfeed-search-mode-map
         ("P" . pocket-reader-elfeed-search-add-link)
         )
-  (:map elfeed-show-mode-map
+  (:elfeed-show-mode-map
         ("P" . pocket-reader-elfeed-entry-add-link)
         )
 
   )
 
-(use-package eww
-  :straight nil
+(leaf eww
   )
 
-(use-package elfeed-protocol
+(leaf elfeed-protocol
   :straight t
-  :config
+  :custom
   ;; curl recommend
-  (setq elfeed-use-curl t)
-  (setq elfeed-db-directory (expand-emacs-cache "elfeed"))
-  (setq elfeed-curl-extra-arguments '("--insecure")) ;necessary for https without a trust certificate
+  (elfeed-use-curl . t)
+  `(elfeed-db-directory . ,(expand-emacs-cache "elfeed"))
+  (elfeed-curl-extra-arguments . '("--insecure")) ;necessary for https without a trust certificate
   ;; (setq elfeed-protocol-fever-update-unread-only nil)
-  (setq elfeed-protocol-fever-fetch-category-as-tag t)
-  (setq elfeed-protocol-fever-update-unread-only t)
+  (elfeed-protocol-fever-fetch-category-as-tag . t)
+  (elfeed-protocol-fever-update-unread-only . t)
   ;; setup feeds
-  (setq elfeed-protocol-feeds
+  (elfeed-protocol-feeds .
         '(
           ("fever+https://grass@rss.grass.work:30443"
            :api-url "https://grass@rss.grass.work:30443/fever/"
@@ -719,25 +647,22 @@
           ))
 
   ;; enable elfeed-protocol
-  (setq elfeed-protocol-enabled-protocols '(fever))
-  (elfeed-set-timeout 36000)
-  :hook
-  (after-init . elfeed-protocol-enable)
+  (elfeed-protocol-enabled-protocols . '(fever))
+  (elfeed-curl-timeout . 36000)
+  :config
+  (elfeed-protocol-enable)
   :bind
-  (:map application-keymap
+  (:application-keymap
         ("r" . elfeed))
   )
 
 ;; Use Dabbrev with Corfu!
-(use-package yasnippet
+(leaf yasnippet
   :straight t
-  :init
-  (setq yas--default-user-snippets-dir (expand-emacs-data "snippets"))
-  :hook
-  (after-init . yas-global-mode)
+  :global-minor-mode yas-global-mode
+  :custom
+  `(yas--default-user-snippets-dir . ,(expand-emacs-data "snippets"))
   )
-
-;; (use-package codeium)
 
 (use-package format-all
   :straight t
@@ -1350,6 +1275,20 @@
 
   :bind
   ("C-c u" . vundo)
+  )
+
+(use-package exec-path-from-shell
+  :straight t
+  :if (memq window-system '(mac ns))
+  :config
+  (exec-path-from-shell-initialize))
+
+
+;; 当某个文件的某一行特别长的时候，自动优化性能
+(use-package so-long
+  :straight t
+  :hook
+  (after-init . global-so-long-mode)
   )
 
 ;; 自动给内置函数增加 demo

@@ -19,8 +19,8 @@
   - [[#修改默认配置][修改默认配置]]
   - [[#性能优化][性能优化]]
   - [[#定义用户级别的键位映射图][定义用户级别的键位映射图]]
-  - [[#emacs-的默认配置][Emacs 的默认配置]]
   - [[#straightel][straight.el]]
+  - [[#leafel][leaf.el]]
 - [[#内置包的配置][内置包的配置]]
 - [[#功能增强][功能增强]]
   - [[#ace-window][ace-window]]
@@ -35,7 +35,6 @@
   - [[#embark][embark]]
   - [[#orderless][orderless]]
   - [[#rainbow-delimiters][rainbow-delimiters]]
-  - [[#symbol-overlay][symbol-overlay]]
 - [[#meow---模态编辑][Meow - 模态编辑]]
 - [[#应用程序][应用程序]]
   - [[#pocket][Pocket]]
@@ -274,13 +273,8 @@
   ;; 关闭emacs自带的退出确认
   (setq confirm-kill-emacs #'yes-or-no-p)
 
-  ;; 自动补全括号
-  (electric-pair-mode t)
-
-  ;; 打开自动保存
-  ;; (auto-save-mode 1)
-  ;; 自动保存当前访问的文件buffer
-  ;; (auto-save-visited-mode 1)
+  ;; 自动补全括号(关闭，有时候很烦人))
+  (electric-pair-mode nil)
 
   ;; 编程模式下，光标在括号上时高亮另一个括号
   (add-hook 'prog-mode-hook #'show-paren-mode)
@@ -310,9 +304,31 @@
 
   ;; 设置自动折行
   (setq truncate-lines nil)
+
+  ;; 默认查找目录为home目录
+  (setq command-line-default-directory "~")
+  (setq nerd-icons-font-names '("SymbolsNerdFontMono-Regular.ttf")) ;
+
+  ;; 设置2个空格
+  (setq-default indent-tabs-mode nil)
+  (setq-default tab-width 2)
+  (setq-default default-tab-width 2)
+  (setq-default js-indent-level 2)
+
+  ;; 使用短的 y-or-n
+  (setopt use-short-answers t)
+
+  ;; 禁用外部程序的粘贴板，避免扰乱emacs 内部的 kill-ring
+  (setq select-enable-clipboard nil)
+
+  ;; 为外部剪切板增加绑定
+  (keymap-global-set "C-S-y" 'clipboard-yank)
+  (keymap-global-set "C-S-s" 'clipboard-save)
+  (keymap-global-unset  "C-h C-f")
+
+  (setq bookmark-default-file (expand-emacs-data "bookmarks"))
+  (setq auto-save-list-file-prefix (expand-emacs-state "auto-save-list/.saves-"))
 #+End_src
-
-
 
 ** 性能优化
 #+begin_src emacs-lisp
@@ -358,73 +374,6 @@
   (defalias 'toggle-keymap toggle-keymap)
 #+end_src
 
-** Emacs 的默认配置
-
-#+begin_src emacs-lisp
-  (use-package emacs
-    :init
-    ;; 默认查找目录为home目录
-    (setq command-line-default-directory "~")
-    (setq nerd-icons-font-names '("SymbolsNerdFontMono-Regular.ttf")) ;
-
-    ;; 设置2个空格
-    (setq-default indent-tabs-mode nil)
-    (setq-default tab-width 2)
-    (setq-default default-tab-width 2)
-    (setq-default js-indent-level 2)
-
-    ;; 使用短的 y-or-n
-    (setopt use-short-answers t)
-
-    ;; 禁用外部程序的粘贴板，避免扰乱emacs 内部的 kill-ring
-    (setq select-enable-clipboard nil)
-    ;; 为外部剪切板增加绑定
-    (keymap-global-set "C-S-y" 'meow-clipboard-yank)
-    (keymap-global-set "C-S-s" 'meow-clipboard-save)
-    (keymap-global-unset  "C-h C-f")
-
-    (setq bookmark-default-file (expand-emacs-data "bookmarks"))
-    (setq auto-save-list-file-prefix (expand-emacs-state "auto-save-list/.saves-"))
-
-    ;; TAB cycle if there are only few candidates
-    (setq completion-cycle-threshold 3)
-
-    ;; Emacs 28: Hide commands in M-x which do not apply to the current mode.
-    ;; Corfu commands are hidden, since they are not supposed to be used via M-x.
-    ;; (setq read-extended-command-predicate
-    ;;       #'command-completion-default-include-p)
-
-    ;; Enable indentation+completion using the TAB key.
-    ;; `completion-at-point' is often bound to M-TAB.
-    (setq tab-always-indent 'complete)
-
-    ;; Add prompt indicator to `completing-read-multiple'.
-    ;; We display [CRM<separator>], e.g., [CRM,] if the separator is a comma.
-    (defun crm-indicator (args)
-      (cons (format "[CRM%s] %s"
-                    (replace-regexp-in-string
-                     "\\`\\[.*?]\\*\\|\\[.*?]\\*\\'" ""
-                     crm-separator)
-                    (car args))
-            (cdr args)))
-    (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
-
-    ;; Do not allow the cursor in the minibuffer prompt
-    (setq minibuffer-prompt-properties
-          '(read-only t cursor-intangible t face minibuffer-prompt))
-    (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
-
-    ;; Emacs 28: Hide commands in M-x which do not work in the current mode.
-    ;; Vertico commands are hidden in normal buffers.
-    ;; (setq read-extended-command-predicate
-    ;;       #'command-completion-default-include-p)
-
-    ;; Enable recursive minibuffers
-    (setq enable-recursive-minibuffers t)
-    )
-
-#+end_src
-
 ** straight.el
 #+begin_src emacs-lisp
   (defvar bootstrap-version)
@@ -444,74 +393,64 @@
         (eval-print-last-sexp)))
     (load bootstrap-file nil 'nomessage))
 #+end_src
+
+** leaf.el
+#+begin_src emacs-lisp
+  (straight-use-package 'leaf)
+  (straight-use-package 'leaf-keywords)
+  (leaf leaf-keywords
+      :config
+      ;; initialize leaf-keywords.el
+      (leaf-keywords-init))
+#+end_src
 * 内置包的配置
 
 #+begin_src emacs-lisp
   ;; 保存了上一次打开文件时的光标位置
-  (use-package saveplace
-    :straight nil
-    :init
-    (setq save-place-file (expand-emacs-state "places"))
-    :hook (after-init . save-place-mode))
-
-  ;; Persist history over Emacs restarts. Vertico sorts by history position.
-  (use-package savehist
-    :straight nil
-    :config
-    (setq savehist-file (expand-emacs-state "history"))
-    :hook
-    (after-init . savehist-mode)
+  (leaf saveplace
+    :global-minor-mode save-place-mode
+    :custom
+    `(save-place-file . ,(expand-emacs-state "places"))
     )
 
-  (use-package dabbrev
+  ;; Persist history over Emacs restarts. Vertico sorts by history position.
+  (leaf savehist
+    :global-minor-mode t
+    :custom
+    `(savehist-file . ,(expand-emacs-state "history"))
+    )
+
+  (leaf dabbrev
     ;; Swap M-/ and C-M-/
     :bind (("M-/" . dabbrev-completion)
            ("C-M-/" . dabbrev-expand))
     ;; Other useful Dabbrev configurations.
     :custom
-    (dabbrev-ignored-buffer-regexps '("\\.\\(?:pdf\\|jpe?g\\|png\\)\\'")))
+    (dabbrev-ignored-buffer-regexps . '("\\.\\(?:pdf\\|jpe?g\\|png\\)\\'")))
 
 
   ;; 配置 tramp -- 远程编辑
-  (use-package tramp
-    :config
-    (setq tramp-default-method "ssh")
-    (setq tramp-persistency-file-name (expand-emacs-state "tramp")))
+  (leaf tramp
+    :custom
+    (tramp-default-method . "ssh")
+    `(tramp-persistency-file-name . ,(expand-emacs-state "tramp")))
 
 
   ;; 文件被外部程序修改后，重新载入buffer
-  (use-package autorevert
-    :hook (after-init . global-auto-revert-mode)
+  (leaf autorevert
+    :global-minor-mode global-auto-revert-mode
     )
 
   ;; 最近打开的文件
-  (use-package recentf
-    :init
-    (setq
-     recentf-save-file (expand-emacs-state "recentf")
-     recentf-max-saved-items 2000
-     recentf-max-menu-items 150)
-    :hook (after-init . recentf-mode)
+  (leaf recentf
+    :global-minor-mode t
+    :custom
+    `(recentf-save-file . ,(expand-emacs-state "recentf"))
+    (recentf-max-saved-items . 2000)
+    (recentf-max-menu-items . 150)
     )
 
-  (use-package exec-path-from-shell
-    :straight t
-    :if (memq window-system '(mac ns))
-    :config
-    (exec-path-from-shell-initialize))
-
-
-  ;; 当某个文件的某一行特别长的时候，自动优化性能
-  (use-package so-long
-    :straight t
-    :hook
-    (after-init . global-so-long-mode)
-    )
 #+end_src
-
-
-
-
 
 * 功能增强
 
@@ -521,9 +460,9 @@
 
 
 #+begin_src emacs-lisp
-  (use-package ace-window
+  (leaf ace-window
     :straight t
-    :bind (("C-x o" . 'ace-window)))
+    :bind (("C-x o" . ace-window)))
 #+end_src
 
 
@@ -534,7 +473,7 @@
 同时，更有意义的是，它还可以覆盖 C-e move-end-of-line 为 mwim-end-of-code-or-line，当本行代码结尾有注释时，第一次按 C-e 将光标移动到代码尾部、注释之前。再按一次则是移动到整行的行尾。 这就大大提高了写代码的效率。
 
 #+begin_src emacs-lisp
-  (use-package mwim
+  (leaf mwim
     :straight t
     :bind
     ("C-a" . mwim-beginning-of-code-or-line)
@@ -547,13 +486,12 @@
 可以进行丰富的定制化
 
 #+begin_src emacs-lisp
-  ;; 美化modeline
-  (use-package doom-modeline
+  (leaf doom-modeline
     :straight t
-    :config
-    (setq doom-modeline-modal-icon t)
-    :hook
-    (after-init . doom-modeline-mode))
+    :global-minor-mode t
+    :custom
+    (doom-modeline-modal-icon . t)
+    )
 #+end_src
 
 ** good-scroll
@@ -562,11 +500,10 @@
 
 
 #+begin_src emacs-lisp
-  (use-package good-scroll
+  (leaf good-scroll
     :straight t
+    :global-minor-mode t
     :when *is-gui*          ; 在图形化界面时才使用这个插件
-    :hook
-    (after-init . good-scroll-mode)
     )
 #+end_src
 
@@ -575,10 +512,10 @@
 这是一个实用小工具，专门针对 Emacs 快捷键多而杂的问题，安装后，当按下部分快捷键前缀时，它会通过 minibuffer 提示你都有哪些可以按的快捷键及其命令名。例如启动了 hs-minor-mode 后，我们正常可以通过 C-c @ C-h 折叠代码块、用 C-c @ C-s 来展开代码块。但这个快捷键很长，时常记不住，那么有了 which-key 后我们可以先按下 C-c @ ，此时 which-key 就会提示我们接下来可以按的键：
 
 #+begin_src emacs-lisp
-  (use-package which-key
+  (leaf which-key
     :straight t
-    :hook
-    (after-init . which-key-mode))
+    :global-minor-mode t
+    )
 #+end_src
 
 
@@ -587,10 +524,10 @@
 [[https://pavinberg.github.io/emacs-book/zh/enhancement/#avy][使用方法]]
 
 #+begin_src emacs-lisp
-  (use-package avy
+  (leaf avy
     :straight t
     :bind
-    (:map jump-keymap
+    (:jump-keymap
           ("j" . avy-goto-char-timer)
           ("l" . avy-goto-line)
           )
@@ -603,17 +540,15 @@
 
 #+begin_src emacs-lisp
   ;; Enable rich annotations using the Marginalia package
-  (use-package marginalia
+  (leaf marginalia
     :straight t
+    :global-minor-mode t
     ;; Bind `marginalia-cycle' locally in the minibuffer.  To make the binding
     ;; available in the *Completions* buffer, add it to the
     ;; `completion-list-mode-map'.
-    :bind (:map minibuffer-local-map
+    :bind
+    (:minibuffer-local-map
                 ("M-A" . marginalia-cycle))
-
-    ;; The :init section is always executed.
-    :hook
-    (after-init . marginalia-mode)
     )
 #+end_src
 
@@ -629,49 +564,51 @@
         (when currentFile (delete-file currentFile)))))
 
   ;; Example configuration for Consult
-  (use-package consult
+  (leaf consult
     :straight t
-    :demand t
     ;; Replace bindings. Lazily loaded due by `use-package'.
     ;; :config
     ;; (meow-leader-define-key '("l" . consult-mode-command))
 
-    :bind (
-           :map project-keymap
-           ("s" . consult-ripgrep)
+    :bind
+    (:project-keymap
+     ("s" . consult-ripgrep))
 
-           :map file-keymap
-           ("f" . find-file)
-           ("d" . delete-current-file)
-           ("e" . consult-recent-file)
-           :map buffer-keymap
-           ("b" . consult-buffer)
-           :map jump-keymap
-           ("g" . consult-goto-line)             ;; orig. goto-line
-           ("m" . consult-imenu)
-           ("s" . consult-line)
-           )                ;; orig. previous-matching-history-element
+    (:file-keymap
+     ("f" . find-file)
+     ("d" . delete-current-file)
+     ("e" . consult-recent-file))
+    (:buffer-keymap
+     ("b" . consult-buffer))
+    (:jump-keymap
+     ("g" . consult-goto-line)            ;; orig. goto-line
+     ("m" . consult-imenu)
+     ("s" . consult-line))                ;; orig. previous-matching-history-element
 
     ;; Enable automatic preview at point in the *Completions* buffer. This is
     ;; relevant when you use the default completion UI.
-    :hook (completion-list-mode . consult-preview-at-point-mode)
+    :hook
+    (completion-list-mode-hook . consult-preview-at-point-mode)
 
     ;; The :init configuration is always executed (Not lazy)
-    :init
+    :custom
 
     ;; Optionally configure the register formatting. This improves the register
     ;; preview for `consult-register', `consult-register-load',
     ;; `consult-register-store' and the Emacs built-ins.
-    (setq register-preview-delay 0.5
-          register-preview-function #'consult-register-format)
+    (register-preview-delay . 0.5)
+    (register-preview-function . #'consult-register-format)
+    ;; Use Consult to select xref locations with preview
+    (xref-show-xrefs-function . #'consult-xref)
+    (xref-show-definitions-function . #'consult-xref)
+    ;; Optionally configure the narrowing key.
+    ;; Both < and C-+ work reasonably well.
+    (consult-narrow-key . "<") ;; "C-+"
 
     ;; Optionally tweak the register preview window.
     ;; This adds thin lines, sorting and hides the mode line of the window.
+    :init
     (advice-add #'register-preview :override #'consult-register-window)
-
-    ;; Use Consult to select xref locations with preview
-    (setq xref-show-xrefs-function #'consult-xref
-          xref-show-definitions-function #'consult-xref)
 
     ;; Configure other variables and modes in the :config section,
     ;; after lazily loading the package.
@@ -694,9 +631,6 @@
      ;; :preview-key "M-."
      :preview-key '(:debounce 0.4 any))
 
-    ;; Optionally configure the narrowing key.
-    ;; Both < and C-+ work reasonably well.
-    (setq consult-narrow-key "<") ;; "C-+"
 
     ;; Optionally make narrowing help available in the minibuffer.
     ;; You may want to use `embark-prefix-help-command' or which-key instead.
@@ -721,20 +655,18 @@
 ** vertico
 
 #+begin_src emacs-lisp
-  ;; Enable vertico
-  (use-package vertico
+  (leaf vertico
     :straight t
-    :config
+    :global-minor-mode t
+    :custom
     ;; Show more candidates
-    (setq vertico-count 20)
+    (vertico-count . 20)
 
     ;; Grow and shrink the Vertico minibuffer
-    ;; (setq vertico-resize t)
+    (vertico-resize . t)
 
     ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
-    ;; (setq vertico-cycle t)
-    :hook
-    (after-init . vertico-mode)
+    (vertico-cycle . t)
     )
 #+end_src
 
@@ -743,17 +675,17 @@
 embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输入命令再输入命令作用的对象。例如，我们先按下 C-x C-f 再输入文件名来打开文件。但是有的时候，我们按下命令、选择了文件后，可能又后悔了，想要对相同的文件输入另一个命令。例如我们按下 C-x k 打算关闭一个后台 buffer，然后输入了文件名，这时我们忽然想再查看一眼那个文件。那么平常，我们只好按下 C-g 放弃这次命令，再用 C-x b 切换过去。而有了 embark ，我们可以在按下 C-x k 、输入了部分文件名选中文件后 ，按下 C-. 触发 embark- act，这时按下 o 就可以在另一个新的窗口打开这个 buffer 了。我们无需放弃命令重新输入，而是继续输入就好了。
 
 #+begin_src emacs-lisp
-  (use-package embark
+  (leaf embark
     :straight t
     :bind
     (("C-." . embark-act)         ;; pick some comfortable binding
      ("C-;" . embark-dwim)        ;; good alternative: M-.
      ("C-h B" . embark-bindings)) ;; alternative for `describe-bindings'
 
-    :init
+    :custom
 
     ;; Optionally replace the key help with a completing-read interface
-    (setq prefix-help-command #'embark-prefix-help-command)
+    (prefix-help-command . #'embark-prefix-help-command)
 
     ;; Show the Embark target at point via Eldoc. You may adjust the
     ;; Eldoc strategy, if you want to see the documentation from
@@ -773,26 +705,25 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
                    (window-parameters (mode-line-format . none)))))
 
   ;; Consult users will also want the embark-consult package.
-  (use-package embark-consult
+  (leaf embark-consult
     :straight t ; only need to install it, embark loads it after consult if found
     :after (consult embark)
     :hook
-    (embark-collect-mode . consult-preview-at-point-mode))
+    (embark-collect-mode-hook . consult-preview-at-point-mode))
 #+end_src
 
 ** orderless
 一个模糊搜索的插件，可以为多个其它插件提供排序函数
 #+begin_src emacs-lisp
-  (use-package orderless
+  (leaf orderless
     :straight t
-    :config
+    :custom
     ;; Configure a custom style dispatcher (see the Consult wiki)
     ;; (setq orderless-style-dispatchers '(+orderless-consult-dispatch orderless-affix-dispatch)
     ;;       orderless-component-separator #'orderless-escapable-split-on-space)
-    (setq completion-styles '(orderless basic)
-          completion-category-defaults nil
-          completion-category-overrides '((file (styles partial-completion))))
-
+    (completion-styles . '(orderless basic))
+    (completion-category-defaults . nil)
+    (completion-category-overrides . '((file (styles partial-completion))))
     )
 #+end_src
 
@@ -802,27 +733,13 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
 
 #+begin_src emacs-lisp
   ;; 括号的多色彩
-  (use-package rainbow-delimiters
+  (leaf rainbow-delimiters
     :straight t
-    :defer t
     :hook
-    (prog-mode . rainbow-delimiters-mode)
+    (prog-mode-hook . rainbow-delimiters-mode)
     )
 #+end_src
 
-** symbol-overlay
-
-这个插件可以高亮出当前 Buffer 中所有的、与光标所在处的符号相同的符号，同时提供一组动作
-
-#+begin_src emacs-lisp
-  (use-package symbol-overlay
-    :straight t
-    :bind
-    (:map jump-keymap
-          ("i" . symbol-overlay-put))
-    )
-
-#+end_src
 * Meow - 模态编辑
 
 可以说这个模态编辑包是整个配置中我最喜欢的。 它可以最大限度的使用 =Emacs= 原生键位。而不需要每安装一个新的包，就去做一些适配和兼容（我说的就是 =evil= ）
@@ -941,9 +858,8 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
      '("'" . repeat)
      '("<escape>" . ignore))
     )
-  (use-package meow
+  (leaf meow
     :straight t
-    :demand t
     :config
     (meow-setup)
     (meow-global-mode 1)
@@ -968,7 +884,7 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
 3. 使用 =./install-eaf.py --ignore-core-deps= 安装所需依赖
 
 #+begin_src emacs-lisp
-  (use-package eaf
+  (leaf eaf
     :demand t
     :load-path (expand-file-name
                 "workspace/forks/emacs-application-framework"
@@ -984,7 +900,7 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
     ;;       ("SPC" . meow-keypad))
     )
 
-  (use-package eaf-browser
+  (leaf eaf-browser
     :after eaf
     :load-path (expand-file-name
                 "workspace/forks/emacs-application-framework/app/browser"
@@ -1013,7 +929,7 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
 目前只在 nix 相关的环境下可用
 
 #+begin_src emacs-lisp
-  (use-package mu4e
+  (leaf mu4e
     :straight t
     :when *is-nix-module*
     :init
@@ -1046,10 +962,10 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
     :autoload
     (mu4e-update-index)
     :bind
-    (:map application-keymap
+    (:application-keymap
           ("m" . mu4e)
           )
-    (:map toggle-keymap
+    (:toggle-keymap
           ("m" . mu4e-update-mail-and-index))
     )
 #+end_src
@@ -1060,20 +976,19 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
 用于阅读和管理稍后阅读列表
 
 #+begin_src emacs-lisp
-  (use-package pocket-reader
+  (leaf pocket-reader
     :straight t
-    :defer 10
-    :config
-    (setq pocket-reader-open-url-default-function #'eww)
+    :custom
+    (pocket-reader-open-url-default-function . #'eww)
 
     :bind
-    (:map application-keymap
+    (:application-keymap
           ("p" . pocket-reader)
           )
-    (:map elfeed-search-mode-map
+    (:elfeed-search-mode-map
           ("P" . pocket-reader-elfeed-search-add-link)
           )
-    (:map elfeed-show-mode-map
+    (:elfeed-show-mode-map
           ("P" . pocket-reader-elfeed-entry-add-link)
           )
 
@@ -1083,26 +998,25 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
 ** 浏览器
 
 #+begin_src emacs-lisp
-  (use-package eww
-    :straight nil
+  (leaf eww
     )
 #+end_src
 
 ** RSS
 
 #+begin_src emacs-lisp
-  (use-package elfeed-protocol
+  (leaf elfeed-protocol
     :straight t
-    :config
+    :custom
     ;; curl recommend
-    (setq elfeed-use-curl t)
-    (setq elfeed-db-directory (expand-emacs-cache "elfeed"))
-    (setq elfeed-curl-extra-arguments '("--insecure")) ;necessary for https without a trust certificate
+    (elfeed-use-curl . t)
+    `(elfeed-db-directory . ,(expand-emacs-cache "elfeed"))
+    (elfeed-curl-extra-arguments . '("--insecure")) ;necessary for https without a trust certificate
     ;; (setq elfeed-protocol-fever-update-unread-only nil)
-    (setq elfeed-protocol-fever-fetch-category-as-tag t)
-    (setq elfeed-protocol-fever-update-unread-only t)
+    (elfeed-protocol-fever-fetch-category-as-tag . t)
+    (elfeed-protocol-fever-update-unread-only . t)
     ;; setup feeds
-    (setq elfeed-protocol-feeds
+    (elfeed-protocol-feeds .
           '(
             ("fever+https://grass@rss.grass.work:30443"
              :api-url "https://grass@rss.grass.work:30443/fever/"
@@ -1110,12 +1024,12 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
             ))
 
     ;; enable elfeed-protocol
-    (setq elfeed-protocol-enabled-protocols '(fever))
-    (elfeed-set-timeout 36000)
-    :hook
-    (after-init . elfeed-protocol-enable)
+    (elfeed-protocol-enabled-protocols . '(fever))
+    (elfeed-curl-timeout . 36000)
+    :config
+    (elfeed-protocol-enable)
     :bind
-    (:map application-keymap
+    (:application-keymap
           ("r" . elfeed))
     )
 #+end_src
@@ -1127,15 +1041,13 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
 
 #+begin_src emacs-lisp
   ;; Use Dabbrev with Corfu!
-  (use-package yasnippet
+  (leaf yasnippet
     :straight t
-    :init
-    (setq yas--default-user-snippets-dir (expand-emacs-data "snippets"))
-    :hook
-    (after-init . yas-global-mode)
+    :global-minor-mode yas-global-mode
+    :custom
+    `(yas--default-user-snippets-dir . ,(expand-emacs-data "snippets"))
     )
 
-  ;; (use-package codeium)
 #+end_src
 
 * 编程语言
@@ -1867,6 +1779,19 @@ Org-mode 相关的配置。
 #+end_src
 ** 小功能
 #+begin_src emacs-lisp
+  (use-package exec-path-from-shell
+    :straight t
+    :if (memq window-system '(mac ns))
+    :config
+    (exec-path-from-shell-initialize))
+
+
+  ;; 当某个文件的某一行特别长的时候，自动优化性能
+  (use-package so-long
+    :straight t
+    :hook
+    (after-init . global-so-long-mode)
+    )
 
   ;; 自动给内置函数增加 demo
   (use-package elisp-demos
