@@ -72,7 +72,6 @@
       darwinModules.default = { config, ... }: {
         options = { };
         config = {
-
           environment.systemPackages = packages; # ++ [ emacsWrap ];
           # environment.variables =
           #   (env-vars // { GRASS_EMACS_ENV = "nix-module"; });
@@ -88,12 +87,12 @@
             brews = [ "emacs-plus@30" ];
           };
 
-          home-manager.extraSpecialArgs = { inherit pkgs; };
+          # home-manager.extraSpecialArgs = { inherit pkgs; };
 
-          home-manager.users.grass = {
-            imports = [ ./modules/rbw.nix ];
-            programs.zsh.shellAliases = { };
-          };
+          # home-manager.users.grass = {
+          #   imports = [ ./modules/rbw.nix ];
+          #   programs.zsh.shellAliases = { };
+          # };
         };
       };
     })

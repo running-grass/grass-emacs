@@ -186,14 +186,7 @@
 (defvar toggle-keymap (make-sparse-keymap) "一些开关按键")
 (defalias 'toggle-keymap toggle-keymap)
 
-(use-package use-package
-  :ensure nil
-  )
-(setq use-package-compute-statistics t)
-
-
 (use-package emacs
-  :ensure nil
   :init
   ;; 默认查找目录为home目录
   (setq command-line-default-directory "~")
@@ -255,27 +248,33 @@
   (setq enable-recursive-minibuffers t)
   )
 
-(unless *is-nix-module*
-  (setq package-archives '(("gnu" . "https://mirrors.ustc.edu.cn/elpa/gnu/")
-                           ("melpa" . "https://mirrors.ustc.edu.cn/elpa/melpa/")
-                           ("nongnu" . "https://mirrors.ustc.edu.cn/elpa/nongnu/")))
-  (package-initialize)
-  )
-
-(use-package el-get
-  :ensure t
-  )
+(defvar bootstrap-version)
+(setq straight-base-dir (expand-emacs-state ""))
+(let ((bootstrap-file
+       (expand-file-name
+        "straight/repos/straight.el/bootstrap.el"
+        (or (bound-and-true-p straight-base-dir)
+            user-emacs-directory)))
+      (bootstrap-version 7))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
 
 ;; 保存了上一次打开文件时的光标位置
 (use-package saveplace
-  :ensure nil
+  :straight nil
   :init
   (setq save-place-file (expand-emacs-state "places"))
   :hook (after-init . save-place-mode))
 
 ;; Persist history over Emacs restarts. Vertico sorts by history position.
 (use-package savehist
-  :ensure nil
+  :straight nil
   :config
   (setq savehist-file (expand-emacs-state "history"))
   :hook
@@ -283,7 +282,6 @@
   )
 
 (use-package dabbrev
-  :ensure nil
   ;; Swap M-/ and C-M-/
   :bind (("M-/" . dabbrev-completion)
          ("C-M-/" . dabbrev-expand))
@@ -294,7 +292,6 @@
 
 ;; 配置 tramp -- 远程编辑
 (use-package tramp
-  :ensure nil
   :config
   (setq tramp-default-method "ssh")
   (setq tramp-persistency-file-name (expand-emacs-state "tramp")))
@@ -302,13 +299,11 @@
 
 ;; 文件被外部程序修改后，重新载入buffer
 (use-package autorevert
-  :ensure nil
   :hook (after-init . global-auto-revert-mode)
   )
 
 ;; 最近打开的文件
 (use-package recentf
-  :ensure nil
   :init
   (setq
    recentf-save-file (expand-emacs-state "recentf")
@@ -318,7 +313,7 @@
   )
 
 (use-package exec-path-from-shell
-  :ensure t
+  :straight t
   :if (memq window-system '(mac ns))
   :config
   (exec-path-from-shell-initialize))
@@ -326,43 +321,43 @@
 
 ;; 当某个文件的某一行特别长的时候，自动优化性能
 (use-package so-long
-  :ensure t
+  :straight t
   :hook
   (after-init . global-so-long-mode)
   )
 
 (use-package ace-window
-  :ensure t
+  :straight t
   :bind (("C-x o" . 'ace-window)))
 
 (use-package mwim
-  :ensure t
+  :straight t
   :bind
   ("C-a" . mwim-beginning-of-code-or-line)
   ("C-e" . mwim-end-of-code-or-line))
 
 ;; 美化modeline
 (use-package doom-modeline
-  :ensure t
+  :straight t
   :config
   (setq doom-modeline-modal-icon t)
   :hook
   (after-init . doom-modeline-mode))
 
 (use-package good-scroll
-  :ensure t
+  :straight t
   :when *is-gui*          ; 在图形化界面时才使用这个插件
   :hook
   (after-init . good-scroll-mode)
   )
 
 (use-package which-key
-  :ensure t
+  :straight t
   :hook
   (after-init . which-key-mode))
 
 (use-package avy
-  :ensure t
+  :straight t
   :bind
   (:map jump-keymap
         ("j" . avy-goto-char-timer)
@@ -372,7 +367,7 @@
 
 ;; Enable rich annotations using the Marginalia package
 (use-package marginalia
-  :ensure t
+  :straight t
   ;; Bind `marginalia-cycle' locally in the minibuffer.  To make the binding
   ;; available in the *Completions* buffer, add it to the
   ;; `completion-list-mode-map'.
@@ -394,7 +389,7 @@
 
 ;; Example configuration for Consult
 (use-package consult
-  :ensure t
+  :straight t
   :demand t
   ;; Replace bindings. Lazily loaded due by `use-package'.
   ;; :config
@@ -483,7 +478,7 @@
 
 ;; Enable vertico
 (use-package vertico
-  :ensure t
+  :straight t
   :config
   ;; Show more candidates
   (setq vertico-count 20)
@@ -498,7 +493,7 @@
   )
 
 (use-package embark
-  :ensure t
+  :straight t
   :bind
   (("C-." . embark-act)         ;; pick some comfortable binding
    ("C-;" . embark-dwim)        ;; good alternative: M-.
@@ -528,13 +523,13 @@
 
 ;; Consult users will also want the embark-consult package.
 (use-package embark-consult
-  :ensure t ; only need to install it, embark loads it after consult if found
+  :straight t ; only need to install it, embark loads it after consult if found
   :after (consult embark)
   :hook
   (embark-collect-mode . consult-preview-at-point-mode))
 
 (use-package orderless
-  :ensure t
+  :straight t
   :config
   ;; Configure a custom style dispatcher (see the Consult wiki)
   ;; (setq orderless-style-dispatchers '(+orderless-consult-dispatch orderless-affix-dispatch)
@@ -547,14 +542,14 @@
 
 ;; 括号的多色彩
 (use-package rainbow-delimiters
-  :ensure t
+  :straight t
   :defer t
   :hook
   (prog-mode . rainbow-delimiters-mode)
   )
 
 (use-package symbol-overlay
-  :ensure t
+  :straight t
   :bind
   (:map jump-keymap
         ("i" . symbol-overlay-put))
@@ -674,7 +669,7 @@
    '("<escape>" . ignore))
   )
 (use-package meow
-  :ensure t
+  :straight t
   :demand t
   :config
   (meow-setup)
@@ -682,48 +677,8 @@
   (add-to-list 'meow-mode-state-list '(minibuffer-mode . insert))
   )
 
-(use-package mu4e
-  :ensure t
-  :when *is-nix-module*
-  :init
-  ;; 定时更新索引
-  (run-with-idle-timer (* 5 60) t 'mu4e-update-index)
-  :config
-  ;; 默认是motion模式
-  (add-to-list 'meow-mode-state-list '(mu4e-view-mode . motion))
-  ;; allow for updating mail using 'U' in the main view:
-
-  (setq user-full-name "Leo Liu"
-        user-mail-address "hi@grass.show"
-        )
-
-  ;; attachments go here
-  (setq sendmail-program "msmtp"
-        mail-user-agent 'mu4e-user-agent
-
-        send-mail-function 'smtpmail-send-it
-        message-sendmail-f-is-evil t
-        message-sendmail-extra-arguments '("--read-envelope-from")
-        message-send-mail-function 'message-send-mail-with-sendmail
-        )
-  (setq
-        mu4e-attachment-dir  "~/Downloads"
-        mu4e-get-mail-command "offlineimap -o"
-        mu4e-update-interval 300
-        mu4e-notification-support t
-        )
-  :autoload
-  (mu4e-update-index)
-  :bind
-  (:map application-keymap
-        ("m" . mu4e)
-        )
-  (:map toggle-keymap
-        ("m" . mu4e-update-mail-and-index))
-  )
-
 (use-package pocket-reader
-  :ensure t
+  :straight t
   :defer 10
   :config
   (setq pocket-reader-open-url-default-function #'eww)
@@ -742,11 +697,11 @@
   )
 
 (use-package eww
-  :ensure nil
+  :straight nil
   )
 
 (use-package elfeed-protocol
-  :ensure t
+  :straight t
   :config
   ;; curl recommend
   (setq elfeed-use-curl t)
@@ -775,7 +730,7 @@
 
 ;; Use Dabbrev with Corfu!
 (use-package yasnippet
-  :ensure t
+  :straight t
   :init
   (setq yas--default-user-snippets-dir (expand-emacs-data "snippets"))
   :hook
@@ -785,7 +740,7 @@
 ;; (use-package codeium)
 
 (use-package format-all
-  :ensure t
+  :straight t
   :commands format-all-mode
   :hook (prog-mode . format-all-mode)
   :bind
@@ -802,7 +757,9 @@
   )
 
 (use-package lsp-bridge
-  :ensure t
+  :straight '(lsp-bridge :type git :host github :repo "manateelazycat/lsp-bridge"
+                         :files (:defaults "*.el" "*.py" "acm" "core" "langserver" "multiserver" "resources")
+                         :build (:not compile))
   :when *is-nix-module*
   :config
   ;; (setq lsp-bridge-enable-log nil)
@@ -840,22 +797,27 @@
   )
 
 (use-package acm-terminal
-  :ensure t
+  :when *is-tui*
+  :init
+  (straight-use-package
+   '(popon :host nil :repo "https://codeberg.org/akib/emacs-popon.git"))
+
+  :straight '(acm-terminal :host github :repo "twlz0ne/acm-terminal")
+
   :after (yasnippet lsp-bridge acm)
-  :when (and *is-tui* *is-nix-module*)
   )
 
 (use-package use-package-ensure-system-package
-  :ensure t
+  :straight t
   :defer t)
 
 (use-package editorconfig
-  :ensure t
+  :straight t
   :config
   (editorconfig-mode 1))
 
 (use-package nix-mode
-  :ensure t
+  :straight t
   :mode "\\.nix\\'"
   :config
   (setq lsp-bridge-nix-lsp-server 'rnix-lsp)
@@ -863,7 +825,7 @@
   )
 
 (use-package php-mode
-  :ensure t
+  :straight t
   :mode "\\.php\\'"
   :config
   (setq lsp-bridge-php-lsp-server 'phpactor)
@@ -877,7 +839,7 @@
 ;; 配置emmet-mode
 ;; 默认为C-j展开
 (use-package emmet-mode
-  :ensure t
+  :straight t
   :hook html-mode
   :hook html-ts-mode
   :hook css-mode
@@ -885,12 +847,11 @@
   )
 
 (use-package typescript-ts-mode
-  :ensure nil
   :mode "\\.ts\\'"
   )
 
 (use-package tide
-  :ensure t
+  :straight t
   ;; :after (company flycheck)
   :hook ((typescript-ts-mode . tide-setup)
          (tsx-ts-mode . tide-setup)
@@ -899,14 +860,14 @@
          (before-save . tide-format-before-save)))
 
 (use-package vue-mode
-  :ensure t
+  :straight t
   :mode "\\.vue\\'"
   :config
   ;; 0, 1, or 2, representing (respectively) none, low, and high coloring
   (setq mmm-submode-decoration-level 0))
 
 (use-package markdown-mode
-  :ensure t
+  :straight t
   :mode ("README\\.md\\'" . gfm-mode)
   :init (setq markdown-command "multimarkdown")
   :bind (:map markdown-mode-map
@@ -915,23 +876,22 @@
               ))
 
 (use-package yaml-ts-mode
-  :ensure nil
   :mode ("\\.yml\\'" "\\.yaml\\'")
   :config
   (setq-default format-all-formatters '(("YAML" (prettier)))))
 
 (use-package just-mode
-  :ensure t
+  :straight t
   )
 (use-package justl
-  :ensure t
+  :straight t
   :bind
   (:map project-keymap
         ("r" . justl-exec-recipe-in-dir))
   )
 
 (use-package magit
-  :ensure t
+  :straight t
   :bind
   (:map project-keymap
         ("v" . magit)
@@ -950,7 +910,6 @@
   )
 
 (use-package project
-  :ensure nil
   :config
   (setq project-list-file (expand-emacs-state "projects"))
   :bind
@@ -964,7 +923,7 @@
 
 
 (use-package projectile
-  :ensure t
+  :straight t
   :defer 5
 
   :config
@@ -982,7 +941,7 @@
 
 ;; 绑定 consult-projectile
 (use-package consult-projectile
-  :ensure t
+  :straight t
   :after (consult projectile)
   :bind
   (:map project-keymap
@@ -1005,7 +964,7 @@
 
 
 (use-package vterm
-  :ensure t
+  :straight t
   :after (projectile)
   :config
   (add-to-list 'meow-mode-state-list '(vterm-mode . insert))
@@ -1019,7 +978,7 @@
 
 ;; 保存是自动更新具有 :TOC: 的标题为目录
 (use-package toc-org
-  :ensure t
+  :straight t
   :hook
   (org-mode . toc-org-mode)
   )
@@ -1136,14 +1095,9 @@
   (org-after-todo-state-change-hook . org-save-all-org-buffers)
   )
 
-;; (use-package svg-lib
-;;   :init
-;;   (el-get-bundle rougier/svg-lib)
-;;   )
-
 ;; 番茄钟
 ;; (use-package org-pomodoro
-;; :ensure t
+;; :straight t
 ;;   :after org
 ;;   :bind
 ;;   (:map gtd-map
@@ -1155,7 +1109,6 @@
 ;;   )
 
 (use-package org-habit
-  :ensure nil
   :after org
   :config
   (setq org-habit-show-habits t)
@@ -1166,7 +1119,7 @@
   )
 
 (use-package org-roam
-  :ensure t
+  :straight t
   :after org
   :custom
   (org-roam-directory "~/org/roam/")
@@ -1181,7 +1134,7 @@
 
 ;; org 美化
 (use-package org-modern
-  :ensure t
+  :straight t
   :hook
   (org-mode . org-modern-mode)
   (org-agenda-finalize . org-modern-agenda)
@@ -1197,7 +1150,7 @@
   )
 
 (use-package ox-hugo
-  :ensure t
+  :straight t
   :after ox
   ;; :hook (org . org-hugo-auto-export-mode)
 
@@ -1235,7 +1188,7 @@
       )
 
 (use-package org-journal
-  :ensure t
+  :straight t
   :config
   (setq org-journal-dir "~/org/journal")
   :bind
@@ -1244,7 +1197,7 @@
   )
 
 (use-package org-caldav
-  :ensure t
+  :straight t
   :init
   ;; 定时每5分钟同步
   ;; (run-with-idle-timer (* 3 60) t 'org-caldav-sync)
@@ -1308,7 +1261,7 @@
   )
 
 (use-package cal-china-x
-  :ensure t
+  :straight t
   :config
   (setq mark-holidays-in-calendar t)
   (setq cal-china-x-important-holidays cal-china-x-chinese-holidays)
@@ -1348,12 +1301,11 @@
 
 ;; 高亮当前行
 (use-package hl-line
-  :ensure nil
   :defer t
   :hook (after-init . global-hl-line-mode))
 
 (use-package modus-themes
-  :ensure t
+  :straight t
   :demand t
   :config
   (setq modus-themes-italic-constructs t
@@ -1373,7 +1325,7 @@
   )
 
 (use-package nerd-icons
-  :ensure t
+  :straight t
   ;; :custom
   ;; The Nerd Font you want to use in GUI
   ;; "Symbols Nerd Font Mono" is the default and is recommended
@@ -1382,19 +1334,19 @@
   )
 
 (use-package nerd-icons-dired
-  :ensure t
+  :straight t
   :after nerd-icons
   :hook
   (dired-mode . nerd-icons-dired-mode))
 (use-package nerd-icons-completion
-  :ensure t
+  :straight t
   :after marginalia nerd-icons
   :config
   (nerd-icons-completion-mode)
   (add-hook 'marginalia-mode-hook #'nerd-icons-completion-marginalia-setup))
 
 (use-package vundo
-  :ensure t
+  :straight t
 
   :bind
   ("C-c u" . vundo)
@@ -1402,7 +1354,7 @@
 
 ;; 自动给内置函数增加 demo
 (use-package elisp-demos
-  :ensure t
+  :straight t
   :config
   (advice-add 'describe-function-1 :after #'elisp-demos-advice-describe-function-1)
   )
@@ -1411,13 +1363,13 @@
 
 ;; 记录命令使用次数
 (use-package keyfreq
-  :ensure t
+  :straight t
   :config
   (keyfreq-mode 1)
   (keyfreq-autosave-mode 1))
 
 (use-package wakatime-mode
-  :ensure t
+  :straight t
   :config
   (setq wakatime-cli-path "wakatime-cli")
   :hook
@@ -1437,7 +1389,7 @@
 ;; Optionally use the `orderless' completion style.
 
 (use-package dirvish
-  :ensure t
+  :straight t
   :after nerd-icons
   :config
   (setq dirvish-mode-line-format
@@ -1461,7 +1413,7 @@
 
 ;; use-package:
 (use-package dashboard
-  :ensure t
+  :straight t
   :after nerd-icons
 
   :init
@@ -1520,8 +1472,7 @@
   (dashboard-setup-startup-hook))
 
 (use-package auto-save
-  :init
-  (el-get-bundle manateelazycat/auto-save)
+  :straight '(auto-save :host github :type git :repo "manateelazycat/auto-save")
   :config
   ;; (auto-save-enable)
 
