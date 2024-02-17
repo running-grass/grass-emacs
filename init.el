@@ -304,10 +304,8 @@
 (leaf avy
   :straight t
   :bind
-  (:jump-keymap
-        ("j" . avy-goto-char-timer)
-        ("l" . avy-goto-line)
-        )
+  ("C-c j j" . avy-goto-char-timer)
+  ("C-c j l" . avy-goto-line)
   )
 
 ;; Enable rich annotations using the Marginalia package
@@ -318,8 +316,9 @@
   ;; available in the *Completions* buffer, add it to the
   ;; `completion-list-mode-map'.
   :bind
+  ;; TODO 不生效
   (:minibuffer-local-map
-              ("M-A" . marginalia-cycle))
+   ("M-A" . marginalia-cycle))
   )
 
 (defun delete-current-file ()
@@ -338,19 +337,14 @@
   ;; (meow-leader-define-key '("l" . consult-mode-command))
 
   :bind
-  (:project-keymap
-   ("s" . consult-ripgrep))
-
-  (:file-keymap
-   ("f" . find-file)
-   ("d" . delete-current-file)
-   ("e" . consult-recent-file))
-  (:buffer-keymap
-   ("b" . consult-buffer))
-  (:jump-keymap
-   ("g" . consult-goto-line)            ;; orig. goto-line
-   ("m" . consult-imenu)
-   ("s" . consult-line))                ;; orig. previous-matching-history-element
+  ("C-c b b" . consult-buffer)
+  ("C-c p s" . consult-ripgrep)
+  ("C-c f f" . find-file)
+  ("C-c f d" . delete-current-file)
+  ("C-c f e" . consult-recent-file)
+  ("C-c j g" . consult-goto-line)            ;; orig. goto-line
+  ("C-c j m" . consult-imenu)
+  ("C-c j s" . consult-line)                ;; orig. previous-matching-history-element
 
   ;; Enable automatic preview at point in the *Completions* buffer. This is
   ;; relevant when you use the default completion UI.
@@ -601,6 +595,7 @@
   )
 (leaf meow
   :straight t
+  :require t
   :config
   (meow-setup)
   (meow-global-mode 1)
@@ -664,61 +659,51 @@
   `(yas--default-user-snippets-dir . ,(expand-emacs-data "snippets"))
   )
 
-(use-package format-all
+(leaf format-all
   :straight t
   :commands format-all-mode
-  :hook (prog-mode . format-all-mode)
+  :hook
+  (prog-mode-hook . format-all-mode)
   :bind
-  (:map buffer-keymap
-        ("=" . format-all-region-or-buffer)
-        )
+  ("C-c b =" . format-all-region-or-buffer)
   )
 
-(use-package emacs
-  :bind
-  ;; (:map jump-keymap
-  ;;       ("l" . goto-line))
-
-  )
-
-(use-package lsp-bridge
+(leaf lsp-bridge
   :straight '(lsp-bridge :type git :host github :repo "manateelazycat/lsp-bridge"
                          :files (:defaults "*.el" "*.py" "acm" "core" "langserver" "multiserver" "resources")
                          :build (:not compile))
-  :when *is-nix-module*
-  :config
-  ;; (setq lsp-bridge-enable-log nil)
-  (setq
-   lsp-bridge-php-lsp-server 'phpactor
-   lsp-bridge-nix-lsp-server 'rnix-lsp
-   )
-  (setq lsp-bridge-use-local-codeium t
-        acm-enable-codeium t
-        acm-backend-codeium-api-key-path (expand-emacs-data "lsp-bridge/codeium_api_key.txt"))
+  ;; :global-minor-mode global-lsp-bridge-mode
+  :custom
+  (lsp-bridge-enable-log . nil)
 
-  (add-to-list 'meow-mode-state-list '(lsp-bridge-ref-mode . motion))
+  (lsp-bridge-php-lsp-server . 'phpactor)
+  (lsp-bridge-nix-lsp-server . 'rnix-lsp)
 
+  (lsp-bridge-use-local-codeium . t)
+  (acm-enable-codeium . t)
+  ;; `(acm-backend-codeium-api-key-path . ,(expand-emacs-data "lsp-bridge/codeium_api_key.txt"))
+
+  ;; :init
   ;; 自动安装 codeium ， 后续需要通过 nixpkgs 来安装
-  (let* ((binary-dir (file-name-as-directory codeium-bridge-folder))
-        (binary-file (concat binary-dir "language_server"))
-        )
-    (unless (file-exists-p binary-file)
-      (lsp-bridge-install-update-codeium))
-    )
-  :hook
-  (after-init . global-lsp-bridge-mode)
+  ;; (let* ((binary-dir (file-name-as-directory codeium-bridge-folder))
+  ;;       (binary-file (concat binary-dir "language_server"))
+  ;;       )
+  ;;   (unless (file-exists-p binary-file)
+  ;;     (lsp-bridge-install-update-codeium))
+  ;;   )
+
+  :config
+  (add-to-list 'meow-mode-state-list '(lsp-bridge-ref-mode . motion))
+  (global-lsp-bridge-mode)
 
   :bind
   ("M-." . lsp-bridge-find-def)
   ("M-," . lsp-bridge-find-def-return)
 
-  (:map jump-keymap
-        ("d" . lsp-bridge-find-def)
-        ("D" . lsp-bridge-find-def-return)
-        )
-  (:map toggle-keymap
-        ("l" . lsp-bridge-mode)
-        )
+  ("C-c j d" . lsp-bridge-find-def)
+  ("C-c j D" . lsp-bridge-find-def-return)
+
+  ("C-c t l" . lsp-bridge-mode)
   )
 
 (use-package acm-terminal
