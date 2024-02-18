@@ -1353,6 +1353,7 @@
 
 (leaf auto-save
   :straight '(auto-save :host github :type git :repo "manateelazycat/auto-save")
+  :require t
   :config
   ;; (auto-save-enable)
 

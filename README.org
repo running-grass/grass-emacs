@@ -37,9 +37,9 @@
   - [[#rainbow-delimiters][rainbow-delimiters]]
 - [[#meow---模态编辑][Meow - 模态编辑]]
 - [[#应用程序][应用程序]]
+  - [[#rss][RSS]]
   - [[#pocket][Pocket]]
   - [[#浏览器][浏览器]]
-  - [[#rss][RSS]]
 - [[#补全][补全]]
 - [[#编程语言][编程语言]]
   - [[#通用配置][通用配置]]
@@ -60,7 +60,7 @@
   - [[#jornal][Jornal]]
   - [[#org-caldav][Org Caldav]]
   - [[#农历][农历]]
-- [[#样式][样式]]
+- [[#style][Style]]
 - [[#杂项][杂项]]
   - [[#undoredo][Undo/Redo]]
   - [[#小功能][小功能]]
@@ -1852,6 +1852,7 @@ Org-mode 相关的配置。
 #+begin_src emacs-lisp
   (leaf auto-save
     :straight '(auto-save :host github :type git :repo "manateelazycat/auto-save")
+    :require t
     :config
     ;; (auto-save-enable)
 
