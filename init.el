@@ -199,8 +199,10 @@
 (defvar org-keymap (make-sparse-keymap) "所有gtd相关的全局操作都在这里")
 (defalias 'org-keymap org-keymap)
 
-(defvar jump-keymap (make-sparse-keymap) "和导航跳转相关的按键")
-(defalias 'jump-keymap jump-keymap)
+(defvar-keymap grass/jump-map
+  :doc "My jump keymap"
+  )
+(keymap-set global-map "C-c j" grass/jump-map)
 
 (defvar toggle-keymap (make-sparse-keymap) "一些开关按键")
 (defalias 'toggle-keymap toggle-keymap)
@@ -332,10 +334,6 @@
 ;; Example configuration for Consult
 (leaf consult
   :straight t
-  ;; Replace bindings. Lazily loaded due by `use-package'.
-  ;; :config
-  ;; (meow-leader-define-key '("l" . consult-mode-command))
-
   :bind
   ("C-c b b" . consult-buffer)
   ("C-c p s" . consult-ripgrep)
@@ -483,14 +481,12 @@
 (defun reload-config ()
   "重新加载配置"
   (interactive)
-  (if *is-nix-module*
-      (warn "Nixos/NixDarwin 使用Module的场景下，不允许重新加载配置。因为配置不在用户文件夹中")
     (progn
       (org-babel-tangle-file (expand-emacs-config  "README.org"))
       (load-file (expand-emacs-config "init.el"))
       )
     )
-  )
+
 (defun meow-setup ()
   (setq meow-cheatsheet-layout meow-cheatsheet-layout-qwerty)
 
@@ -500,8 +496,8 @@
    '("<escape>" . ignore))
   (meow-leader-define-key
    ;; SPC j/k will run the original command in MOTION state.
-   '("j" . "H-j")
-   '("k" . "H-k")
+   '("J" . "H-j")
+   '("K" . "H-k")
    ;; Use SPC (0-9) for digit arguments.
    '("1" . meow-digit-argument)
    '("2" . meow-digit-argument)
@@ -516,14 +512,6 @@
    '("/" . meow-keypad-describe-key)
 
    '("?" . meow-cheatsheet)
-
-   '("p" . project-keymap)
-   '("a" . application-keymap)
-   '("b" . buffer-keymap)
-   '("f" . file-keymap)
-   '("n" . org-keymap)
-   '("j" . jump-keymap)
-   '("t" . toggle-keymap)
 
    '("<SPC>" . consult-mode-command)
 
@@ -602,31 +590,9 @@
   (add-to-list 'meow-mode-state-list '(minibuffer-mode . insert))
   )
 
-(leaf pocket-reader
-  :straight t
-  :custom
-  (pocket-reader-open-url-default-function . #'eww)
-
-  :bind
-  (:application-keymap
-        ("p" . pocket-reader)
-        )
-  (:elfeed-search-mode-map
-        ("P" . pocket-reader-elfeed-search-add-link)
-        )
-  (:elfeed-show-mode-map
-        ("P" . pocket-reader-elfeed-entry-add-link)
-        )
-
-  )
-
-(leaf eww
-  )
-
 (leaf elfeed-protocol
   :straight t
   :custom
-  ;; curl recommend
   (elfeed-use-curl . t)
   `(elfeed-db-directory . ,(expand-emacs-cache "elfeed"))
   (elfeed-curl-extra-arguments . '("--insecure")) ;necessary for https without a trust certificate
@@ -647,8 +613,26 @@
   :config
   (elfeed-protocol-enable)
   :bind
-  (:application-keymap
-        ("r" . elfeed))
+  ("C-c a r" . elfeed)
+  )
+
+(leaf pocket-reader
+  :straight t
+  :after elfeed
+  :custom
+  (pocket-reader-open-url-default-function . #'eww)
+  :bind
+  ("C-c a p" . pocket-reader)
+  (:elfeed-search-mode-map
+        ("P" . pocket-reader-elfeed-search-add-link)
+        )
+  (:elfeed-show-mode-map
+        ("P" . pocket-reader-elfeed-entry-add-link)
+        )
+
+  )
+
+(leaf eww
   )
 
 ;; Use Dabbrev with Corfu!
@@ -706,27 +690,25 @@
   ("C-c t l" . lsp-bridge-mode)
   )
 
-(use-package acm-terminal
+(leaf acm-terminal
   :when *is-tui*
-  :init
-  (straight-use-package
-   '(popon :host nil :repo "https://codeberg.org/akib/emacs-popon.git"))
+  :straight '(popon :host nil :repo "https://codeberg.org/akib/emacs-popon.git")
+  ;; :init
+  ;; (straight-use-package
+  ;;  '(popon :host nil :repo "https://codeberg.org/akib/emacs-popon.git"))
 
-  :straight '(acm-terminal :host github :repo "twlz0ne/acm-terminal")
+  ;; :s
+  traight '(acm-terminal :host github :repo "twlz0ne/acm-terminal")
 
   :after (yasnippet lsp-bridge acm)
   )
 
-(use-package use-package-ensure-system-package
-  :straight t
-  :defer t)
-
-(use-package editorconfig
+(leaf editorconfig
   :straight t
   :config
   (editorconfig-mode 1))
 
-(use-package nix-mode
+(leaf nix-mode
   :straight t
   :mode "\\.nix\\'"
   :config
@@ -734,82 +716,81 @@
   (setq-default format-all-formatters '(("Nix" (nixfmt))))
   )
 
-(use-package php-mode
+(leaf php-mode
   :straight t
   :mode "\\.php\\'"
   :config
   (setq lsp-bridge-php-lsp-server 'phpactor)
   :bind
-  (:map php-mode-map
-        ;; 清除 C-. 为 embark 腾空
-        ("C-," . nil)
-        ("C-." . nil))
+  (:php-mode-map
+   ;; 清除 C-. 为 embark 腾空
+   ("C-," . nil)
+   ("C-." . nil))
   )
 
 ;; 配置emmet-mode
 ;; 默认为C-j展开
-(use-package emmet-mode
+(leaf emmet-mode
   :straight t
-  :hook html-mode
-  :hook html-ts-mode
-  :hook css-mode
-  :hook vue-mode
+  :hook html-mode-hook
+  :hook html-ts-mode-hook
+  :hook css-mode-hook
+  :hook vue-mode-hook
   )
 
-(use-package typescript-ts-mode
+(leaf typescript-ts-mode
   :mode "\\.ts\\'"
   )
 
-(use-package tide
+(leaf tide
   :straight t
   ;; :after (company flycheck)
-  :hook ((typescript-ts-mode . tide-setup)
-         (tsx-ts-mode . tide-setup)
-         (js-mode . tide-setup)
-         (typescript-ts-mode . tide-hl-identifier-mode)
-         (before-save . tide-format-before-save)))
+  :hook
+  (typescript-ts-mode-hook . tide-setup)
+  (tsx-ts-mode-hook . tide-setup)
+  (js-mode-hook . tide-setup)
+  (typescript-ts-mode-hook . tide-hl-identifier-mode)
+  (before-save-hook . tide-format-before-save)
+  )
 
-(use-package vue-mode
+(leaf vue-mode
   :straight t
   :mode "\\.vue\\'"
   :config
   ;; 0, 1, or 2, representing (respectively) none, low, and high coloring
   (setq mmm-submode-decoration-level 0))
 
-(use-package markdown-mode
+(leaf markdown-mode
   :straight t
   :mode ("README\\.md\\'" . gfm-mode)
   :init (setq markdown-command "multimarkdown")
-  :bind (:map markdown-mode-map
-              ("C-c C-e" . markdown-do)
+  :bind
+  (:markdown-mode-map
+   ("C-c C-e" . markdown-do)
+   ))
 
-              ))
-
-(use-package yaml-ts-mode
+(leaf yaml-ts-mode
   :mode ("\\.yml\\'" "\\.yaml\\'")
   :config
   (setq-default format-all-formatters '(("YAML" (prettier)))))
 
-(use-package just-mode
+(leaf just-mode
   :straight t
   )
-(use-package justl
-  :straight t
-  :bind
-  (:map project-keymap
-        ("r" . justl-exec-recipe-in-dir))
-  )
-
-(use-package magit
+(leaf justl
   :straight t
   :bind
-  (:map project-keymap
-        ("v" . magit)
-        )
+  ("C-c p r" . justl-exec-recipe-in-dir)
+  )
+
+(leaf magit
+  :straight t
+  :bind
+  ("C-c p v" . magit)
   )
 
 
-(use-package transient
+(leaf transient
   :config
   (setq
    transient-levels-file (expand-emacs-state "transient/levels.el")
@@ -819,23 +800,19 @@
 
   )
 
-(use-package project
+(leaf project
   :config
   (setq project-list-file (expand-emacs-state "projects"))
   :bind
-  (:map project-keymap
-        ("p" . project-switch-project)
-        ("f" . project-find-file)
-        ("d" . project-find-dir)
-        ("b" . consult-project-buffer)
-        )
+  ("C-c p p" . project-switch-project)
+  ("C-c p f" . project-find-file)
+  ("C-c p d" . project-find-dir)
+  ("C-c p b" . consult-project-buffer)
   )
 
 
-(use-package projectile
+(leaf projectile
   :straight t
-  :defer 5
-
   :config
   ;; 关闭启动时的自动项目发现
   (setq projectile-auto-discover nil)
@@ -850,14 +827,13 @@
   )
 
 ;; 绑定 consult-projectile
-(use-package consult-projectile
+(leaf consult-projectile
   :straight t
   :after (consult projectile)
   :bind
-  (:map project-keymap
-        ("p" . consult-projectile-switch-project)
-        ("4 f" . consult-projectile-find-file-other-window)
-        ))
+  ("C-c p p" . consult-projectile-switch-project)
+  ("C-c p 4 f" . consult-projectile-find-file-other-window)
+  )
 
 
 
@@ -873,29 +849,27 @@
     (vterm-send-return)))
 
 
-(use-package vterm
+(leaf vterm
   :straight t
   :after (projectile)
   :config
   (add-to-list 'meow-mode-state-list '(vterm-mode . insert))
 
   :bind
-  (:map buffer-keymap
-        ("t" . vterm))
-  (:map project-keymap
-        ("t" . projectile-run-vterm))
+  ("C-c b t" . vterm)
+  ("C-c p t" . projectile-run-vterm)
   )
 
 ;; 保存是自动更新具有 :TOC: 的标题为目录
-(use-package toc-org
+(leaf toc-org
   :straight t
   :hook
-  (org-mode . toc-org-mode)
+  (org-mode-hook . toc-org-mode)
   )
 
 
 ;; Org模式相关的，和GTD相关的
-(use-package org
+(leaf org
   :config
   (setq org-agenda-include-diary t)
   (setq
@@ -991,13 +965,10 @@
 
 
   :bind
-  (:map org-keymap
-        ("s" . org-save-all-org-buffers)
-        ("c" . org-capture)
-        ("n" . org-agenda-list)
-        ("a" . org-agenda)
-        )
-
+  ("C-c n s" . org-save-all-org-buffers)
+  ("C-c n c" . org-capture)
+  ("C-c n n" . org-agenda-list)
+  ("C-c n a" . org-agenda)
   :hook
   (org-capture-after-finalize-hook . org-save-all-org-buffers)
   (org-after-tags-change-hook . org-save-all-org-buffers)
@@ -1006,7 +977,7 @@
   )
 
 ;; 番茄钟
-;; (use-package org-pomodoro
+;; (leaf org-pomodoro
 ;; :straight t
 ;;   :after org
 ;;   :bind
@@ -1018,36 +989,33 @@
 ;;         ("C-c C-x C-p" . org-pomodoro))
 ;;   )
 
-(use-package org-habit
+(leaf org-habit
   :after org
   :config
   (setq org-habit-show-habits t)
   (setq org-habit-following-days 2)
   (setq org-habit-preceding-days 7)
   (setq org-habit-graph-column 60)
-  (setq org-agenda-align-tags-to-column 60)
   )
 
-(use-package org-roam
+(leaf org-roam
   :straight t
-  :after org
+  ;; :package t
   :custom
-  (org-roam-directory "~/org/roam/")
+  (org-roam-directory . "~/org/roam/")
   :bind
-  (:map org-keymap
-        ("f" . org-roam-find-file)
-        ("i" . org-roam-insert)
-        )
+  ("C-c n f" . org-roam-find-file)
+  ("C-c n i" . org-roam-insert)
   :config
   (setq org-all-files (f-files org-directory 'org-roam--org-file-p t))
   )
 
 ;; org 美化
-(use-package org-modern
+(leaf org-modern
   :straight t
   :hook
-  (org-mode . org-modern-mode)
-  (org-agenda-finalize . org-modern-agenda)
+  (org-mode-hook . org-modern-mode)
+  (org-agenda-finalize-hook . org-modern-agenda)
   :config
   (setq org-modern-todo-faces
          '(
@@ -1059,11 +1027,9 @@
 
   )
 
-(use-package ox-hugo
+(leaf ox-hugo
   :straight t
   :after ox
-  ;; :hook (org . org-hugo-auto-export-mode)
-
   :config
   (setq org-hugo-section "post"
         org-hugo-auto-set-lastmod	t
@@ -1097,16 +1063,15 @@
 
       )
 
-(use-package org-journal
+(leaf org-journal
   :straight t
   :config
   (setq org-journal-dir "~/org/journal")
   :bind
-  (:map org-keymap
-        ("j" . org-journal-new-entry))
+  ("C-c n j" . org-journal-new-entry)
   )
 
-(use-package org-caldav
+(leaf org-caldav
   :straight t
   :init
   ;; 定时每5分钟同步
@@ -1131,16 +1096,16 @@
 
    org-caldav-todo-percent-states  '(
                                      (0 "TODO")
-                                     (9 "NEXT")
+                                     (10 "NEXT")
                                      (50 "WAITING")
                                      (60 "SOMEDAY")
                                      (100 "DONE")
-                                     (94 "CANCELLED")
-                                     (1 "UNSTARTED")
-                                     (2 "INPROGRESS")
+                                     (80 "CANCELLED")
+                                     (30 "UNSTARTED")
+                                     (40 "INPROGRESS")
                                      (10 "SUSPEND")
-                                     (99 "FINISHED")
-                                     (95 "ABORT")
+                                     (90 "FINISHED")
+                                     (70 "ABORT")
                                      )
 
    ;; 如果上一次异常，不询问
@@ -1166,12 +1131,12 @@
    org-caldav-show-sync-results nil
    )
   :bind
-  (:map toggle-keymap
-        ("c" . org-caldav-sync))
+  ("C-c t c" . org-caldav-sync)
   )
 
-(use-package cal-china-x
+(leaf cal-china-x
   :straight t
+  :require t
   :config
   (setq mark-holidays-in-calendar t)
   (setq cal-china-x-important-holidays cal-china-x-chinese-holidays)
@@ -1210,13 +1175,14 @@
             day dayname cn-month-string cn-day-string)))
 
 ;; 高亮当前行
-(use-package hl-line
-  :defer t
-  :hook (after-init . global-hl-line-mode))
+(leaf hl-line
+  :global-minor-mode global-hl-line-mode
+  )
 
-(use-package modus-themes
+(leaf modus-themes
   :straight t
-  :demand t
+  :leaf-defer nil
+  :require t
   :config
   (setq modus-themes-italic-constructs t
         modus-themes-bold-constructs nil)
@@ -1229,40 +1195,33 @@
 
   :bind
   ("<f5>" . modus-themes-toggle)
-  (:map toggle-keymap
-        ("t" . modus-themes-toggle)
-        )
+  ("C-c t t" . modus-themes-toggle)
   )
 
-(use-package nerd-icons
+(leaf nerd-icons
   :straight t
-  ;; :custom
-  ;; The Nerd Font you want to use in GUI
-  ;; "Symbols Nerd Font Mono" is the default and is recommended
-  ;; but you can use any other Nerd Font if you want
-  ;; (nerd-icons-font-family "Symbols Nerd Font Mono")
   )
 
-(use-package nerd-icons-dired
+(leaf nerd-icons-dired
   :straight t
   :after nerd-icons
   :hook
-  (dired-mode . nerd-icons-dired-mode))
-(use-package nerd-icons-completion
+  (dired-mode-hook . nerd-icons-dired-mode))
+(leaf nerd-icons-completion
   :straight t
   :after marginalia nerd-icons
   :config
   (nerd-icons-completion-mode)
   (add-hook 'marginalia-mode-hook #'nerd-icons-completion-marginalia-setup))
 
-(use-package vundo
+(leaf vundo
   :straight t
 
   :bind
   ("C-c u" . vundo)
   )
 
-(use-package exec-path-from-shell
+(leaf exec-path-from-shell
   :straight t
   :if (memq window-system '(mac ns))
   :config
@@ -1270,39 +1229,36 @@
 
 
 ;; 当某个文件的某一行特别长的时候，自动优化性能
-(use-package so-long
+(leaf so-long
   :straight t
-  :hook
-  (after-init . global-so-long-mode)
+  :global-minor-mode global-so-long-mode
   )
 
 ;; 自动给内置函数增加 demo
-(use-package elisp-demos
+(leaf elisp-demos
   :straight t
   :config
   (advice-add 'describe-function-1 :after #'elisp-demos-advice-describe-function-1)
   )
-;; (use-package company)
+;; (leaf company)
 
 
 ;; 记录命令使用次数
-(use-package keyfreq
+(leaf keyfreq
   :straight t
   :config
   (keyfreq-mode 1)
   (keyfreq-autosave-mode 1))
 
-(use-package wakatime-mode
+(leaf wakatime-mode
   :straight t
+  :global-minor-mode global-wakatime-mode
   :config
   (setq wakatime-cli-path "wakatime-cli")
-  :hook
-  (after-init . global-wakatime-mode)
   )
 
 ;; 快速选择工具
-;; (use-package expand-region
-;;   :defer t
+;; (leaf expand-region
 ;;   :bind
 ;;   ("C-c e" . er/expand-region)
 ;;   )
@@ -1312,7 +1268,7 @@
 
 ;; Optionally use the `orderless' completion style.
 
-(use-package dirvish
+(leaf dirvish
   :straight t
   :after nerd-icons
   :config
@@ -1332,14 +1288,14 @@
   (dirvish-peek-mode) ; Preview files in minibuffer
   (dirvish-side-follow-mode) ; similar to `treemacs-follow-mode'
   :hook
-  (dired-mode . (dirvish-override-dired-mode))
+  (dired-mode-hook . (dirvish-override-dired-mode))
   )
 
-;; use-package:
-(use-package dashboard
+;; leaf:
+(leaf dashboard
   :straight t
   :after nerd-icons
-
+  :require t
   :init
   ;; Content is not centered by default. To center, set
   (setq dashboard-center-content t)
@@ -1395,7 +1351,7 @@
 
   (dashboard-setup-startup-hook))
 
-(use-package auto-save
+(leaf auto-save
   :straight '(auto-save :host github :type git :repo "manateelazycat/auto-save")
   :config
   ;; (auto-save-enable)
@@ -1411,9 +1367,7 @@
             (string-suffix-p
              "gpg"
              (file-name-extension (buffer-name)) t))))
-
-  :hook
-  (after-init . auto-save-enable)
+  (auto-save-enable)
   )
 
 (when (file-exists-p *custom-file*)
