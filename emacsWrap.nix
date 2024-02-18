@@ -1,6 +1,7 @@
 { pkgs, ... }:
 let
-  emacsBase = if pkgs.stdenv.isDarwin then pkgs.emacs-macport else pkgs.emacs-pgtk;
+  emacsBase =
+    if pkgs.stdenv.isDarwin then pkgs.emacs-macport else pkgs.emacs-pgtk;
   emacsWrap = (pkgs.emacsWithPackagesFromUsePackage {
     package = emacsBase;
 
@@ -18,4 +19,4 @@ let
       [ treesit-grammars.with-all-grammars ];
   });
 
-in emacsWrap
+in pkgs.emacs-pgtk
