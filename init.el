@@ -117,7 +117,7 @@
 (setq confirm-kill-emacs #'yes-or-no-p)
 
 ;; 自动补全括号(关闭，有时候很烦人))
-(electric-pair-mode nil)
+(electric-pair-mode -1)
 
 ;; 编程模式下，光标在括号上时高亮另一个括号
 (add-hook 'prog-mode-hook #'show-paren-mode)
@@ -165,8 +165,8 @@
 (setq select-enable-clipboard nil)
 
 ;; 为外部剪切板增加绑定
-(keymap-global-set "C-S-y" 'clipboard-yank)
-(keymap-global-set "C-S-s" 'clipboard-save)
+(keymap-global-set "C-S-y" 'meow-clipboard-yank)
+(keymap-global-set "C-S-s" 'meow-clipboard-save)
 (keymap-global-unset  "C-h C-f")
 
 (setq bookmark-default-file (expand-emacs-data "bookmarks"))
@@ -318,7 +318,6 @@
   ;; available in the *Completions* buffer, add it to the
   ;; `completion-list-mode-map'.
   :bind
-  ;; TODO 不生效
   (:minibuffer-local-map
    ("M-A" . marginalia-cycle))
   )
@@ -590,6 +589,40 @@
   (add-to-list 'meow-mode-state-list '(minibuffer-mode . insert))
   )
 
+(leaf mu4e
+  :when *is-nix-module*
+
+  :custom
+  (user-full-name . "Leo Liu")
+  (user-mail-address . "hi@grass.show")
+
+  (sendmail-program . "msmtp")
+  (mail-user-agent . 'mu4e-user-agent)
+
+  (send-mail-function . 'smtpmail-send-it)
+  (message-sendmail-f-is-evil . t)
+  (message-sendmail-extra-arguments . '("--read-envelope-from"))
+  (message-send-mail-function . 'message-send-mail-with-sendmail)
+
+  (mu4e-attachment-dir .  "~/Downloads")
+  (mu4e-get-mail-command . "offlineimap -o")
+  (mu4e-update-interval . 300)
+  (mu4e-notification-support . t)
+
+  :init
+  ;; 定时更新索引
+  (run-with-idle-timer (* 5 60) t 'mu4e-update-index)
+  :config
+  ;; 默认是motion模式
+  (add-to-list 'meow-mode-state-list '(mu4e-view-mode . motion))
+  ;; allow for updating mail using 'U' in the main view:
+
+  :commands mu4e-update-index
+  :bind
+  ("C-c a m" . mu4e)
+  ("C-c t m" . mu4e-update-mail-and-index)
+  )
+
 (leaf elfeed-protocol
   :straight t
   :custom
@@ -719,8 +752,8 @@
 (leaf php-mode
   :straight t
   :mode "\\.php\\'"
-  :config
-  (setq lsp-bridge-php-lsp-server 'phpactor)
+  :custom
+  (lsp-bridge-php-lsp-server . 'phpactor)
   :bind
   (:php-mode-map
    ;; 清除 C-. 为 embark 腾空
@@ -763,7 +796,8 @@
 (leaf markdown-mode
   :straight t
   :mode ("README\\.md\\'" . gfm-mode)
-  :init (setq markdown-command "multimarkdown")
+  :custom
+  (markdown-command . "multimarkdown")
   :bind
   (:markdown-mode-map
    ("C-c C-e" . markdown-do)
@@ -1006,8 +1040,8 @@
   :bind
   ("C-c n f" . org-roam-find-file)
   ("C-c n i" . org-roam-insert)
-  :config
-  (setq org-all-files (f-files org-directory 'org-roam--org-file-p t))
+  ;; :config
+  ;; (setq org-all-files (f-files org-directory 'org-roam--org-file-p t))
   )
 
 ;; org 美化
@@ -1117,13 +1151,13 @@
 
    ;; 不导出 VTODO
    org-caldav-sync-todo t
-   org-icalendar-include-todo 'unblocked
+   org-icalendar-include-todo '("TODO" "NEXT")
 
    ;; 如果是todo节点，会作为一个event
-   org-icalendar-use-scheduled '(event-if-not-todo todo-start)
+   org-icalendar-use-scheduled '(event-if-not-todo event-if-todo-not-done todo-start)
 
    ;; 如果是todo节点，会作为一个event
-   org-icalendar-use-deadline '(event-if-not-todo todo-due)
+   org-icalendar-use-deadline '(event-if-not-todo event-if-todo-not-done todo-due)
 
    ;; 不使用sexp
    org-icalendar-include-sexps nil
