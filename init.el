@@ -350,7 +350,6 @@
 
   ;; The :init configuration is always executed (Not lazy)
   :custom
-
   ;; Optionally configure the register formatting. This improves the register
   ;; preview for `consult-register', `consult-register-load',
   ;; `consult-register-store' and the Emacs built-ins.
@@ -679,8 +678,6 @@
 (leaf format-all
   :straight t
   :commands format-all-mode
-  :hook
-  (prog-mode-hook . format-all-mode)
   :bind
   ("C-c b =" . format-all-region-or-buffer)
   )
@@ -689,15 +686,15 @@
   :straight '(lsp-bridge :type git :host github :repo "manateelazycat/lsp-bridge"
                          :files (:defaults "*.el" "*.py" "acm" "core" "langserver" "multiserver" "resources")
                          :build (:not compile))
-  ;; :global-minor-mode global-lsp-bridge-mode
+  :leaf-defer nil
   :custom
   (lsp-bridge-enable-log . nil)
 
   (lsp-bridge-php-lsp-server . 'phpactor)
   (lsp-bridge-nix-lsp-server . 'rnix-lsp)
 
-  (lsp-bridge-use-local-codeium . t)
-  (acm-enable-codeium . t)
+  ;; (lsp-bridge-use-local-codeium . t)
+  ;; (acm-enable-codeium . t)
   ;; `(acm-backend-codeium-api-key-path . ,(expand-emacs-data "lsp-bridge/codeium_api_key.txt"))
 
   ;; :init
@@ -726,20 +723,13 @@
 (leaf acm-terminal
   :when *is-tui*
   :straight '(popon :host nil :repo "https://codeberg.org/akib/emacs-popon.git")
-  ;; :init
-  ;; (straight-use-package
-  ;;  '(popon :host nil :repo "https://codeberg.org/akib/emacs-popon.git"))
-
-  ;; :s
-  traight '(acm-terminal :host github :repo "twlz0ne/acm-terminal")
-
-  :after (yasnippet lsp-bridge acm)
+  :straight '(acm-terminal :host github :repo "twlz0ne/acm-terminal")
   )
 
 (leaf editorconfig
   :straight t
-  :config
-  (editorconfig-mode 1))
+  :global-minor-mode editorconfig-mode
+  )
 
 (leaf nix-mode
   :straight t
@@ -928,13 +918,11 @@
 
    org-directory "~/org/"
    org-startup-folded 'content
-   org-agenda-files (list "~/org/gtd" "~/org/sync" "~/org/inbox")
+   org-agenda-files '("~/org/gtd/gtd.org" "~/org/inbox")
    org-refile-targets '(
                         (nil . (:level . 1)) ;当前文件的level1
                         (nil . (:tag . "project"))
-                        ("~/org/gtd/personal.org" :level . 1)
-                        ("~/org/gtd/mugeda.org" :level . 1)
-                        ("~/org/gtd/family.org" :level . 1)
+                        ("~/org/gtd/gtd.org" . (:tag . "inbox"))
                         )
    org-todo-keywords '(
                        (sequence "TODO(t)" "NEXT(n)" "WAITING(w@)" "SOMEDAY(s)" "|" "DONE(d!)" "CANCELLED(c@)")
@@ -946,11 +934,18 @@
    org-log-into-drawer "LOGBOOK"
    org-clock-stored-history t
    org-tag-alist '(
+                   ;; 分类
                    (:startgroup . nil)
                    ("personal")
                    ("family")
                    ("work")
                    (:endgroup . nil)
+                   ;; 上下文需求
+                   (:startgroup . nil)
+                   ("@home" ?h)
+                   ("@office" ?o)
+                   (:endgroup . nil)
+                   ;; 类型
                    ("task" . ?t)
                    ("project" . ?p)
                    ("event" . ?e)
@@ -960,9 +955,9 @@
 
    org-agenda-custom-commands '(
                                 ("w" . "每周回顾")
-                                ("j" . "日常使用")
-                                ("ji" "所有待细化的项目" tags "inbox")
-                                ("jw" "所有等待中的项目" ((todo "WAITING")))
+                                ("i" "外部收集箱" tags "+inbox" ((org-agenda-files '("~/org/inbox" "~/org/sync"))))
+                                ("g" "所有待细化的项目" tags "+inbox+gtd")
+                                ("j" "所有等待中的项目" ((todo "WAITING")))
                                 ("wp" "每周项目回顾" tags "+project" ((org-use-tag-inheritance nil)))
                                 ("wt" "每周TODO回顾" todo "TODO")
                                 ("ws" "每周SOMEDAY回顾" todo "SOMEDAY")
@@ -1107,63 +1102,64 @@
 
 (leaf org-caldav
   :straight t
+  :leaf-defer nil
+  :after org
+  :custom
+  ;; 双向同步
+  (org-caldav-sync-direction . 'twoway)
+
+  (org-caldav-exclude-tags . '("no_caldav"))
+  (org-caldav-todo-percent-states  . '(
+                                       (0 "TODO")
+                                       (10 "NEXT")
+                                       (50 "WAITING")
+                                       (60 "SOMEDAY")
+                                       (100 "DONE")
+                                       (80 "CANCELLED")
+                                       (30 "UNSTARTED")
+                                       (40 "INPROGRESS")
+                                       (10 "SUSPEND")
+                                       (90 "FINISHED")
+                                       (70 "ABORT")
+                                       ))
+
+  ;; ;; 如果上一次异常，不询问
+  (org-caldav-resume-aborted . 'always)
+
+  ;; 同步过程中自动删除条目，不再询问(我的本地org使用了git存储)
+  ;; org-caldav-delete-org-entries 'always
+  (org-caldav-delete-calendar-entries . 'always)
+
+  ;; 不导出 VTODO
+  (org-caldav-sync-todo . t)
+  (org-icalendar-include-todo . '("TODO" "NEXT"))
+
+  ;; 如果不是是todo节点，会作为一个event
+  (org-icalendar-use-scheduled . '(todo-start))
+
+  ;; 如果是todo节点，会作为一个event
+  (org-icalendar-use-deadline . '(todo-due))
+
+  ;; 不使用sexp
+  (org-icalendar-include-sexps . nil)
+  ;; 后台导出，不显示同步结果
+  (org-caldav-show-sync-results . nil)
   :init
-  ;; 定时每5分钟同步
-  ;; (run-with-idle-timer (* 3 60) t 'org-caldav-sync)
-  :config
-  (setq
-   ;; 双向同步
-   org-caldav-sync-direction 'twoway
+  ;; 多个日历
+  (setq org-caldav-calendars (list (list
+                                    :url (concat "https://grass:" (grass-emacs/get-bitwarden-password "carddav:grass") "@carddav.grass.work:30443/grass")
+                                    :calendar-id "34a7e558-4066-efe4-69f7-15ada01bc7b6" ; 个人日历
+                                    :select-tags (list "personal" "work")
+                                    :files '("~/org/gtd/gtd.org")
+                                    :inbox "~/org/inbox/caldav-personal.org")
+                                   (list
+                                    :url (concat "https://family:" (grass-emacs/get-bitwarden-password "carddav:family") "@carddav.grass.work:30443/family")
+                                    :calendar-id "593557a2-6721-38bf-0243-0cd18c9237ea" ; 家庭日历
+                                    :select-tags (list "family")
+                                    :files '("~/org/gtd/gtd.org")
+                                    :inbox "~/org/inbox/caldav-family.org")))
 
-   org-caldav-exclude-tags '("no_caldav")
-   ;; 多个日历
-   org-caldav-calendars (list (list
-                               :url (concat "https://grass:" (grass-emacs/get-bitwarden-password "carddav:grass") "@carddav.grass.work:30443/grass")
-                               :calendar-id "34a7e558-4066-efe4-69f7-15ada01bc7b6" ; 个人日历
-                               :files (list (expand-file-name "gtd/personal.org" org-directory) (expand-file-name "gtd/mugeda.org" org-directory) )
-                               :inbox "~/org/inbox/caldav-personal.org")
-                              (list
-                               :url (concat "https://family:" (grass-emacs/get-bitwarden-password "carddav:family") "@carddav.grass.work:30443/family")
-                               :calendar-id "593557a2-6721-38bf-0243-0cd18c9237ea" ; 家庭日历
-                               :files (list (expand-file-name "gtd/family.org" org-directory))
-                               :inbox "~/org/inbox/caldav-family.org"))
 
-   org-caldav-todo-percent-states  '(
-                                     (0 "TODO")
-                                     (10 "NEXT")
-                                     (50 "WAITING")
-                                     (60 "SOMEDAY")
-                                     (100 "DONE")
-                                     (80 "CANCELLED")
-                                     (30 "UNSTARTED")
-                                     (40 "INPROGRESS")
-                                     (10 "SUSPEND")
-                                     (90 "FINISHED")
-                                     (70 "ABORT")
-                                     )
-
-   ;; 如果上一次异常，不询问
-   org-caldav-resume-aborted 'always
-
-   ;; 同步过程中自动删除条目，不再询问(我的本地org使用了git存储)
-   ;; org-caldav-delete-org-entries 'always
-   ;; org-caldav-delete-calendar-entries 'always
-
-   ;; 不导出 VTODO
-   org-caldav-sync-todo t
-   org-icalendar-include-todo '("TODO" "NEXT")
-
-   ;; 如果是todo节点，会作为一个event
-   org-icalendar-use-scheduled '(event-if-not-todo event-if-todo-not-done todo-start)
-
-   ;; 如果是todo节点，会作为一个event
-   org-icalendar-use-deadline '(event-if-not-todo event-if-todo-not-done todo-due)
-
-   ;; 不使用sexp
-   org-icalendar-include-sexps nil
-   ;; 后台导出，不显示同步结果
-   org-caldav-show-sync-results nil
-   )
   :bind
   ("C-c t c" . org-caldav-sync)
   )
