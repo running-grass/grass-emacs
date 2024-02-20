@@ -56,11 +56,11 @@
             packages = fontPackages;
           };
 
-          # services.emacs = {
-          #   enable = true;
-          #   package = emacsWrap;
-          #   defaultEditor = true;
-          # };
+          services.emacs = {
+            enable = true;
+            package = emacsWrap;
+            defaultEditor = true;
+          };
         };
       };
     })

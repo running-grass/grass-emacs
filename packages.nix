@@ -50,6 +50,10 @@ in with pkgs;
 
   wakatime
 
+  # 可视化
+  graphviz
+
+
   git
   nodejs
   wmctrl

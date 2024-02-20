@@ -894,105 +894,70 @@
 
 ;; Org模式相关的，和GTD相关的
 (leaf org
+  :custom
+  (org-agenda-include-diary . t)
+  (org-agenda-show-future-repeats . 'next)
+  ;; Edit settings
+  (org-auto-align-tags . t)
+  (org-tags-column . 0)
+  (org-catch-invisible-edits . 'show-and-error)
+  (org-special-ctrl-a/e . t)
+  (org-insert-heading-respect-content . t)
+
+  ;; Org styling, hide markup etc.
+  (org-hide-emphasis-markers . t)
+  (org-pretty-entities . t)
+
+  ;; Agenda styling
+  (org-agenda-tags-column . 0)
+  (org-directory . "~/org/")
+  (org-startup-folded . 'content)
+  (org-agenda-files . '("~/org/gtd/gtd.org" "~/org/inbox"))
+  (org-refile-targets . '(
+                          (nil . (:level . 1)) ;当前文件的level1
+                          (nil . (:tag . "project"))
+                          ("~/org/gtd/gtd.org" . (:tag . "inbox"))
+                          ))
+  (org-todo-keywords . '(
+                         (sequence "TODO(t)" "NEXT(n)" "WAITING(w@)" "SOMEDAY(s)" "|" "DONE(d!)" "CANCELLED(c@)")
+                         (sequence "UNSTARTED(u)" "INPROGRESS(i!)" "SUSPEND(e@)" "|" "FINISHED(f!)" "ABORT(a@)")
+                         ))
+  (org-clock-string-limit . 5)
+  (org-log-refile . 'nil)
+  (org-log-done . 'nil)
+  (org-log-into-drawer . "LOGBOOK")
+  (org-clock-stored-history . t)
+  (org-clock-auto-clockout-timer . 1800)
+  (org-tag-alist . '(
+                     ;; 分类
+                     (:startgroup . nil)
+                     ("personal")
+                     ("family")
+                     ("work")
+                     (:endgroup . nil)
+                     ;; 上下文需求
+                     (:startgroup . nil)
+                     ("@home" ?h)
+                     ("@office" ?o)
+                     (:endgroup . nil)
+                     ;; 类型
+                     ("task" . ?t)
+                     ("project" . ?p)
+                     ("event" . ?e)
+                     ))
+  (org-capture-templates . '(("t" "Todo" entry (file "~/org/inbox/emacs.org") "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:")
+                             ))
+  (org-agenda-custom-commands . '(
+                                  ("w" . "每周回顾")
+                                  ("i" "外部收集箱" tags "+inbox" ((org-agenda-files '("~/org/inbox" "~/org/sync"))))
+                                  ("g" "所有待细化的项目" tags "+inbox+gtd")
+                                  ("j" "所有等待中的项目" ((todo "WAITING")))
+                                  ("wp" "每周项目回顾" tags "+project" ((org-use-tag-inheritance nil)))
+                                  ("wt" "每周TODO回顾" todo "TODO")
+                                  ("ws" "每周SOMEDAY回顾" todo "SOMEDAY")
+                                  ))
   :config
-  (setq org-agenda-include-diary t)
-  (setq
-   ;; Edit settings
-   org-auto-align-tags t
-   org-tags-column 0
-   org-catch-invisible-edits 'show-and-error
-   org-special-ctrl-a/e t
-   org-insert-heading-respect-content t
-
-   ;; Org styling, hide markup etc.
-   org-hide-emphasis-markers t
-   org-pretty-entities t
-
-   ;; Agenda styling
-   org-agenda-tags-column 0
-   )
-  ;; 重复任务只显示未来的一个
-  (setq org-agenda-show-future-repeats 'next)
-
-  (setq
-
-   org-directory "~/org/"
-   org-startup-folded 'content
-   org-agenda-files '("~/org/gtd/gtd.org" "~/org/inbox")
-   org-refile-targets '(
-                        (nil . (:level . 1)) ;当前文件的level1
-                        (nil . (:tag . "project"))
-                        ("~/org/gtd/gtd.org" . (:tag . "inbox"))
-                        )
-   org-todo-keywords '(
-                       (sequence "TODO(t)" "NEXT(n)" "WAITING(w@)" "SOMEDAY(s)" "|" "DONE(d!)" "CANCELLED(c@)")
-                       (sequence "UNSTARTED(u)" "INPROGRESS(i!)" "SUSPEND(e@)" "|" "FINISHED(f!)" "ABORT(a@)")
-                       )
-   org-clock-string-limit 5
-   org-log-refile 'nil
-   org-log-done 'nil
-   org-log-into-drawer "LOGBOOK"
-   org-clock-stored-history t
-   org-tag-alist '(
-                   ;; 分类
-                   (:startgroup . nil)
-                   ("personal")
-                   ("family")
-                   ("work")
-                   (:endgroup . nil)
-                   ;; 上下文需求
-                   (:startgroup . nil)
-                   ("@home" ?h)
-                   ("@office" ?o)
-                   (:endgroup . nil)
-                   ;; 类型
-                   ("task" . ?t)
-                   ("project" . ?p)
-                   ("event" . ?e)
-                   )
-   org-capture-templates '(("t" "Todo" entry (file "~/org/inbox/emacs.org") "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:")
-                           )
-
-   org-agenda-custom-commands '(
-                                ("w" . "每周回顾")
-                                ("i" "外部收集箱" tags "+inbox" ((org-agenda-files '("~/org/inbox" "~/org/sync"))))
-                                ("g" "所有待细化的项目" tags "+inbox+gtd")
-                                ("j" "所有等待中的项目" ((todo "WAITING")))
-                                ("wp" "每周项目回顾" tags "+project" ((org-use-tag-inheritance nil)))
-                                ("wt" "每周TODO回顾" todo "TODO")
-                                ("ws" "每周SOMEDAY回顾" todo "SOMEDAY")
-                                )
-   )
-
-
-  (defvar dynamic-agenda-files nil
-    "dynamic generate agenda files list when changing org state")
-
-  (defun update-dynamic-agenda-hook ()
-    (let ((done (or (not org-state) ;; nil when no TODO list
-                    (member org-state org-done-keywords)))
-          (file (buffer-file-name))
-          (agenda (funcall (ad-get-orig-definition 'org-agenda-files)) ))
-      (unless (member file agenda)
-        (if done
-            (save-excursion
-              (goto-char (point-min))
-              ;; Delete file from dynamic files when all TODO entry changed to DONE
-              (unless (and (search-forward-regexp org-not-done-headinqg-regexp nil t)
-                           (search-forward-regexp "SCHEDULED:" nil t)
-                           (search-forward-regexp "DEADLINE:" nil t)
-                           )
-                (customize-save-variable
-                 'dynamic-agenda-files
-                 (cl-delete-if (lambda (k) (string= k file))
-                               dynamic-agenda-files))))
-          ;; Add this file to dynamic agenda files
-          (unless (member file dynamic-agenda-files)
-            (customize-save-variable 'dynamic-agenda-files
-                                     (add-to-list 'dynamic-agenda-files file)))))))
-
-
-
+  (org-clock-auto-clockout-insinuate)
   :bind
   ("C-c n s" . org-save-all-org-buffers)
   ("C-c n c" . org-capture)
@@ -1006,17 +971,17 @@
   )
 
 ;; 番茄钟
-;; (leaf org-pomodoro
-;; :straight t
-;;   :after org
-;;   :bind
-;;   (:map gtd-map
-;;         ("p" . org-pomodoro))
-;;   (:map org-agenda-mode-map
-;;         ("C-c C-x C-p" . org-pomodoro))
-;;   (:map org-mode-map
-;;         ("C-c C-x C-p" . org-pomodoro))
-;;   )
+(leaf org-pomodoro
+  :straight t
+  :after org
+  :bind
+  ("C-c n p" . org-pomodoro)
+  (:org-agenda-mode-map
+   ("C-c C-x C-p" . org-pomodoro)
+   ("p" . org-pomodoro))
+  (:org-mode-map
+   ("C-c C-x C-p" . org-pomodoro))
+  )
 
 (leaf org-habit
   :after org
@@ -1029,12 +994,23 @@
 
 (leaf org-roam
   :straight t
-  ;; :package t
+  :require org-roam org-roam-protocol
+  :after org
   :custom
   (org-roam-directory . "~/org/roam/")
   :bind
-  ("C-c n f" . org-roam-find-file)
-  ("C-c n i" . org-roam-insert)
+  ("C-c n l" . org-roam-buffer-toggle)
+  ("C-c n f" . org-roam-node-find)
+  ("C-c n g" . org-roam-graph)
+  ("C-c n i" . org-roam-node-insert)
+  ("C-c n C" . org-roam-capture)
+  ;; Dailies
+  ("C-c n j" . org-roam-dailies-capture-today)
+
+  :config
+  ;; If you're using a vertical completion framework, you might want a more informative completion interface
+  (setq org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
+  (org-roam-db-autosync-mode)
   ;; :config
   ;; (setq org-all-files (f-files org-directory 'org-roam--org-file-p t))
   )
@@ -1091,14 +1067,6 @@
                      "\n")))
 
       )
-
-(leaf org-journal
-  :straight t
-  :config
-  (setq org-journal-dir "~/org/journal")
-  :bind
-  ("C-c n j" . org-journal-new-entry)
-  )
 
 (leaf org-caldav
   :straight t
