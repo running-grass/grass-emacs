@@ -303,7 +303,6 @@
   :global-minor-mode t
   :custom
   (doom-modeline-modal-icon . t)
-
   )
 
 (leaf good-scroll
@@ -977,6 +976,10 @@
 (leaf org-pomodoro
   :straight t
   :after org
+  :config
+  (defun org-pomodoro-notify (title message)
+    "Send a notification with TITLE and MESSAGE using `alert'."
+    (notifications-notify :body message :title title :timeout 10000))
   :bind
   ("C-c n p" . org-pomodoro)
   (:org-agenda-mode-map
