@@ -19,8 +19,11 @@
   - [[#修改默认配置][修改默认配置]]
   - [[#性能优化][性能优化]]
   - [[#定义用户级别的键位映射图][定义用户级别的键位映射图]]
+- [[#包管理工具及相关依赖][包管理工具及相关依赖]]
   - [[#straightel][straight.el]]
   - [[#leafel][leaf.el]]
+  - [[#systempackages][systemPackages]]
+  - [[#shell-path][Shell Path]]
 - [[#内置包的配置][内置包的配置]]
 - [[#功能增强][功能增强]]
   - [[#ace-window][ace-window]]
@@ -138,14 +141,11 @@
 
 修改配置以后就可以使用 =SPC r= 来重新加载配置了。
 * 全局配置
-
 ** Emacs 版本判断
-
 #+begin_src emacs-lisp
   (when (version< emacs-version "29")
     (error "必须要使用 Emacs 29 以上的版本"))
 #+end_src
-
 
 ** 定义常量
 #+begin_src emacs-lisp
@@ -157,13 +157,14 @@
   (defconst *is-win* (eq system-type 'windows-nt) "是否是 Windows 操作系统")
 
   ;; 是否是 GUI
-  (defconst *is-gui* (display-graphic-p))
+  (defconst *is-gui* (display-graphic-p) "是否是GUI")
   ;; 是否是 TUI
-  (defconst *is-tui* (not *is-gui*))
+  (defconst *is-tui* (not *is-gui*) "是否是TUI")
 
   ;; 是否是 nixos/darwin 模块 使用
-  (defconst *is-nix-module* (equal (getenv "GRASS_EMACS_ENV") "nix-module"))
-
+  (defconst *is-nix-module* (equal (getenv "GRASS_EMACS_ENV") "nix-module") "是否是Nix模块")
+  ;; 是否是nixos
+  (defconst *is-nixos* (and *is-linux* *is-nix-module*) "是否是 NixOS 操作系统")
 #+end_src
 
 ** 常用工具函数
@@ -377,6 +378,7 @@
   (defalias 'toggle-keymap toggle-keymap)
 #+end_src
 
+* 包管理工具及相关依赖
 ** straight.el
 #+begin_src emacs-lisp
   (defvar bootstrap-version)
@@ -405,6 +407,23 @@
       :config
       ;; initialize leaf-keywords.el
       (leaf-keywords-init))
+#+end_src
+
+** systemPackages
+#+begin_src emacs-lisp
+  (leaf system-packages
+    :straight t
+    :custom
+    (system-packages-use-sudo . nil)
+    )
+#+end_src
+
+** Shell Path
+#+begin_src emacs-lisp
+  (leaf exec-path-from-shell
+    :straight t
+    :config
+    (exec-path-from-shell-initialize))
 #+end_src
 * 内置包的配置
 
@@ -1041,26 +1060,15 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
   (leaf lsp-bridge
     :straight '(lsp-bridge :type git :host github :repo "manateelazycat/lsp-bridge"
                            :files (:defaults "*.el" "*.py" "acm" "core" "langserver" "multiserver" "resources")
-                           :build (:not compile))
+                           :build (:not compile)
+                           )
     :leaf-defer nil
     :custom
     (lsp-bridge-enable-log . nil)
-
+    ;; 用户级别的lsp-bridge配置
+    (lsp-bridge-user-langserver-dir . "~/.config/emacs/lsp-bridge-user/langserver")
     (lsp-bridge-php-lsp-server . 'phpactor)
     (lsp-bridge-nix-lsp-server . 'rnix-lsp)
-
-    ;; (lsp-bridge-use-local-codeium . t)
-    ;; (acm-enable-codeium . t)
-    ;; `(acm-backend-codeium-api-key-path . ,(expand-emacs-data "lsp-bridge/codeium_api_key.txt"))
-
-    ;; :init
-    ;; 自动安装 codeium ， 后续需要通过 nixpkgs 来安装
-    ;; (let* ((binary-dir (file-name-as-directory codeium-bridge-folder))
-    ;;       (binary-file (concat binary-dir "language_server"))
-    ;;       )
-    ;;   (unless (file-exists-p binary-file)
-    ;;     (lsp-bridge-install-update-codeium))
-    ;;   )
 
     :config
     (add-to-list 'meow-mode-state-list '(lsp-bridge-ref-mode . motion))
@@ -1374,7 +1382,7 @@ Org-mode 相关的配置。
     (org-agenda-custom-commands . '(
                                     ("w" . "每周回顾")
                                     ("i" "外部收集箱" tags "+inbox" ((org-agenda-files '("~/org/inbox" "~/org/sync"))))
-                                    ("g" "所有待细化的项目" tags "+inbox+gtd")
+                                    ("g" "所有待细化的项目" tags-todo "+inbox+gtd")
                                     ("j" "所有等待中的项目" ((todo "WAITING")))
                                     ("wp" "每周项目回顾" tags "+project" ((org-use-tag-inheritance nil)))
                                     ("wt" "每周TODO回顾" todo "TODO")
@@ -1427,6 +1435,7 @@ Org-mode 相关的配置。
   (leaf org-roam
     :straight t
     :require org-roam org-roam-protocol
+    :ensure-system-package graphviz
     :after org
     :custom
     (org-roam-directory . "~/org/roam/")
@@ -1680,11 +1689,6 @@ Org-mode 相关的配置。
 #+end_src
 ** 小功能
 #+begin_src emacs-lisp
-  (leaf exec-path-from-shell
-    :straight t
-    :if (memq window-system '(mac ns))
-    :config
-    (exec-path-from-shell-initialize))
 
 
   ;; 当某个文件的某一行特别长的时候，自动优化性能
@@ -1711,6 +1715,7 @@ Org-mode 相关的配置。
 
   (leaf wakatime-mode
     :straight t
+    :ensure-system-package wakatime
     :global-minor-mode global-wakatime-mode
     :config
     (setq wakatime-cli-path "wakatime-cli")

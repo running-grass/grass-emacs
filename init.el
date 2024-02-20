@@ -16,12 +16,14 @@
 (defconst *is-win* (eq system-type 'windows-nt) "是否是 Windows 操作系统")
 
 ;; 是否是 GUI
-(defconst *is-gui* (display-graphic-p))
+(defconst *is-gui* (display-graphic-p) "是否是GUI")
 ;; 是否是 TUI
-(defconst *is-tui* (not *is-gui*))
+(defconst *is-tui* (not *is-gui*) "是否是TUI")
 
 ;; 是否是 nixos/darwin 模块 使用
-(defconst *is-nix-module* (equal (getenv "GRASS_EMACS_ENV") "nix-module"))
+(defconst *is-nix-module* (equal (getenv "GRASS_EMACS_ENV") "nix-module") "是否是Nix模块")
+;; 是否是nixos
+(defconst *is-nixos* (and *is-linux* *is-nix-module*) "是否是 NixOS 操作系统")
 
 ;; 计算中国农历的年份，用于org中
 (defun grass-emacs/calc-chinese-year (year)
@@ -231,6 +233,17 @@
     ;; initialize leaf-keywords.el
     (leaf-keywords-init))
 
+(leaf system-packages
+  :straight t
+  :custom
+  (system-packages-use-sudo . nil)
+  )
+
+(leaf exec-path-from-shell
+  :straight t
+  :config
+  (exec-path-from-shell-initialize))
+
 ;; 保存了上一次打开文件时的光标位置
 (leaf saveplace
   :global-minor-mode save-place-mode
@@ -290,6 +303,7 @@
   :global-minor-mode t
   :custom
   (doom-modeline-modal-icon . t)
+
   )
 
 (leaf good-scroll
@@ -685,26 +699,15 @@
 (leaf lsp-bridge
   :straight '(lsp-bridge :type git :host github :repo "manateelazycat/lsp-bridge"
                          :files (:defaults "*.el" "*.py" "acm" "core" "langserver" "multiserver" "resources")
-                         :build (:not compile))
+                         :build (:not compile)
+                         )
   :leaf-defer nil
   :custom
   (lsp-bridge-enable-log . nil)
-
+  ;; 用户级别的lsp-bridge配置
+  (lsp-bridge-user-langserver-dir . "~/.config/emacs/lsp-bridge-user/langserver")
   (lsp-bridge-php-lsp-server . 'phpactor)
   (lsp-bridge-nix-lsp-server . 'rnix-lsp)
-
-  ;; (lsp-bridge-use-local-codeium . t)
-  ;; (acm-enable-codeium . t)
-  ;; `(acm-backend-codeium-api-key-path . ,(expand-emacs-data "lsp-bridge/codeium_api_key.txt"))
-
-  ;; :init
-  ;; 自动安装 codeium ， 后续需要通过 nixpkgs 来安装
-  ;; (let* ((binary-dir (file-name-as-directory codeium-bridge-folder))
-  ;;       (binary-file (concat binary-dir "language_server"))
-  ;;       )
-  ;;   (unless (file-exists-p binary-file)
-  ;;     (lsp-bridge-install-update-codeium))
-  ;;   )
 
   :config
   (add-to-list 'meow-mode-state-list '(lsp-bridge-ref-mode . motion))
@@ -950,7 +953,7 @@
   (org-agenda-custom-commands . '(
                                   ("w" . "每周回顾")
                                   ("i" "外部收集箱" tags "+inbox" ((org-agenda-files '("~/org/inbox" "~/org/sync"))))
-                                  ("g" "所有待细化的项目" tags "+inbox+gtd")
+                                  ("g" "所有待细化的项目" tags-todo "+inbox+gtd")
                                   ("j" "所有等待中的项目" ((todo "WAITING")))
                                   ("wp" "每周项目回顾" tags "+project" ((org-use-tag-inheritance nil)))
                                   ("wt" "每周TODO回顾" todo "TODO")
@@ -995,6 +998,7 @@
 (leaf org-roam
   :straight t
   :require org-roam org-roam-protocol
+  :ensure-system-package graphviz
   :after org
   :custom
   (org-roam-directory . "~/org/roam/")
@@ -1219,13 +1223,6 @@
   ("C-c u" . vundo)
   )
 
-(leaf exec-path-from-shell
-  :straight t
-  :if (memq window-system '(mac ns))
-  :config
-  (exec-path-from-shell-initialize))
-
-
 ;; 当某个文件的某一行特别长的时候，自动优化性能
 (leaf so-long
   :straight t
@@ -1250,6 +1247,7 @@
 
 (leaf wakatime-mode
   :straight t
+  :ensure-system-package wakatime
   :global-minor-mode global-wakatime-mode
   :config
   (setq wakatime-cli-path "wakatime-cli")

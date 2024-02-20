@@ -48,8 +48,6 @@ in with pkgs;
   # jdk
   # graphviz-nox
 
-  wakatime
-
   # 可视化
   graphviz
 
