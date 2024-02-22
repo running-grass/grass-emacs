@@ -34,9 +34,6 @@ in with pkgs;
   mu
   offlineimap
 
-  # org
-  pandoc
-
   # check and format
   shellcheck
   html-tidy
@@ -47,10 +44,6 @@ in with pkgs;
   # plantuml
   # jdk
   # graphviz-nox
-
-  # 可视化
-  graphviz
-
 
   git
   nodejs

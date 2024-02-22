@@ -237,6 +237,9 @@
   :straight t
   :custom
   (system-packages-use-sudo . nil)
+  (system-packages-noconfirm . t)
+  :config
+  (system-packages-ensure "git")
   )
 
 (leaf exec-path-from-shell
@@ -346,6 +349,7 @@
 ;; Example configuration for Consult
 (leaf consult
   :straight t
+  :ensure-system-package ripgrep
   :bind
   ("C-c b b" . consult-buffer)
   ("C-c p s" . consult-ripgrep)
@@ -708,6 +712,12 @@
   (lsp-bridge-php-lsp-server . 'phpactor)
   (lsp-bridge-nix-lsp-server . 'rnix-lsp)
 
+  ;; formatter
+  (lsp-bridge-enable-auto-format-code . nil)
+  (lsp-bridge-auto-format-code-idle . nil)
+  :hook
+  (vue-mode-hook . lsp-bridge-mode)
+
   :config
   (add-to-list 'meow-mode-state-list '(lsp-bridge-ref-mode . motion))
   (global-lsp-bridge-mode)
@@ -783,7 +793,8 @@
   :mode "\\.vue\\'"
   :config
   ;; 0, 1, or 2, representing (respectively) none, low, and high coloring
-  (setq mmm-submode-decoration-level 0))
+  (setq mmm-submode-decoration-level 0)
+  )
 
 (leaf markdown-mode
   :straight t
@@ -830,7 +841,6 @@
   :config
   (setq project-list-file (expand-emacs-state "projects"))
   :bind
-  ("C-c p p" . project-switch-project)
   ("C-c p f" . project-find-file)
   ("C-c p d" . project-find-dir)
   ("C-c p b" . consult-project-buffer)
@@ -886,19 +896,10 @@
   ("C-c p t" . projectile-run-vterm)
   )
 
-;; 保存是自动更新具有 :TOC: 的标题为目录
-(leaf toc-org
-  :straight t
-  :hook
-  (org-mode-hook . toc-org-mode)
-  )
-
-
 ;; Org模式相关的，和GTD相关的
 (leaf org
+  :ensure-system-package pandoc
   :custom
-  (org-agenda-include-diary . t)
-  (org-agenda-show-future-repeats . 'next)
   ;; Edit settings
   (org-auto-align-tags . t)
   (org-tags-column . 0)
@@ -910,11 +911,8 @@
   (org-hide-emphasis-markers . t)
   (org-pretty-entities . t)
 
-  ;; Agenda styling
-  (org-agenda-tags-column . 0)
   (org-directory . "~/org/")
   (org-startup-folded . 'content)
-  (org-agenda-files . '("~/org/gtd/gtd.org" "~/org/inbox"))
   (org-refile-targets . '(
                           (nil . (:level . 1)) ;当前文件的level1
                           (nil . (:tag . "project"))
@@ -949,22 +947,11 @@
                      ))
   (org-capture-templates . '(("t" "Todo" entry (file "~/org/inbox/emacs.org") "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:")
                              ))
-  (org-agenda-custom-commands . '(
-                                  ("w" . "每周回顾")
-                                  ("i" "外部收集箱" tags "+inbox" ((org-agenda-files '("~/org/inbox" "~/org/sync"))))
-                                  ("g" "所有待细化的项目" tags-todo "+inbox+gtd")
-                                  ("j" "所有等待中的项目" ((todo "WAITING")))
-                                  ("wp" "每周项目回顾" tags "+project" ((org-use-tag-inheritance nil)))
-                                  ("wt" "每周TODO回顾" todo "TODO")
-                                  ("ws" "每周SOMEDAY回顾" todo "SOMEDAY")
-                                  ))
   :config
   (org-clock-auto-clockout-insinuate)
   :bind
   ("C-c n s" . org-save-all-org-buffers)
   ("C-c n c" . org-capture)
-  ("C-c n n" . org-agenda-list)
-  ("C-c n a" . org-agenda)
   :hook
   (org-capture-after-finalize-hook . org-save-all-org-buffers)
   (org-after-tags-change-hook . org-save-all-org-buffers)
@@ -972,10 +959,43 @@
   (org-after-todo-state-change-hook . org-save-all-org-buffers)
   )
 
-;; 番茄钟
+(leaf org-agenda
+  :custom
+  ;; 除了gtd的，还有各种外部收集箱中的未整理的也要显示
+  (org-agenda-files . '("~/org/gtd/gtd.org" "~/org/inbox"))
+  (org-agenda-tags-column . 0)
+  (org-agenda-include-diary . t)
+  (org-agenda-show-future-repeats . 'next)
+  ;; 在agenda视图中默认显示实体文本内容，且最多10行
+  (org-agenda-start-with-entry-text-mode . t)
+  (org-agenda-entry-text-maxlines . 10)
+
+  (org-agenda-custom-commands . '(
+                                  ("w" . "每周回顾")
+                                  ("i" "外部收集箱" tags "+inbox" ((org-agenda-files '("~/org/inbox" "~/org/sync"))))
+                                  ("j" "所有待细化的项目" tags-todo "+inbox+gtd")
+                                  ("g" "所有等待中的项目" ((todo "WAITING")))
+                                  ("wp" "每周项目回顾" tags "+project" ((org-use-tag-inheritance nil)))
+                                  ("wt" "每周TODO回顾" todo "TODO")
+                                  ("ws" "每周SOMEDAY回顾" todo "SOMEDAY")
+                                  ))
+
+  :bind
+  ("C-c n a" . org-agenda)
+  ("C-c n n" . org-agenda-list)
+  )
+
+(leaf org-habit
+  :after org
+  :config
+  (setq org-habit-show-habits t)
+  (setq org-habit-following-days 2)
+  (setq org-habit-preceding-days 7)
+  (setq org-habit-graph-column 60)
+  )
+
 (leaf org-pomodoro
   :straight t
-  :after org
   :config
   (defun org-pomodoro-notify (title message)
     "Send a notification with TITLE and MESSAGE using `alert'."
@@ -987,15 +1007,6 @@
    ("p" . org-pomodoro))
   (:org-mode-map
    ("C-c C-x C-p" . org-pomodoro))
-  )
-
-(leaf org-habit
-  :after org
-  :config
-  (setq org-habit-show-habits t)
-  (setq org-habit-following-days 2)
-  (setq org-habit-preceding-days 7)
-  (setq org-habit-graph-column 60)
   )
 
 (leaf org-roam
@@ -1137,6 +1148,12 @@
 
   :bind
   ("C-c t c" . org-caldav-sync)
+  )
+
+(leaf toc-org
+  :straight t
+  :hook
+  (org-mode-hook . toc-org-mode)
   )
 
 (leaf cal-china-x
