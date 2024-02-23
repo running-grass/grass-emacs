@@ -406,9 +406,12 @@
   (straight-use-package 'leaf)
   (straight-use-package 'leaf-keywords)
   (leaf leaf-keywords
-      :config
-      ;; initialize leaf-keywords.el
-      (leaf-keywords-init))
+    :custom
+    (leaf-expand-ensure-system-package . nil)
+    :config
+    ;; initialize leaf-keywords.el
+    (leaf-keywords-init)
+    )
 #+end_src
 
 ** systemPackages
@@ -1059,9 +1062,7 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
     )
 #+end_src
 
-*** 代码自动补全
-
-**** LSP-Bridge
+*** LSP-Bridge
 #+begin_src emacs-lisp
   (leaf lsp-bridge
     :straight '(lsp-bridge :type git :host github :repo "manateelazycat/lsp-bridge"
@@ -1070,11 +1071,16 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
                            )
     :leaf-defer nil
     :custom
+    ;; ui
+    (acm-enable-preview . t)
     (lsp-bridge-enable-log . nil)
     ;; 用户级别的lsp-bridge配置
     (lsp-bridge-user-langserver-dir . "~/.config/emacs/lsp-bridge-user/langserver")
     (lsp-bridge-php-lsp-server . 'phpactor)
     (lsp-bridge-nix-lsp-server . 'rnix-lsp)
+    ;; codeium
+    (acm-enable-codeium . t)
+    ;; (acm-preview-overlay
 
     ;; formatter
     (lsp-bridge-enable-auto-format-code . nil)
@@ -1090,14 +1096,11 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
     ("M-." . lsp-bridge-find-def)
     ("M-," . lsp-bridge-find-def-return)
 
-    ("C-c j d" . lsp-bridge-find-def)
-    ("C-c j D" . lsp-bridge-find-def-return)
-
     ("C-c t l" . lsp-bridge-mode)
     )
 #+end_src
 
-**** TUI Patch (ace-terminal)
+*** TUI Patch (ace-terminal)
 
 由于 =lsp-bridge= 不支持 =TUI=, 单独装一个包来支持 =TUI=
 #+begin_src emacs-lisp
@@ -1109,21 +1112,105 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
     )
 #+end_src
 
-***** 杂项
+*** editorconfig
 #+begin_src emacs-lisp
   (leaf editorconfig
     :straight t
     :global-minor-mode editorconfig-mode
     )
 #+end_src
+
+*** COMMENT codeium
+使用 =codeium= 可以自动生成代码提示，但是不支持 =TUI=
+#+begin_src emacs-lisp
+  ;; we recommend using use-package to organize your init.el
+  (leaf codeium
+    :straight '(codeium :host github :type git :repo "Exafunction/codeium.el")
+    ;; if you use straight
+    ;; :straight '(:type git :host github :repo "Exafunction/codeium.el")
+    ;; otherwise, make sure that the codeium.el file is on load-path
+
+    :init
+    ;; use globally
+    (add-to-list 'completion-at-point-functions #'codeium-completion-at-point)
+    ;; or on a hook
+    ;; (add-hook 'python-mode-hook
+    ;;     (lambda ()
+    ;;         (setq-local completion-at-point-functions '(codeium-completion-at-point))))
+
+    ;; if you want multiple completion backends, use cape (https://github.com/minad/cape):
+    ;; (add-hook 'python-mode-hook
+    ;;     (lambda ()
+    ;;         (setq-local completion-at-point-functions
+    ;;             (list (cape-super-capf #'codeium-completion-at-point #'lsp-completion-at-point)))))
+    ;; an async company-backend is coming soon!
+
+    ;; codeium-completion-at-point is autoloaded, but you can
+    ;; optionally set a timer, which might speed up things as the
+    ;; codeium local language server takes ~0.2s to start up
+    ;; (add-hook 'emacs-startup-hook
+    ;;  (lambda () (run-with-timer 0.1 nil #'codeium-init)))
+
+    ;; :defer t ;; lazy loading, if you want
+    :config
+    (setq use-dialog-box nil) ;; do not use popup boxes
+
+    ;; if you don't want to use customize to save the api-key
+    ;; (setq codeium/metadata/api_key "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")
+
+    ;; get codeium status in the modeline
+    (setq codeium-mode-line-enable
+          (lambda (api) (not (memq api '(CancelRequest Heartbeat AcceptCompletion)))))
+    (add-to-list 'mode-line-format '(:eval (car-safe codeium-mode-line)) t)
+    ;; alternatively for a more extensive mode-line
+    ;; (add-to-list 'mode-line-format '(-50 "" codeium-mode-line) t)
+
+    ;; use M-x codeium-diagnose to see apis/fields that would be sent to the local language server
+    (setq codeium-api-enabled
+          (lambda (api)
+            (memq api '(GetCompletions Heartbeat CancelRequest GetAuthToken RegisterUser auth-redirect AcceptCompletion))))
+    ;; you can also set a config for a single buffer like this:
+    ;; (add-hook 'python-mode-hook
+    ;;     (lambda ()
+    ;;         (setq-local codeium/editor_options/tab_size 4)))
+
+    ;; You can overwrite all the codeium configs!
+    ;; for example, we recommend limiting the string sent to codeium for better performance
+    (defun my-codeium/document/text ()
+      (buffer-substring-no-properties (max (- (point) 3000) (point-min)) (min (+ (point) 1000) (point-max))))
+    ;; if you change the text, you should also change the cursor_offset
+    ;; warning: this is measured by UTF-8 encoded bytes
+    (defun my-codeium/document/cursor_offset ()
+      (codeium-utf8-byte-length
+       (buffer-substring-no-properties (max (- (point) 3000) (point-min)) (point))))
+    (setq codeium/document/text 'my-codeium/document/text)
+    (setq codeium/document/cursor_offset 'my-codeium/document/cursor_offset))
+
+  (leaf company
+    :straight t
+    :config
+    (global-company-mode t)
+    (setq-default
+     company-idle-delay 0.05
+     company-require-match nil
+     company-minimum-prefix-length 0
+
+     ;; get only preview
+     company-frontends '(company-preview-frontend)
+     ;; also get a drop down
+     ;; company-frontends '(company-pseudo-tooltip-frontend company-preview-frontend)
+     ))
+
+#+end_src
 ** Nix
 #+begin_src emacs-lisp
   (leaf nix-mode
     :straight t
     :mode "\\.nix\\'"
-    :config
-    (setq lsp-bridge-nix-lsp-server 'rnix-lsp)
-    (setq-default format-all-formatters '(("Nix" (nixfmt))))
+    :custom
+    (lsp-bridge-nix-lsp-server . 'rnix-lsp)
+    :setq-default
+    (format-all-formatters . '(("Nix" (nixfmt))))
     )
 #+end_src
 
@@ -1148,30 +1235,29 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
 
 使用 =Emmet= 处理快速展开，语法高亮都使用 =treesite= ， =ts= 和 =js= 的基础补全使用 =lsp= ，其余高级功能使用 =tide=
 #+begin_src emacs-lisp
-    ;; 配置emmet-mode
-    ;; 默认为C-j展开
-    (leaf emmet-mode
-      :straight t
-      :hook html-mode-hook
-      :hook html-ts-mode-hook
-      :hook css-mode-hook
-      :hook vue-mode-hook
-      )
+  ;; 配置emmet-mode
+  ;; 默认为C-j展开
+  (leaf emmet-mode
+    :straight t
+    :hook html-mode-hook
+    :hook html-ts-mode-hook
+    :hook css-mode-hook
+    :hook vue-mode-hook
+    )
 
-    (leaf typescript-ts-mode
-      :mode "\\.ts\\'"
-      )
+  (leaf typescript-ts-mode
+    :mode "\\.ts\\'"
+    )
 
-    (leaf tide
-      :straight t
-      ;; :after (company flycheck)
-      :hook
-      (typescript-ts-mode-hook . tide-setup)
-      (tsx-ts-mode-hook . tide-setup)
-      (js-mode-hook . tide-setup)
-      (typescript-ts-mode-hook . tide-hl-identifier-mode)
-      (before-save-hook . tide-format-before-save)
-      )
+  ;; (leaf tide
+  ;;   :straight t
+  ;;   :hook
+  ;;   (typescript-ts-mode-hook . tide-setup)
+  ;;   (tsx-ts-mode-hook . tide-setup)
+  ;;   (js-mode-hook . tide-setup)
+  ;;   (vue-mode-hook . tide-setup)
+  ;;   (typescript-ts-mode-hook . tide-hl-identifier-mode)
+  ;;   )
 #+end_src
 
 ** Vue
@@ -1179,9 +1265,9 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
   (leaf vue-mode
     :straight t
     :mode "\\.vue\\'"
-    :config
+    :custom
     ;; 0, 1, or 2, representing (respectively) none, low, and high coloring
-    (setq mmm-submode-decoration-level 0)
+    (mmm-submode-decoration-level . 0)
     )
 #+end_src
 
@@ -1204,8 +1290,8 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
 #+begin_src emacs-lisp
   (leaf yaml-ts-mode
     :mode ("\\.yml\\'" "\\.yaml\\'")
-    :config
-    (setq-default format-all-formatters '(("YAML" (prettier)))))
+    :setq-default
+    (format-all-formatters . '(("YAML" (prettier)))))
 #+end_src
 
 ** COMMENT PlantUML
@@ -1213,13 +1299,13 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
 #+begin_src emacs-lisp
   (leaf plantuml-mode
     :straight t
-    :config
-    (setq plantuml-executable-path "~/.nix-profile/bin/plantuml")
-    (setq plantuml-jar-path "~/.nix-profile/lib/plantuml.jar")
-    (setq plantuml-default-exec-mode 'executable)
-    (setq org-plantuml-exec-mode 'executable)
-    (setq org-plantuml-jar-path "~/.nix-profile/lib/plantuml.jar")
-    (setq plantuml-executable-args '(
+    :custom
+    (plantuml-executable-path . "~/.nix-profile/bin/plantuml")
+    (plantuml-jar-path  . "~/.nix-profile/lib/plantuml.jar")
+    (plantuml-default-exec-mode . 'executable)
+    (org-plantuml-exec-mode . 'executable)
+    (org-plantuml-jar-path . "~/.nix-profile/lib/plantuml.jar")
+    (plantuml-executable-args . '(
                                      "-headless"
                                      "-charset"
                                      "UTF-8"
@@ -1231,6 +1317,7 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
 #+begin_src emacs-lisp
   (leaf just-mode
     :straight t
+    :mode ("\\justfile\\'")
     )
   (leaf justl
     :straight t
@@ -1309,7 +1396,6 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
 
   (leaf vterm
     :straight t
-    :after (projectile)
     :config
     (add-to-list 'meow-mode-state-list '(vterm-mode . insert))
 
@@ -1378,7 +1464,7 @@ Org-mode 相关的配置。
                        ("project" . ?p)
                        ("event" . ?e)
                        ))
-    (org-capture-templates . '(("t" "Todo" entry (file "~/org/inbox/emacs.org") "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:")
+    (org-capture-templates . '(("t" "Todo" entry (file+headline  "~/org/gtd/gtd.org" "Inbox For GTD") "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:")
                                ))
     :config
     (org-clock-auto-clockout-insinuate)
@@ -1391,7 +1477,6 @@ Org-mode 相关的配置。
     (org-after-refile-insert-hook . org-save-all-org-buffers)
     (org-after-todo-state-change-hook . org-save-all-org-buffers)
     )
-
 #+end_src
 
 ** Org Agenda
@@ -1426,12 +1511,14 @@ Org-mode 相关的配置。
 ** Org Habit
 #+begin_src emacs-lisp
   (leaf org-habit
-    :after org
-    :config
-    (setq org-habit-show-habits t)
-    (setq org-habit-following-days 2)
-    (setq org-habit-preceding-days 7)
-    (setq org-habit-graph-column 60)
+    :custom
+    (org-habit-show-habits . t)
+    (org-habit-following-days . 2)
+    (org-habit-preceding-days . 7)
+    (org-habit-graph-column . 60)
+    :push (
+           (org-modules . 'habit)
+           )
     )
 #+end_src
 ** Org Pomodoro 番茄钟
@@ -1441,7 +1528,7 @@ Org-mode 相关的配置。
     :config
     (defun org-pomodoro-notify (title message)
       "Send a notification with TITLE and MESSAGE using `alert'."
-      (notifications-notify :body message :title title :timeout 10000))
+      (notifications-notify :body message :title title :timeout 60000))
     :bind
     ("C-c n p" . org-pomodoro)
     (:org-agenda-mode-map
@@ -1453,29 +1540,29 @@ Org-mode 相关的配置。
 #+end_src
 ** Org-roam
 #+begin_src emacs-lisp
-  (leaf org-roam
-    :straight t
-    :require org-roam org-roam-protocol
-    :ensure-system-package graphviz
-    :after org
-    :custom
-    (org-roam-directory . "~/org/roam/")
-    :bind
-    ("C-c n l" . org-roam-buffer-toggle)
-    ("C-c n f" . org-roam-node-find)
-    ("C-c n g" . org-roam-graph)
-    ("C-c n i" . org-roam-node-insert)
-    ("C-c n C" . org-roam-capture)
-    ;; Dailies
-    ("C-c n j" . org-roam-dailies-capture-today)
+    (leaf org-roam
+      :straight t
+      :require org-roam org-roam-protocol
+      :ensure-system-package graphviz
+      :after org
+      :custom
+      (org-roam-directory . "~/org/roam/")
+      :bind
+      ("C-c n l" . org-roam-buffer-toggle)
+      ("C-c n f" . org-roam-node-find)
+      ("C-c n g" . org-roam-graph)
+      ("C-c n i" . org-roam-node-insert)
+      ("C-c n C" . org-roam-capture)
+      ;; Dailies
+      ("C-c n j" . org-roam-dailies-capture-today)
 
-    :config
-    ;; If you're using a vertical completion framework, you might want a more informative completion interface
-    (setq org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
-    (org-roam-db-autosync-mode)
-    ;; :config
-    ;; (setq org-all-files (f-files org-directory 'org-roam--org-file-p t))
-    )
+      :config
+      ;; If you're using a vertical completion framework, you might want a more informative completion interface
+      (setq org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
+      (org-roam-db-autosync-mode)
+      ;; :config
+      ;; (setq org-all-files (f-files org-directory 'org-roam--org-file-p t))
+      )
 #+end_src
 ** Org-Mordern
 #+begin_src emacs-lisp
@@ -1485,14 +1572,13 @@ Org-mode 相关的配置。
     :hook
     (org-mode-hook . org-modern-mode)
     (org-agenda-finalize-hook . org-modern-agenda)
-    :config
-    (setq org-modern-todo-faces
-           '(
-                  ("NEXT" :background "red"
-                   :foreground "white")
-                  ("SOMEDAY" :background "gray"
-                   :foreground "black")
-                  ))
+    :custom
+    (org-modern-todo-faces . '(
+                               ("NEXT" :background "red"
+                                :foreground "white")
+                               ("SOMEDAY" :background "gray"
+                                :foreground "black")
+                               ))
 
     )
 #+end_src
@@ -1501,11 +1587,10 @@ Org-mode 相关的配置。
   (leaf ox-hugo
     :straight t
     :after ox
+    :custom
+    (org-hugo-section . "post")
+    (org-hugo-auto-set-lastmod	. t)
     :config
-    (setq org-hugo-section "post"
-          org-hugo-auto-set-lastmod	t
-          )
-
     (add-to-list 'org-capture-templates
                  '("h"
                    "Hugo draft"

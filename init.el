@@ -229,9 +229,12 @@
 (straight-use-package 'leaf)
 (straight-use-package 'leaf-keywords)
 (leaf leaf-keywords
-    :config
-    ;; initialize leaf-keywords.el
-    (leaf-keywords-init))
+  :custom
+  (leaf-expand-ensure-system-package . nil)
+  :config
+  ;; initialize leaf-keywords.el
+  (leaf-keywords-init)
+  )
 
 (leaf system-packages
   :straight t
@@ -706,11 +709,16 @@
                          )
   :leaf-defer nil
   :custom
+  ;; ui
+  (acm-enable-preview . t)
   (lsp-bridge-enable-log . nil)
   ;; 用户级别的lsp-bridge配置
   (lsp-bridge-user-langserver-dir . "~/.config/emacs/lsp-bridge-user/langserver")
   (lsp-bridge-php-lsp-server . 'phpactor)
   (lsp-bridge-nix-lsp-server . 'rnix-lsp)
+  ;; codeium
+  (acm-enable-codeium . t)
+  ;; (acm-preview-overlay
 
   ;; formatter
   (lsp-bridge-enable-auto-format-code . nil)
@@ -725,9 +733,6 @@
   :bind
   ("M-." . lsp-bridge-find-def)
   ("M-," . lsp-bridge-find-def-return)
-
-  ("C-c j d" . lsp-bridge-find-def)
-  ("C-c j D" . lsp-bridge-find-def-return)
 
   ("C-c t l" . lsp-bridge-mode)
   )
@@ -746,9 +751,10 @@
 (leaf nix-mode
   :straight t
   :mode "\\.nix\\'"
-  :config
-  (setq lsp-bridge-nix-lsp-server 'rnix-lsp)
-  (setq-default format-all-formatters '(("Nix" (nixfmt))))
+  :custom
+  (lsp-bridge-nix-lsp-server . 'rnix-lsp)
+  :setq-default
+  (format-all-formatters . '(("Nix" (nixfmt))))
   )
 
 (leaf php-mode
@@ -777,23 +783,22 @@
   :mode "\\.ts\\'"
   )
 
-(leaf tide
-  :straight t
-  ;; :after (company flycheck)
-  :hook
-  (typescript-ts-mode-hook . tide-setup)
-  (tsx-ts-mode-hook . tide-setup)
-  (js-mode-hook . tide-setup)
-  (typescript-ts-mode-hook . tide-hl-identifier-mode)
-  (before-save-hook . tide-format-before-save)
-  )
+;; (leaf tide
+;;   :straight t
+;;   :hook
+;;   (typescript-ts-mode-hook . tide-setup)
+;;   (tsx-ts-mode-hook . tide-setup)
+;;   (js-mode-hook . tide-setup)
+;;   (vue-mode-hook . tide-setup)
+;;   (typescript-ts-mode-hook . tide-hl-identifier-mode)
+;;   )
 
 (leaf vue-mode
   :straight t
   :mode "\\.vue\\'"
-  :config
+  :custom
   ;; 0, 1, or 2, representing (respectively) none, low, and high coloring
-  (setq mmm-submode-decoration-level 0)
+  (mmm-submode-decoration-level . 0)
   )
 
 (leaf markdown-mode
@@ -808,11 +813,12 @@
 
 (leaf yaml-ts-mode
   :mode ("\\.yml\\'" "\\.yaml\\'")
-  :config
-  (setq-default format-all-formatters '(("YAML" (prettier)))))
+  :setq-default
+  (format-all-formatters . '(("YAML" (prettier)))))
 
 (leaf just-mode
   :straight t
+  :mode ("\\justfile\\'")
   )
 (leaf justl
   :straight t
@@ -887,7 +893,6 @@
 
 (leaf vterm
   :straight t
-  :after (projectile)
   :config
   (add-to-list 'meow-mode-state-list '(vterm-mode . insert))
 
@@ -945,7 +950,7 @@
                      ("project" . ?p)
                      ("event" . ?e)
                      ))
-  (org-capture-templates . '(("t" "Todo" entry (file "~/org/inbox/emacs.org") "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:")
+  (org-capture-templates . '(("t" "Todo" entry (file+headline  "~/org/gtd/gtd.org" "Inbox For GTD") "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:")
                              ))
   :config
   (org-clock-auto-clockout-insinuate)
@@ -986,12 +991,14 @@
   )
 
 (leaf org-habit
-  :after org
-  :config
-  (setq org-habit-show-habits t)
-  (setq org-habit-following-days 2)
-  (setq org-habit-preceding-days 7)
-  (setq org-habit-graph-column 60)
+  :custom
+  (org-habit-show-habits . t)
+  (org-habit-following-days . 2)
+  (org-habit-preceding-days . 7)
+  (org-habit-graph-column . 60)
+  :push (
+         (org-modules . 'habit)
+         )
   )
 
 (leaf org-pomodoro
@@ -999,7 +1006,7 @@
   :config
   (defun org-pomodoro-notify (title message)
     "Send a notification with TITLE and MESSAGE using `alert'."
-    (notifications-notify :body message :title title :timeout 10000))
+    (notifications-notify :body message :title title :timeout 60000))
   :bind
   ("C-c n p" . org-pomodoro)
   (:org-agenda-mode-map
@@ -1039,25 +1046,23 @@
   :hook
   (org-mode-hook . org-modern-mode)
   (org-agenda-finalize-hook . org-modern-agenda)
-  :config
-  (setq org-modern-todo-faces
-         '(
-                ("NEXT" :background "red"
-                 :foreground "white")
-                ("SOMEDAY" :background "gray"
-                 :foreground "black")
-                ))
+  :custom
+  (org-modern-todo-faces . '(
+                             ("NEXT" :background "red"
+                              :foreground "white")
+                             ("SOMEDAY" :background "gray"
+                              :foreground "black")
+                             ))
 
   )
 
 (leaf ox-hugo
   :straight t
   :after ox
+  :custom
+  (org-hugo-section . "post")
+  (org-hugo-auto-set-lastmod	. t)
   :config
-  (setq org-hugo-section "post"
-        org-hugo-auto-set-lastmod	t
-        )
-
   (add-to-list 'org-capture-templates
                '("h"
                  "Hugo draft"
