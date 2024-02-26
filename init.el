@@ -718,8 +718,7 @@
   (lsp-bridge-nix-lsp-server . 'rnix-lsp)
   ;; codeium
   (acm-enable-codeium . t)
-  ;; (acm-preview-overlay
-
+  (lsp-bridge-enable-completion-in-string . t)
   ;; formatter
   (lsp-bridge-enable-auto-format-code . nil)
   (lsp-bridge-auto-format-code-idle . nil)
@@ -871,7 +870,6 @@
 ;; 绑定 consult-projectile
 (leaf consult-projectile
   :straight t
-  :after (consult projectile)
   :bind
   ("C-c p p" . consult-projectile-switch-project)
   ("C-c p 4 f" . consult-projectile-find-file-other-window)
@@ -996,8 +994,8 @@
   (org-habit-following-days . 2)
   (org-habit-preceding-days . 7)
   (org-habit-graph-column . 60)
-  :push (
-         (org-modules . 'habit)
+  :require t
+  :push ((org-modules . 'habit)
          )
   )
 
@@ -1062,7 +1060,7 @@
   :custom
   (org-hugo-section . "post")
   (org-hugo-auto-set-lastmod	. t)
-  :config
+  :init
   (add-to-list 'org-capture-templates
                '("h"
                  "Hugo draft"
