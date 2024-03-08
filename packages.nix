@@ -27,6 +27,8 @@ in with pkgs;
   emmet-ls
   yaml-language-server
 
+  wakatime
+
   # mardown
   multimarkdown
 
