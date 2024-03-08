@@ -257,10 +257,11 @@
   `(save-place-file . ,(expand-emacs-state "places"))
   )
 
-;; Persist history over Emacs restarts. Vertico sorts by history position.
+;; 命令记录
 (leaf savehist
   :global-minor-mode t
   :custom
+  (savehist-autosave-interval . 60)
   `(savehist-file . ,(expand-emacs-state "history"))
   )
 
@@ -278,7 +279,6 @@
   :custom
   (tramp-default-method . "ssh")
   `(tramp-persistency-file-name . ,(expand-emacs-state "tramp")))
-
 
 ;; 文件被外部程序修改后，重新载入buffer
 (leaf autorevert
@@ -496,6 +496,14 @@
   (prog-mode-hook . rainbow-delimiters-mode)
   )
 
+(leaf transient
+  :straight t
+  :custom
+  `(transient-levels-file . ,(expand-emacs-state "transient/levels.el"))
+  `(transient-values-file . ,(expand-emacs-state "transient/values.el"))
+  `(transient-history-file . ,(expand-emacs-state "transient/history.el"))
+  )
+
 (defun reload-config ()
   "重新加载配置"
   (interactive)
@@ -509,8 +517,8 @@
   (setq meow-cheatsheet-layout meow-cheatsheet-layout-qwerty)
 
   (meow-motion-overwrite-define-key
-   '("j" . meow-next)
-   '("k" . meow-prev)
+   ;; '("j" . meow-next)
+   ;; '("k" . meow-prev)
    '("<escape>" . ignore))
   (meow-leader-define-key
    ;; SPC j/k will run the original command in MOTION state.
@@ -662,6 +670,7 @@
   ;; enable elfeed-protocol
   (elfeed-protocol-enabled-protocols . '(fever))
   (elfeed-curl-timeout . 36000)
+  :require t
   :config
   (elfeed-protocol-enable)
   :bind
@@ -693,13 +702,6 @@
   :global-minor-mode yas-global-mode
   :custom
   `(yas--default-user-snippets-dir . ,(expand-emacs-data "snippets"))
-  )
-
-(leaf format-all
-  :straight t
-  :commands format-all-mode
-  :bind
-  ("C-c b =" . format-all-region-or-buffer)
   )
 
 (leaf lsp-bridge
@@ -740,6 +742,72 @@
   :when *is-tui*
   :straight '(popon :host nil :repo "https://codeberg.org/akib/emacs-popon.git")
   :straight '(acm-terminal :host github :repo "twlz0ne/acm-terminal")
+  )
+
+(defun projectile-run-vterm ()
+  (interactive)
+  (let* ((project (projectile-ensure-project (projectile-project-root)))
+         (buffer "vterm"))
+    (require 'vterm)
+    (if (buffer-live-p (get-buffer buffer))
+        (switch-to-buffer buffer)
+      (vterm))
+    (vterm-send-string (concat "cd " project))
+    (vterm-send-return)))
+
+
+(leaf vterm
+  :straight t
+  :config
+  (add-to-list 'meow-mode-state-list '(vterm-mode . insert))
+
+  :bind
+  ("C-c b t" . vterm)
+  )
+
+(leaf project
+  :config
+  (setq project-list-file (expand-emacs-state "projects"))
+  :bind
+  ("C-c p f" . project-find-file)
+  ("C-c p d" . project-find-dir)
+  ("C-c p b" . consult-project-buffer)
+  )
+
+(leaf projectile
+  :straight t
+  :global-minor-mode projectile-mode
+  :custom
+  ;; 关闭启动时的自动项目发现
+  (projectile-auto-discover . nil)
+  `(projectile-known-projects-file . ,(expand-emacs-state "projectile-known-projects.eld"))
+  (projectile-project-search-path . '(
+                                      ("~/workspace" . 2)
+                                      "~/workspace/mugeda"
+                                      ))
+  :bind
+  ("C-c p R" . projectile-replace)
+  )
+
+;; 绑定 consult-projectile
+(leaf consult-projectile
+  :straight t
+  :bind
+  ("C-c p p" . consult-projectile-switch-project)
+  ("C-c p 4 f" . consult-projectile-find-file-other-window)
+  )
+
+(leaf magit
+  :straight t
+  :bind
+  ("C-c p v" . magit)
+  )
+
+(leaf format-all
+  :straight t
+  :commands format-all-mode
+  :bind
+  ("C-c b =" . format-all-region-or-buffer)
   )
 
 (leaf editorconfig
@@ -825,78 +893,28 @@
   ("C-c p r" . justl-exec-recipe-in-dir)
   )
 
-(leaf magit
+(leaf dockerfile-mode
   :straight t
-  :bind
-  ("C-c p v" . magit)
+  :mode ("\\Dockerfile\\'")
   )
 
-
-(leaf transient
-  :config
-  (setq
-   transient-levels-file (expand-emacs-state "transient/levels.el")
-   transient-values-file (expand-emacs-state "transient/values.el")
-   transient-history-file (expand-emacs-state "transient/history.el")
-   )
-
-  )
-
-(leaf project
-  :config
-  (setq project-list-file (expand-emacs-state "projects"))
-  :bind
-  ("C-c p f" . project-find-file)
-  ("C-c p d" . project-find-dir)
-  ("C-c p b" . consult-project-buffer)
-  )
-
-
-(leaf projectile
+(leaf hl-todo
   :straight t
-  :config
-  ;; 关闭启动时的自动项目发现
-  (setq projectile-auto-discover nil)
-  (setq
-   projectile-known-projects-file (expand-emacs-state "projectile-known-projects.eld")
-   projectile-project-search-path '(
-                                    ("~/workspace" . 2)
-                                    "~/workspace/mugeda"
-                                    )
-   )
-  (projectile-mode +1)
+  :global-minor-mode global-hl-todo-mode
   )
 
-;; 绑定 consult-projectile
-(leaf consult-projectile
+(leaf magit-todos
   :straight t
-  :bind
-  ("C-c p p" . consult-projectile-switch-project)
-  ("C-c p 4 f" . consult-projectile-find-file-other-window)
+  :after magit
+  :global-minor-mode magit-todos-mode
   )
 
-
-
-(defun projectile-run-vterm ()
-  (interactive)
-  (let* ((project (projectile-ensure-project (projectile-project-root)))
-         (buffer "vterm"))
-    (require 'vterm)
-    (if (buffer-live-p (get-buffer buffer))
-        (switch-to-buffer buffer)
-      (vterm))
-    (vterm-send-string (concat "cd " project))
-    (vterm-send-return)))
-
-
-(leaf vterm
+(leaf consult-todo
   :straight t
-  :config
-  (add-to-list 'meow-mode-state-list '(vterm-mode . insert))
-
+  :after consult
   :bind
-  ("C-c b t" . vterm)
-  ("C-c p t" . projectile-run-vterm)
+  ("C-c p t" . consult-todo-project)
+  ("C-c j t" . consult-todo)
   )
 
 ;; Org模式相关的，和GTD相关的
@@ -909,6 +927,8 @@
   (org-catch-invisible-edits . 'show-and-error)
   (org-special-ctrl-a/e . t)
   (org-insert-heading-respect-content . t)
+
+  (org-protocol-default-template-key . "n")
 
   ;; Org styling, hide markup etc.
   (org-hide-emphasis-markers . t)
@@ -929,26 +949,26 @@
   (org-log-refile . 'nil)
   (org-log-done . 'nil)
   (org-log-into-drawer . "LOGBOOK")
+
   (org-clock-stored-history . t)
   (org-clock-auto-clockout-timer . 1800)
   (org-tag-alist . '(
-                     ;; 分类
-                     (:startgroup . nil)
-                     ("personal")
-                     ("family")
-                     ("work")
-                     (:endgroup . nil)
                      ;; 上下文需求
                      (:startgroup . nil)
-                     ("@home" ?h)
-                     ("@office" ?o)
+                     ("@home" . ?h)
+                     ("@office" . ?o)
+                     ("@phone" . ?f)
+                     ("@pc" . ?c)
                      (:endgroup . nil)
                      ;; 类型
                      ("task" . ?t)
                      ("project" . ?p)
                      ("event" . ?e)
                      ))
-  (org-capture-templates . '(("t" "Todo" entry (file+headline  "~/org/gtd/gtd.org" "Inbox For GTD") "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:")
+  (org-capture-templates . '(
+                             ("t" "Todo" entry (file+headline  "~/org/gtd/gtd.org" "Inbox For GTD") "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:")
+                             ("n" "摘抄" entry (file  "~/org/inbox/emacs.org") "* TODO 摘抄自 %a \n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:\n%i\n" :immediate-finish t)
+                             ("x" "快速捕获任务" entry (file  "~/org/inbox/emacs.org") "* TODO %l \nSCHEDULED: %T\n" :immediate-finish t)
                              ))
   :config
   (org-clock-auto-clockout-insinuate)
@@ -971,13 +991,18 @@
   (org-agenda-show-future-repeats . 'next)
   ;; 在agenda视图中默认显示实体文本内容，且最多10行
   (org-agenda-start-with-entry-text-mode . t)
-  (org-agenda-entry-text-maxlines . 10)
+  (org-agenda-entry-text-maxlines . 3)
 
   (org-agenda-custom-commands . '(
-                                  ("w" . "每周回顾")
                                   ("i" "外部收集箱" tags "+inbox" ((org-agenda-files '("~/org/inbox" "~/org/sync"))))
-                                  ("j" "所有待细化的项目" tags-todo "+inbox+gtd")
+                                  ("j" "所有待细化的项目" tags "inbox"
+                                   (
+                                    (org-agenda-files '("~/org/gtd/gtd.org"))
+                                    (org-agenda-skip-function '(org-agenda-skip-entry-if 'regexp "Inbox For GTD"))
+                                    ))
                                   ("g" "所有等待中的项目" ((todo "WAITING")))
+
+                                  ("w" . "每周回顾")
                                   ("wp" "每周项目回顾" tags "+project" ((org-use-tag-inheritance nil)))
                                   ("wt" "每周TODO回顾" todo "TODO")
                                   ("ws" "每周SOMEDAY回顾" todo "SOMEDAY")
@@ -1004,7 +1029,7 @@
   :config
   (defun org-pomodoro-notify (title message)
     "Send a notification with TITLE and MESSAGE using `alert'."
-    (notifications-notify :body message :title title :timeout 60000))
+    (notifications-notify :body message :title title :timeout (* 5 * 60 * 1000)))
   :bind
   ("C-c n p" . org-pomodoro)
   (:org-agenda-mode-map
@@ -1057,6 +1082,8 @@
 (leaf ox-hugo
   :straight t
   :after ox
+  :require t
+  :leaf-defer nil
   :custom
   (org-hugo-section . "post")
   (org-hugo-auto-set-lastmod	. t)
@@ -1091,8 +1118,6 @@
 
 (leaf org-caldav
   :straight t
-  :leaf-defer nil
-  :after org
   :custom
   ;; 双向同步
   (org-caldav-sync-direction . 'twoway)
@@ -1101,15 +1126,6 @@
   (org-caldav-todo-percent-states  . '(
                                        (0 "TODO")
                                        (10 "NEXT")
-                                       (50 "WAITING")
-                                       (60 "SOMEDAY")
-                                       (100 "DONE")
-                                       (80 "CANCELLED")
-                                       (30 "UNSTARTED")
-                                       (40 "INPROGRESS")
-                                       (10 "SUSPEND")
-                                       (90 "FINISHED")
-                                       (70 "ABORT")
                                        ))
 
   ;; ;; 如果上一次异常，不询问
@@ -1124,15 +1140,19 @@
   (org-icalendar-include-todo . '("TODO" "NEXT"))
 
   ;; 如果不是是todo节点，会作为一个event
-  (org-icalendar-use-scheduled . '(todo-start))
+  (org-icalendar-use-scheduled . '(todo-start event-if-not-todo))
 
-  ;; 如果是todo节点，会作为一个event
-  (org-icalendar-use-deadline . '(todo-due))
+  ;; 如果不是todo节点，会作为一个event
+  (org-icalendar-use-deadline . '(todo-due event-if-not-todo))
 
   ;; 不使用sexp
   (org-icalendar-include-sexps . nil)
+  (org-icalendar-include-bbdb-anniversaries . nil)
+
   ;; 后台导出，不显示同步结果
   (org-caldav-show-sync-results . nil)
+  ;; debug logs
+  (org-caldav-debug-level . 1)
   :init
   ;; 多个日历
   (setq org-caldav-calendars (list (list
@@ -1147,8 +1167,6 @@
                                     :select-tags (list "family")
                                     :files '("~/org/gtd/gtd.org")
                                     :inbox "~/org/inbox/caldav-family.org")))
-
-
   :bind
   ("C-c t c" . org-caldav-sync)
   )
@@ -1161,22 +1179,32 @@
 
 (leaf cal-china-x
   :straight t
-  :require t
-  :config
-  (setq mark-holidays-in-calendar t)
-  (setq cal-china-x-important-holidays cal-china-x-chinese-holidays)
-  (setq cal-china-x-general-holidays '((holiday-lunar 1 15 "元宵节")))
-  (setq calendar-holidays
-        (append cal-china-x-important-holidays
-                cal-china-x-general-holidays
-                holiday-other-holidays))
+  :custom
+  (mark-holidays-in-calendar . t)
+  (calendar-holidays . '(
+                         (holiday-fixed 1 1 "元旦")
+                         (holiday-lunar 1 1 "春节")
+                         (holiday-lunar 1 15 "元宵节")
+                         (holiday-lunar 2 2 "龙抬头")
+                         (holiday-fixed 2 14 "情人节")
+                         (holiday-fixed 3 8 "妇女节")
+                         (holiday-solar-term "清明" "清明节")
+                         (holiday-fixed 5 1 "劳动节")
+                         (holiday-lunar 5 5 "端午节")
+                         (holiday-lunar 7 7 "七夕")
+                         (holiday-lunar 7 15 "中元节")
+                         (holiday-lunar 8 15 "中秋节")
+                         (holiday-lunar 9 9 "重阳节")
+                         (holiday-fixed 10 1 "国庆节")
+                         (holiday-lunar 10 1 "寒衣节")
+                         (holiday-lunar 12 23 "小年")
+                         (holiday-lunar 12 30 "除夕")
+                         ))
+  ;; 在议程中自定义显示格式为阴历
+  (org-agenda-format-date . 'grass-emacs/org-agenda-format-date-aligned)
   )
 
-
-
-;; 在议程中自定义显示格式为阴历
-(setq org-agenda-format-date 'grass-emacs/org-agenda-format-date-aligned)
-
+;; agenda中的日期格式化
 (defun grass-emacs/org-agenda-format-date-aligned (date)
   "Format a DATE string for display in the daily/weekly agenda, or timeline.
       This function makes sure that dates are aligned for easy reading."
