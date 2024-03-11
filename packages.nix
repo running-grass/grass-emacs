@@ -27,15 +27,6 @@ in with pkgs;
   emmet-ls
   yaml-language-server
 
-  wakatime
-
-  # mardown
-  multimarkdown
-
-  # email
-  mu
-  offlineimap
-
   # check and format
   shellcheck
   html-tidy
@@ -54,7 +45,4 @@ in with pkgs;
   aria
   # eaf-file-manager
   fd
-
-  # hugo
-  hugo
 ] ++ [ python ] ++ onlyDarwin ++ onlyLinux

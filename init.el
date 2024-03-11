@@ -230,14 +230,14 @@
 (straight-use-package 'leaf-keywords)
 (leaf leaf-keywords
   :custom
-  (leaf-expand-ensure-system-package . nil)
+  (leaf-expand-ensure-system-package . t)
   :config
-  ;; initialize leaf-keywords.el
   (leaf-keywords-init)
   )
 
 (leaf system-packages
-  :straight t
+  :straight '(system-packages
+              :type git :host github :repo "running-grass/system-packages")
   :custom
   (system-packages-use-sudo . nil)
   (system-packages-noconfirm . t)
@@ -250,6 +250,10 @@
   :config
   (exec-path-from-shell-initialize))
 
+(leaf url
+  :custom
+  `(url-configuration-directory . ,(expand-emacs-state "url"))
+  )
 ;; 保存了上一次打开文件时的光标位置
 (leaf saveplace
   :global-minor-mode save-place-mode
@@ -352,7 +356,7 @@
 ;; Example configuration for Consult
 (leaf consult
   :straight t
-  :ensure-system-package ripgrep
+  :ensure-system-package (rg . ripgrep)
   :bind
   ("C-c b b" . consult-buffer)
   ("C-c p s" . consult-ripgrep)
@@ -618,7 +622,7 @@
 
 (leaf mu4e
   :when *is-nix-module*
-
+  :ensure-system-package mu offlineimap
   :custom
   (user-full-name . "Leo Liu")
   (user-mail-address . "hi@grass.show")
@@ -870,6 +874,7 @@
 
 (leaf markdown-mode
   :straight t
+  :ensure-system-package multimarkdown
   :mode ("README\\.md\\'" . gfm-mode)
   :custom
   (markdown-command . "multimarkdown")
@@ -882,6 +887,12 @@
   :mode ("\\.yml\\'" "\\.yaml\\'")
   :setq-default
   (format-all-formatters . '(("YAML" (prettier)))))
+
+(leaf mermaid-mode
+  :straight t
+  :ensure-system-package
+  (mmdc . mermaid-cli)
+  )
 
 (leaf just-mode
   :straight t
@@ -1042,7 +1053,8 @@
 (leaf org-roam
   :straight t
   :require org-roam org-roam-protocol
-  :ensure-system-package graphviz
+  :ensure-system-package
+  (dot . graphviz)
   :after org
   :custom
   (org-roam-directory . "~/org/roam/")
@@ -1084,6 +1096,7 @@
   :after ox
   :require t
   :leaf-defer nil
+  :ensure-system-package hugo
   :custom
   (org-hugo-section . "post")
   (org-hugo-auto-set-lastmod	. t)
@@ -1298,7 +1311,7 @@
 
 (leaf wakatime-mode
   :straight t
-  :ensure-system-package wakatime
+  :ensure-system-package (wakatime-cli . wakatime)
   :global-minor-mode global-wakatime-mode
   :config
   (setq wakatime-cli-path "wakatime-cli")
