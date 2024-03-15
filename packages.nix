@@ -17,7 +17,7 @@ let
 in with pkgs;
 [
   # lsp
-  rnix-lsp # nix
+  # rnix-lsp # nix
   phpactor # php
 
   typescript

@@ -13,19 +13,19 @@
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-23.11";
     flake-utils.url = "github:numtide/flake-utils";
 
-    emacs-overlay = {
-      url = "github:nix-community/emacs-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.nixpkgs-stable.follows = "nixpkgs-stable";
-    };
+    # emacs-overlay = {
+    #   url = "github:nix-community/emacs-overlay";
+    #   inputs.nixpkgs.follows = "nixpkgs";
+    #   inputs.nixpkgs-stable.follows = "nixpkgs-stable";
+    # };
   };
-  outputs = { self, nixpkgs, emacs-overlay, flake-utils, ... }:
+  outputs = { self, nixpkgs, flake-utils, ... }:
     let
       getEmacs = system: rec {
         pkgs = import nixpkgs {
           inherit system;
           config.allowUnfree = true;
-          overlays = [ (import emacs-overlay) ];
+          # overlays = [ (import emacs-overlay) ];
         };
         emacsWrap = import ./emacsWrap.nix { inherit pkgs; };
         packages = import ./packages.nix { inherit pkgs; };

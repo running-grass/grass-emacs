@@ -721,7 +721,6 @@
   ;; 用户级别的lsp-bridge配置
   (lsp-bridge-user-langserver-dir . "~/.config/emacs/lsp-bridge-user/langserver")
   (lsp-bridge-php-lsp-server . 'phpactor)
-  (lsp-bridge-nix-lsp-server . 'rnix-lsp)
   ;; codeium
   (acm-enable-codeium . t)
   (lsp-bridge-enable-completion-in-string . t)
@@ -822,8 +821,8 @@
 (leaf nix-mode
   :straight t
   :mode "\\.nix\\'"
-  :custom
-  (lsp-bridge-nix-lsp-server . 'rnix-lsp)
+  ;; :custom
+  ;; (lsp-bridge-nix-lsp-server . 'rnix-lsp)
   :setq-default
   (format-all-formatters . '(("Nix" (nixfmt))))
   )
@@ -1044,9 +1043,8 @@
   :bind
   ("C-c n p" . org-pomodoro)
   (:org-agenda-mode-map
-   ("C-c C-x C-p" . org-pomodoro)
-   ("p" . org-pomodoro))
-  (:org-mode-map
+   ("C-c C-x C-p" . org-pomodoro))
+   (:org-mode-map
    ("C-c C-x C-p" . org-pomodoro))
   )
 
@@ -1058,6 +1056,7 @@
   :after org
   :custom
   (org-roam-directory . "~/org/roam/")
+  `(org-roam-node-display-template . ,(concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
   :bind
   ("C-c n l" . org-roam-buffer-toggle)
   ("C-c n f" . org-roam-node-find)
@@ -1068,11 +1067,7 @@
   ("C-c n j" . org-roam-dailies-capture-today)
 
   :config
-  ;; If you're using a vertical completion framework, you might want a more informative completion interface
-  (setq org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
   (org-roam-db-autosync-mode)
-  ;; :config
-  ;; (setq org-all-files (f-files org-directory 'org-roam--org-file-p t))
   )
 
 ;; org 美化
@@ -1186,6 +1181,7 @@
 
 (leaf toc-org
   :straight t
+  :after org
   :hook
   (org-mode-hook . toc-org-mode)
   )
@@ -1282,7 +1278,6 @@
 
 (leaf vundo
   :straight t
-
   :bind
   ("C-c u" . vundo)
   )
@@ -1330,7 +1325,6 @@
 
 (leaf dirvish
   :straight t
-  :after nerd-icons
   :config
   (setq dirvish-mode-line-format
         '(:left (sort symlink) :right (omit yank index)))

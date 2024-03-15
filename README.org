@@ -80,7 +80,7 @@
 - [[#杂项][杂项]]
   - [[#undoredo][Undo/Redo]]
   - [[#小功能][小功能]]
-  - [[#仪表盘][仪表盘]]
+  - [[#dashboard][Dashboard]]
   - [[#auto-save][Auto save]]
 - [[#加载自定义文件][加载自定义文件]]
 - [[#footer][Footer]]
@@ -1086,7 +1086,6 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
     ;; 用户级别的lsp-bridge配置
     (lsp-bridge-user-langserver-dir . "~/.config/emacs/lsp-bridge-user/langserver")
     (lsp-bridge-php-lsp-server . 'phpactor)
-    (lsp-bridge-nix-lsp-server . 'rnix-lsp)
     ;; codeium
     (acm-enable-codeium . t)
     (lsp-bridge-enable-completion-in-string . t)
@@ -1307,8 +1306,8 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
   (leaf nix-mode
     :straight t
     :mode "\\.nix\\'"
-    :custom
-    (lsp-bridge-nix-lsp-server . 'rnix-lsp)
+    ;; :custom
+    ;; (lsp-bridge-nix-lsp-server . 'rnix-lsp)
     :setq-default
     (format-all-formatters . '(("Nix" (nixfmt))))
     )
@@ -1595,9 +1594,8 @@ Org-mode 相关的配置。
     :bind
     ("C-c n p" . org-pomodoro)
     (:org-agenda-mode-map
-     ("C-c C-x C-p" . org-pomodoro)
-     ("p" . org-pomodoro))
-    (:org-mode-map
+     ("C-c C-x C-p" . org-pomodoro))
+     (:org-mode-map
      ("C-c C-x C-p" . org-pomodoro))
     )
 #+end_src
@@ -1611,6 +1609,7 @@ Org-mode 相关的配置。
     :after org
     :custom
     (org-roam-directory . "~/org/roam/")
+    `(org-roam-node-display-template . ,(concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
     :bind
     ("C-c n l" . org-roam-buffer-toggle)
     ("C-c n f" . org-roam-node-find)
@@ -1621,11 +1620,7 @@ Org-mode 相关的配置。
     ("C-c n j" . org-roam-dailies-capture-today)
 
     :config
-    ;; If you're using a vertical completion framework, you might want a more informative completion interface
-    (setq org-roam-node-display-template (concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
     (org-roam-db-autosync-mode)
-    ;; :config
-    ;; (setq org-all-files (f-files org-directory 'org-roam--org-file-p t))
     )
 #+end_src
 
@@ -1749,6 +1744,7 @@ Org-mode 相关的配置。
 #+begin_src emacs-lisp
   (leaf toc-org
     :straight t
+    :after org
     :hook
     (org-mode-hook . toc-org-mode)
     )
@@ -1855,7 +1851,6 @@ Org-mode 相关的配置。
 #+begin_src emacs-lisp
   (leaf vundo
     :straight t
-
     :bind
     ("C-c u" . vundo)
     )
@@ -1908,7 +1903,6 @@ Org-mode 相关的配置。
 
   (leaf dirvish
     :straight t
-    :after nerd-icons
     :config
     (setq dirvish-mode-line-format
           '(:left (sort symlink) :right (omit yank index)))
@@ -1928,13 +1922,10 @@ Org-mode 相关的配置。
     :hook
     (dired-mode-hook . (dirvish-override-dired-mode))
     )
-
-
-
 #+end_src
 
 
-** 仪表盘
+** Dashboard
 
 #+begin_src emacs-lisp
   ;; leaf:
