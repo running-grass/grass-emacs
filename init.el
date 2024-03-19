@@ -953,7 +953,6 @@
                           ))
   (org-todo-keywords . '(
                          (sequence "TODO(t)" "NEXT(n)" "WAITING(w@)" "SOMEDAY(s)" "|" "DONE(d!)" "CANCELLED(c@)")
-                         (sequence "UNSTARTED(u)" "INPROGRESS(i!)" "SUSPEND(e@)" "|" "FINISHED(f!)" "ABORT(a@)")
                          ))
   (org-clock-string-limit . 5)
   (org-log-refile . 'nil)
