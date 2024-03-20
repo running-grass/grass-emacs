@@ -952,8 +952,8 @@
                           ("~/org/gtd/gtd.org" . (:tag . "inbox"))
                           ))
   (org-todo-keywords . '(
-                         (sequence "TODO(t)" "NEXT(n)" "WAITING(w@)" "SOMEDAY(s)" "|" "DONE(d!)" "CANCELLED(c@)")
-                         ))
+      (sequence "NEXT(n)" "TODO(t)"  "WAITING(w@)" "SOMEDAY(s)" "|" "DONE(d!)" "CANCELLED(c@)")
+      ))
   (org-clock-string-limit . 5)
   (org-log-refile . 'nil)
   (org-log-done . 'nil)
@@ -1147,10 +1147,10 @@
   (org-icalendar-include-todo . '("TODO" "NEXT"))
 
   ;; 如果不是是todo节点，会作为一个event
-  (org-icalendar-use-scheduled . '(todo-start event-if-not-todo))
+  (org-icalendar-use-scheduled . '(todo-start))
 
   ;; 如果不是todo节点，会作为一个event
-  (org-icalendar-use-deadline . '(todo-due event-if-not-todo))
+  (org-icalendar-use-deadline . '(todo-due))
 
   ;; 不使用sexp
   (org-icalendar-include-sexps . nil)
