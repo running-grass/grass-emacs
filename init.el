@@ -839,6 +839,12 @@
    ("C-." . nil))
   )
 
+(leaf python
+  :ensure-system-package pyright
+  :custom
+  (lsp-bridge-python-lsp-server . 'pyright)
+  )
+
 ;; 配置emmet-mode
 ;; 默认为C-j展开
 (leaf emmet-mode

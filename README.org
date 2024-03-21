@@ -57,6 +57,7 @@
   - [[#通用配置][通用配置]]
   - [[#nix][Nix]]
   - [[#php][PHP]]
+  - [[#python][Python]]
   - [[#web][Web]]
   - [[#vue][Vue]]
   - [[#markdown][Markdown]]
@@ -1330,6 +1331,14 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
     )
 #+end_src
 
+** Python
+#+begin_src emacs-lisp
+  (leaf python
+    :ensure-system-package pyright
+    :custom
+    (lsp-bridge-python-lsp-server . 'pyright)
+    )
+#+end_src
 ** Web
 
 使用 =Emmet= 处理快速展开，语法高亮都使用 =treesite= ， =ts= 和 =js= 的基础补全使用 =lsp= ，其余高级功能使用 =tide=
