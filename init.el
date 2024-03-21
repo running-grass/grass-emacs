@@ -887,6 +887,19 @@
   :setq-default
   (format-all-formatters . '(("YAML" (prettier)))))
 
+(leaf plantuml-mode
+  :straight t
+  :ensure-system-package plantuml
+  :mode ("\\.puml\\'" "\\.plantuml\\'" "\\.wsd\\'" "\\.pu\\'" "\\.iuml\\'")
+  :custom
+  (plantuml-default-exec-mode . 'executable)
+  (plantuml-executable-args . '(
+                                "-headless"
+                                "-charset"
+                                "UTF-8"
+                                ))
+  )
+
 (leaf mermaid-mode
   :straight t
   :ensure-system-package
@@ -945,7 +958,7 @@
   (org-pretty-entities . t)
 
   (org-directory . "~/org/")
-  (org-startup-folded . 'content)
+  (org-startup-folded . 'nofold)
   (org-refile-targets . '(
                           (nil . (:level . 1)) ;当前文件的level1
                           (nil . (:tag . "project"))

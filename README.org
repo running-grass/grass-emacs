@@ -61,6 +61,7 @@
   - [[#vue][Vue]]
   - [[#markdown][Markdown]]
   - [[#yaml][YAML]]
+  - [[#plantuml][PlantUML]]
   - [[#mermaid][Mermaid]]
   - [[#just-file][Just File]]
   - [[#docker][Docker]]
@@ -1393,22 +1394,20 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
     (format-all-formatters . '(("YAML" (prettier)))))
 #+end_src
 
-** COMMENT PlantUML
+** PlantUML
 
 #+begin_src emacs-lisp
   (leaf plantuml-mode
     :straight t
+    :ensure-system-package plantuml
+    :mode ("\\.puml\\'" "\\.plantuml\\'" "\\.wsd\\'" "\\.pu\\'" "\\.iuml\\'")
     :custom
-    (plantuml-executable-path . "~/.nix-profile/bin/plantuml")
-    (plantuml-jar-path  . "~/.nix-profile/lib/plantuml.jar")
     (plantuml-default-exec-mode . 'executable)
-    (org-plantuml-exec-mode . 'executable)
-    (org-plantuml-jar-path . "~/.nix-profile/lib/plantuml.jar")
     (plantuml-executable-args . '(
-                                     "-headless"
-                                     "-charset"
-                                     "UTF-8"
-                                     ))
+                                  "-headless"
+                                  "-charset"
+                                  "UTF-8"
+                                  ))
     )
 #+end_src
 
@@ -1488,7 +1487,7 @@ Org-mode 相关的配置。
     (org-pretty-entities . t)
 
     (org-directory . "~/org/")
-    (org-startup-folded . 'content)
+    (org-startup-folded . 'nofold)
     (org-refile-targets . '(
                             (nil . (:level . 1)) ;当前文件的level1
                             (nil . (:tag . "project"))
