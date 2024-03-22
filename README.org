@@ -921,23 +921,25 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
 
 #+begin_src emacs-lisp
   (leaf eaf
-    :load-path (expand-file-name
-                "workspace/forks/emacs-application-framework"
-                (getenv "HOME")
-                )
+    :straight '(eaf :type git :host github :repo "emacs-eaf/emacs-application-framework"
+                    ;; :files (:defaults "*")
+                    :files (:defaults "*.el" "*.py" "*.json" "extension" "core" "reinput")
+                    )
+
+    ;; :load-path (expand-file-name
+    ;;             "workspace/forks/emacs-application-framework"
+    ;;             (getenv "HOME")
+    ;;             )
 
     ;; :init
-    :config
-    (add-to-list 'meow-mode-state-list '(eaf-mode . motion))
+    ;; :config
+    ;; (add-to-list 'meow-mode-state-list '(eaf-mode . motion))
     )
 
   (leaf eaf-browser
     :after eaf
-    :load-path (expand-file-name
-                "workspace/forks/emacs-application-framework/app/browser"
-                (getenv "HOME")
-                )
-
+    :require t
+    :load-path "~/.local/state/emacs/straight/repos/emacs-application-framework/app/browser/"
     :custom
     (eaf-browser-continue-where-left-off . t)
     (eaf-browser-enable-adblocker . t)
@@ -945,6 +947,23 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
 
     :config
     (defalias 'browse-web #'eaf-open-browser)
+    ;; (eaf-bind-key scroll_up "C-n" eaf-pdf-viewer-keybinding)
+    ;; (eaf-bind-key scroll_down "C-p" eaf-pdf-viewer-keybinding)
+    ;; (eaf-bind-key take_photo "p" eaf-camera-keybinding)
+    ;; (eaf-bind-key nil "M-q" eaf-browser-keybinding) ;; unbind, see more in the Wiki
+    ;; (eaf-bind-key nil "SPC" eaf-browser-keybinding) ;; unbind, see more in the Wiki
+    )
+  (leaf eaf-file-manager
+    :after eaf
+    :require t
+    :load-path "~/.local/state/emacs/straight/repos/emacs-application-framework/app/file-manager/"
+    ;; :custom
+    ;; (eaf-browser-continue-where-left-off . t)
+    ;; (eaf-browser-enable-adblocker . t)
+    ;; (browse-url-browser-function . 'eaf-open-browser)
+
+    ;; :config
+    ;; (defalias 'browse-web #'eaf-open-browser)
     ;; (eaf-bind-key scroll_up "C-n" eaf-pdf-viewer-keybinding)
     ;; (eaf-bind-key scroll_down "C-p" eaf-pdf-viewer-keybinding)
     ;; (eaf-bind-key take_photo "p" eaf-camera-keybinding)
@@ -1480,7 +1499,7 @@ Org-mode 相关的配置。
 
   ;; Org模式相关的，和GTD相关的
   (leaf org
-    :ensure-system-package pandoc
+    :ensure-system-package (pandoc zip)
     :custom
     ;; Edit settings
     (org-auto-align-tags . t)
@@ -1507,7 +1526,7 @@ Org-mode 相关的配置。
         ))
     (org-clock-string-limit . 5)
     (org-log-refile . 'nil)
-    (org-log-done . 'nil)
+    (org-log-done . 'time)
     (org-log-into-drawer . "LOGBOOK")
 
     (org-clock-stored-history . t)
@@ -1529,7 +1548,7 @@ Org-mode 相关的配置。
                                ("T" "带上下文捕获任务" entry (file+headline  "~/org/gtd/gtd.org" "Inbox For GTD") "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:")
                                ("t" "捕获任务" entry (file+headline  "~/org/gtd/gtd.org" "Inbox For GTD") "* TODO %?\n")
                                ("n" "摘抄" entry (file  "~/org/inbox/emacs.org") "* TODO 摘抄自 %a \n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:\n%i\n" :immediate-finish t)
-                               ("x" "快速捕获任务" entry (file-headline  "~/org/gtd/gtd.org" "Inbox For GTD") "* TODO %l \n" :immediate-finish t)
+                               ("x" "快速捕获任务" entry (file+headline  "~/org/gtd/gtd.org" "Inbox For GTD") "* TODO %l \n" :immediate-finish t)
                                ))
     :config
     (org-clock-auto-clockout-insinuate)
