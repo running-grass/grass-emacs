@@ -656,6 +656,7 @@
 
 (leaf elfeed-protocol
   :straight t
+  :ensure-system-package rbw
   :custom
   (elfeed-use-curl . t)
   `(elfeed-db-directory . ,(expand-emacs-cache "elfeed"))
@@ -946,9 +947,15 @@
   ("C-c j t" . consult-todo)
   )
 
+(leaf ledger-mode
+  :straight t
+  :ensure-system-package ledger
+  :mode "\\.ledger\\'"
+  )
+
 ;; Org模式相关的，和GTD相关的
 (leaf org
-  :ensure-system-package pandoc
+  :ensure-system-package (pandoc zip)
   :custom
   ;; Edit settings
   (org-auto-align-tags . t)
@@ -971,11 +978,11 @@
                           ("~/org/gtd/gtd.org" . (:tag . "inbox"))
                           ))
   (org-todo-keywords . '(
-      (sequence "NEXT(n)" "TODO(t)"  "WAITING(w@)" "SOMEDAY(s)" "|" "DONE(d!)" "CANCELLED(c@)")
-      ))
+                         (sequence "NEXT(n)" "TODO(t)"  "WAITING(w@)" "SOMEDAY(s)" "|" "DONE(d!)" "CANCELLED(c@)")
+                         ))
   (org-clock-string-limit . 5)
   (org-log-refile . 'nil)
-  (org-log-done . 'nil)
+  (org-log-done . 'time)
   (org-log-into-drawer . "LOGBOOK")
 
   (org-clock-stored-history . t)
@@ -997,10 +1004,17 @@
                              ("T" "带上下文捕获任务" entry (file+headline  "~/org/gtd/gtd.org" "Inbox For GTD") "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:")
                              ("t" "捕获任务" entry (file+headline  "~/org/gtd/gtd.org" "Inbox For GTD") "* TODO %?\n")
                              ("n" "摘抄" entry (file  "~/org/inbox/emacs.org") "* TODO 摘抄自 %a \n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:\n%i\n" :immediate-finish t)
-                             ("x" "快速捕获任务" entry (file-headline  "~/org/gtd/gtd.org" "Inbox For GTD") "* TODO %l \n" :immediate-finish t)
+                             ("x" "快速捕获任务" entry (file+headline  "~/org/gtd/gtd.org" "Inbox For GTD") "* TODO %l \n" :immediate-finish t)
                              ))
   :config
   (org-clock-auto-clockout-insinuate)
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '(
+     ;; (dot . t)
+     (emacs-lisp . t)
+     ;; (ledger . t)         ;this is the important one for this tutorial
+     ))
   :bind
   ("C-c n s" . org-save-all-org-buffers)
   ("C-c n c" . org-capture)
@@ -1145,6 +1159,7 @@
 
 (leaf org-caldav
   :straight t
+  :ensure-system-package rbw
   :custom
   ;; 双向同步
   (org-caldav-sync-direction . 'twoway)
@@ -1153,6 +1168,7 @@
   (org-caldav-todo-percent-states  . '(
                                        (0 "TODO")
                                        (10 "NEXT")
+                                       (100 "DONE")
                                        ))
 
   ;; ;; 如果上一次异常，不询问
@@ -1167,10 +1183,10 @@
   (org-icalendar-include-todo . '("TODO" "NEXT"))
 
   ;; 如果不是是todo节点，会作为一个event
-  (org-icalendar-use-scheduled . '(todo-start))
+  (org-icalendar-use-scheduled . '(todo-start event-if-not-todo))
 
   ;; 如果不是todo节点，会作为一个event
-  (org-icalendar-use-deadline . '(todo-due))
+  (org-icalendar-use-deadline . '(todo-due event-if-not-todo))
 
   ;; 不使用sexp
   (org-icalendar-include-sexps . nil)
@@ -1196,6 +1212,12 @@
                                     :inbox "~/org/inbox/caldav-family.org")))
   :bind
   ("C-c t c" . org-caldav-sync)
+  )
+
+(leaf org-anki
+  :straight t
+  ;; :ensure-system-package anki
+
   )
 
 (leaf toc-org
