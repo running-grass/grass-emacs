@@ -201,6 +201,15 @@
           )
       (if (string-prefix-p "rbw get: couldn't find entry for" out) (error "没找到对应的密码") out)
       ))
+
+  (defun grass-emacs/next-monday ()
+    (org-read-date nil nil "Mon"))
+
+  (defun grass-emacs/current-monday ()
+    (org-read-date nil nil "-Mon"))
+
+  (defun grass-emacs/last-monday ()
+    (org-read-date nil nil "--1w" nil (date-to-time (grass-emacs/current-monday))))
 #+end_src
 ** 定义常用目录
 
@@ -1597,19 +1606,56 @@ Org-mode 相关的配置。
     (org-agenda-start-with-entry-text-mode . t)
     (org-agenda-entry-text-maxlines . 3)
 
-    (org-agenda-custom-commands . '(
+    (org-agenda-custom-commands . `(
                                     ("i" "外部收集箱" tags "+inbox" ((org-agenda-files '("~/org/inbox" "~/org/sync"))))
                                     ("j" "所有待细化的项目" tags "inbox"
                                      (
                                       (org-agenda-files '("~/org/gtd/gtd.org"))
                                       (org-agenda-skip-function '(org-agenda-skip-entry-if 'regexp "Inbox For GTD"))
                                       ))
-                                    ("g" "所有等待中的项目" ((todo "WAITING")))
 
                                     ("w" . "每周回顾")
                                     ("wp" "每周项目回顾" tags "+project" ((org-use-tag-inheritance nil)))
-                                    ("wt" "每周TODO回顾" todo "TODO")
-                                    ("ws" "每周SOMEDAY回顾" todo "SOMEDAY")
+
+                                    ("r" . "回顾统计")
+                                    ("rt" "今日完成任务"
+                                     tags "+CLOSED>=\"<today>\"|+LAST_REPEAT>=\"<today>\"|+TIMESTAMP>=\"<today>\"+TIMESTAMP<\"<tomorrow>\""
+                                     ((org-agenda-overriding-header "今日完成的任务")
+                                      (org-agenda-sorting-strategy '(priority-down))
+                                      (org-agenda-start-with-entry-text-mode . nil)
+                                      )
+                                     nil)
+
+                                    ("ry" "昨日完成任务"
+                                     tags "+CLOSED>=\"<-1d>\"+CLOSED<\"<today>\"|+LAST_REPEAT>=\"<-1d>\"+LAST_REPEAT<\"<today>\"|+TIMESTAMP>=\"<-1d>\"+TIMESTAMP<\"<today>\""
+                                     ((org-agenda-overriding-header "昨日完成的任务")
+                                      (org-agenda-sorting-strategy '(priority-down))
+                                      (org-agenda-start-with-entry-text-mode . nil)
+                                      )
+                                     nil)
+
+                                    ("rw" "本周完成任务"
+                                     tags ,(let ((monday (grass-emacs/current-monday)))
+                                             (format "+CLOSED>=\"<%s>\"|+LAST_REPEAT>=\"<%s>\"|+TIMESTAMP>=\"<%s>\"+TIMESTAMP<=\"<now>\"" monday monday monday))
+                                     ((org-agenda-overriding-header "本周完成的任务")
+                                      (org-agenda-sorting-strategy '(priority-down))
+                                      (org-agenda-start-with-entry-text-mode . nil)
+                                      )
+                                     nil)
+
+                                    ("rp" "上周完成任务"
+                                     tags ,(let (
+                                                 (monday (grass-emacs/current-monday))
+                                                 (last-monday (grass-emacs/last-monday)))
+                                             (format
+                                              "+CLOSED>=\"<%s>\"+CLOSED<\"<%s>\"|+LAST_REPEAT>=\"<%s>\"+LAST_REPEAT<\"<%s>\"|+TIMESTAMP>=\"<%s>\"+TIMESTAMP<\"<%s>\""
+                                              last-monday monday last-monday monday last-monday monday))
+                                     ((org-agenda-overriding-header "上周完成的任务")
+                                      (org-agenda-sorting-strategy '(priority-down))
+                                      (org-agenda-start-with-entry-text-mode . nil)
+                                      )
+                                     nil)
+
                                     ))
 
     :bind
