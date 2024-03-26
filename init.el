@@ -42,15 +42,6 @@
     (if (string-prefix-p "rbw get: couldn't find entry for" out) (error "没找到对应的密码") out)
     ))
 
-(defun grass-emacs/next-monday ()
-  (org-read-date nil nil "Mon"))
-
-(defun grass-emacs/current-monday ()
-  (org-read-date nil nil "-Mon"))
-
-(defun grass-emacs/last-monday ()
-  (org-read-date nil nil "--1w" nil (date-to-time (grass-emacs/current-monday))))
-
 (require 'xdg)
 
 (defun expand-emacs-config (filename)
@@ -307,6 +298,181 @@
   (recentf-max-menu-items . 150)
   )
 
+(defun reload-config ()
+  "重新加载配置"
+  (interactive)
+  (progn
+    (org-babel-tangle-file (expand-emacs-config  "README.org"))
+    (load-file (expand-emacs-config "init.el"))
+    )
+  )
+
+(defun meow-setup ()
+  (setq meow-cheatsheet-layout meow-cheatsheet-layout-qwerty)
+
+  (meow-motion-overwrite-define-key
+   ;; '("j" . meow-next)
+   ;; '("k" . meow-prev)
+   '("<escape>" . ignore))
+  (meow-leader-define-key
+   ;; SPC j/k will run the original command in MOTION state.
+   '("J" . "H-j")
+   '("K" . "H-k")
+   ;; Use SPC (0-9) for digit arguments.
+   '("1" . meow-digit-argument)
+   '("2" . meow-digit-argument)
+   '("3" . meow-digit-argument)
+   '("4" . meow-digit-argument)
+   '("5" . meow-digit-argument)
+   '("6" . meow-digit-argument)
+   '("7" . meow-digit-argument)
+   '("8" . meow-digit-argument)
+   '("9" . meow-digit-argument)
+   '("0" . meow-digit-argument)
+   '("/" . meow-keypad-describe-key)
+
+   '("?" . meow-cheatsheet)
+
+   '("<SPC>" . consult-mode-command)
+
+   '("r" . reload-config)
+   )
+  (meow-normal-define-key
+   '("0" . meow-expand-0)
+   '("9" . meow-expand-9)
+   '("8" . meow-expand-8)
+   '("7" . meow-expand-7)
+   '("6" . meow-expand-6)
+   '("5" . meow-expand-5)
+   '("4" . meow-expand-4)
+   '("3" . meow-expand-3)
+   '("2" . meow-expand-2)
+   '("1" . meow-expand-1)
+   '("-" . negative-argument)
+   '(";" . meow-reverse)
+   '("," . meow-inner-of-thing)
+   '("." . meow-bounds-of-thing)
+   '("[" . meow-beginning-of-thing)
+   '("]" . meow-end-of-thing)
+   '("a" . meow-append)
+   '("A" . meow-open-below)
+   '("b" . meow-back-word)
+   '("B" . meow-back-symbol)
+   '("c" . meow-change)
+   '("d" . meow-delete)
+   '("D" . meow-backward-delete)
+   '("e" . meow-next-word)
+   '("E" . meow-next-symbol)
+   '("f" . meow-find)
+   '("g" . meow-cancel-selection)
+   '("G" . meow-grab)
+   '("h" . meow-left)
+   '("H" . meow-left-expand)
+   '("i" . meow-insert)
+   '("I" . meow-open-above)
+   '("j" . meow-next)
+   '("J" . meow-next-expand)
+   '("k" . meow-prev)
+   '("K" . meow-prev-expand)
+   '("l" . meow-right)
+   '("L" . meow-right-expand)
+   '("m" . meow-join)
+   '("n" . meow-search)
+   '("o" . meow-block)
+   '("O" . meow-to-block)
+   '("p" . meow-yank)
+   '("P" . consult-yank-from-kill-ring)
+   '("q" . meow-quit)
+   '("Q" . meow-goto-line)
+   '("r" . meow-replace)
+   '("R" . meow-swap-grab)
+   '("s" . meow-kill)
+   '("t" . meow-till)
+   '("u" . meow-undo)
+   '("U" . meow-undo-in-selection)
+   '("v" . meow-visit)
+   '("w" . meow-mark-word)
+   '("W" . meow-mark-symbol)
+   '("x" . meow-line)
+   '("X" . meow-goto-line)
+   '("y" . meow-save)
+   '("Y" . meow-sync-grab)
+   '("z" . meow-pop-selection)
+   '("'" . repeat)
+   '("<escape>" . ignore))
+  )
+(leaf meow
+  :straight t
+  :require t
+  :init
+  (defvar meow-leaving-insert-mode-hook nil
+    "Hook to run when leaving meow insert mode.")
+  (defvar meow-entering-insert-mode-hook nil
+    "Hook to run when entering meow insert mode.")
+
+
+  :hook
+  (meow-insert-mode-hook . (lambda ()
+                           (if meow-insert-mode
+                               (run-hooks 'meow-entering-insert-mode-hook)
+                             (run-hooks 'meow-leaving-insert-mode-hook))))
+  (meow-leaving-insert-mode-hook . sis-set-english)
+
+  :config
+  (meow-setup)
+  (meow-global-mode 1)
+  (add-to-list 'meow-mode-state-list '(minibuffer-mode . insert))
+  )
+
+(leaf sis
+  :straight t
+  :when *is-linux*
+  :hook
+  (sis-context-hooks . meow-entering-insert-mode-hook)
+  ;; enable the /context/ and /inline region/ mode for specific buffers
+  ;; (((text-mode prog-mode) . sis-context-mode)
+  ;;  ((text-mode prog-mode) . sis-inline-mode))
+  :config
+  ;; For MacOS
+  (sis-ism-lazyman-config
+   ;; English input source may be: "ABC", "US" or another one.
+   ;; "com.apple.keylayout.ABC"
+   "1"
+
+   ;; Other language input source: "rime", "sogou" or another one.
+   ;; "im.rime.inputmethod.Squirrel.Rime"
+   "2"
+
+   'fcitx5
+   )
+
+  ;; enable the /cursor color/ mode
+  (sis-global-cursor-color-mode t)
+  ;; enable the /respect/ mode
+  (sis-global-respect-mode -1)
+  ;; enable the /context/ mode for all buffers
+  (sis-global-context-mode 1)
+  ;; enable the /inline english/ mode for all buffers
+  ;; (sis-global-inline-mode t)
+
+  ;; org title 处切换 Rime，telega 聊天时切换 Rime。
+  ;; 使用模式编辑 meow，需要额外加 meow-insert-mode 条件。
+  (add-to-list 'sis-context-detectors
+               (lambda (&rest _)
+                 (when (and meow-insert-mode
+                            (or (derived-mode-p 'org-mode
+                                                'telega-chat-mode
+                                                )))
+                   'other)))
+
+  (defun +meow-focus-change-function ()
+    (if (frame-focus-state)
+        (sis-set-english)
+      (meow-insert-exit)))
+
+  (add-function :after after-focus-change-function '+meow-focus-change-function)
+  )
+
 (leaf ace-window
   :straight t
   :bind (("C-x o" . ace-window)))
@@ -515,118 +681,6 @@
   `(transient-levels-file . ,(expand-emacs-state "transient/levels.el"))
   `(transient-values-file . ,(expand-emacs-state "transient/values.el"))
   `(transient-history-file . ,(expand-emacs-state "transient/history.el"))
-  )
-
-(defun reload-config ()
-  "重新加载配置"
-  (interactive)
-    (progn
-      (org-babel-tangle-file (expand-emacs-config  "README.org"))
-      (load-file (expand-emacs-config "init.el"))
-      )
-    )
-
-(defun meow-setup ()
-  (setq meow-cheatsheet-layout meow-cheatsheet-layout-qwerty)
-
-  (meow-motion-overwrite-define-key
-   ;; '("j" . meow-next)
-   ;; '("k" . meow-prev)
-   '("<escape>" . ignore))
-  (meow-leader-define-key
-   ;; SPC j/k will run the original command in MOTION state.
-   '("J" . "H-j")
-   '("K" . "H-k")
-   ;; Use SPC (0-9) for digit arguments.
-   '("1" . meow-digit-argument)
-   '("2" . meow-digit-argument)
-   '("3" . meow-digit-argument)
-   '("4" . meow-digit-argument)
-   '("5" . meow-digit-argument)
-   '("6" . meow-digit-argument)
-   '("7" . meow-digit-argument)
-   '("8" . meow-digit-argument)
-   '("9" . meow-digit-argument)
-   '("0" . meow-digit-argument)
-   '("/" . meow-keypad-describe-key)
-
-   '("?" . meow-cheatsheet)
-
-   '("<SPC>" . consult-mode-command)
-
-   '("r" . reload-config)
-   )
-  (meow-normal-define-key
-   '("0" . meow-expand-0)
-   '("9" . meow-expand-9)
-   '("8" . meow-expand-8)
-   '("7" . meow-expand-7)
-   '("6" . meow-expand-6)
-   '("5" . meow-expand-5)
-   '("4" . meow-expand-4)
-   '("3" . meow-expand-3)
-   '("2" . meow-expand-2)
-   '("1" . meow-expand-1)
-   '("-" . negative-argument)
-   '(";" . meow-reverse)
-   '("," . meow-inner-of-thing)
-   '("." . meow-bounds-of-thing)
-   '("[" . meow-beginning-of-thing)
-   '("]" . meow-end-of-thing)
-   '("a" . meow-append)
-   '("A" . meow-open-below)
-   '("b" . meow-back-word)
-   '("B" . meow-back-symbol)
-   '("c" . meow-change)
-   '("d" . meow-delete)
-   '("D" . meow-backward-delete)
-   '("e" . meow-next-word)
-   '("E" . meow-next-symbol)
-   '("f" . meow-find)
-   '("g" . meow-cancel-selection)
-   '("G" . meow-grab)
-   '("h" . meow-left)
-   '("H" . meow-left-expand)
-   '("i" . meow-insert)
-   '("I" . meow-open-above)
-   '("j" . meow-next)
-   '("J" . meow-next-expand)
-   '("k" . meow-prev)
-   '("K" . meow-prev-expand)
-   '("l" . meow-right)
-   '("L" . meow-right-expand)
-   '("m" . meow-join)
-   '("n" . meow-search)
-   '("o" . meow-block)
-   '("O" . meow-to-block)
-   '("p" . meow-yank)
-   '("P" . consult-yank-from-kill-ring)
-   '("q" . meow-quit)
-   '("Q" . meow-goto-line)
-   '("r" . meow-replace)
-   '("R" . meow-swap-grab)
-   '("s" . meow-kill)
-   '("t" . meow-till)
-   '("u" . meow-undo)
-   '("U" . meow-undo-in-selection)
-   '("v" . meow-visit)
-   '("w" . meow-mark-word)
-   '("W" . meow-mark-symbol)
-   '("x" . meow-line)
-   '("X" . meow-goto-line)
-   '("y" . meow-save)
-   '("Y" . meow-sync-grab)
-   '("z" . meow-pop-selection)
-   '("'" . repeat)
-   '("<escape>" . ignore))
-  )
-(leaf meow
-  :straight t
-  :require t
-  :config
-  (meow-setup)
-  (meow-global-mode 1)
-  (add-to-list 'meow-mode-state-list '(minibuffer-mode . insert))
   )
 
 (leaf mu4e
@@ -960,6 +1014,8 @@
   :straight t
   :ensure-system-package ledger
   :mode "\\.ledger\\'"
+  :custom
+  (ledger-post-amount-alignment-column . 60)
   )
 
 ;; Org模式相关的，和GTD相关的
@@ -1017,13 +1073,16 @@
                              ))
   :config
   (org-clock-auto-clockout-insinuate)
-  (org-babel-do-load-languages
-   'org-babel-load-languages
-   '(
-     ;; (dot . t)
-     (emacs-lisp . t)
-     ;; (ledger . t)         ;this is the important one for this tutorial
-     ))
+  (defun grass-emacs/next-monday ()
+    (org-read-date nil nil "Mon"))
+
+  (defun grass-emacs/current-monday ()
+    (org-read-date nil nil "-Mon"))
+
+  (defun grass-emacs/last-monday ()
+    (org-read-date nil nil "--1w" nil (date-to-time (grass-emacs/current-monday))))
+
+
   :bind
   ("C-c n s" . org-save-all-org-buffers)
   ("C-c n c" . org-capture)
@@ -1035,6 +1094,7 @@
   )
 
 (leaf org-agenda
+  :after org
   :custom
   ;; 除了gtd的，还有各种外部收集箱中的未整理的也要显示
   (org-agenda-files . '("~/org/gtd/gtd.org" "~/org/inbox"))
