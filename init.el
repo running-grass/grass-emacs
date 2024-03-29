@@ -870,154 +870,6 @@
   ("C-c p v" . magit)
   )
 
-(leaf format-all
-  :straight t
-  :commands format-all-mode
-  :bind
-  ("C-c b =" . format-all-region-or-buffer)
-  )
-
-(leaf editorconfig
-  :straight t
-  :global-minor-mode editorconfig-mode
-  )
-
-(leaf nix-mode
-  :straight t
-  :mode "\\.nix\\'"
-  ;; :custom
-  ;; (lsp-bridge-nix-lsp-server . 'rnix-lsp)
-  :setq-default
-  (format-all-formatters . '(("Nix" (nixfmt))))
-  )
-
-(leaf php-mode
-  :straight t
-  :mode "\\.php\\'"
-  :custom
-  (lsp-bridge-php-lsp-server . 'phpactor)
-  :bind
-  (:php-mode-map
-   ;; 清除 C-. 为 embark 腾空
-   ("C-," . nil)
-   ("C-." . nil))
-  )
-
-(leaf python
-  :ensure-system-package pyright
-  :custom
-  (lsp-bridge-python-lsp-server . 'pyright)
-  )
-
-;; 配置emmet-mode
-;; 默认为C-j展开
-(leaf emmet-mode
-  :straight t
-  :hook html-mode-hook
-  :hook html-ts-mode-hook
-  :hook css-mode-hook
-  :hook vue-mode-hook
-  )
-
-(leaf typescript-ts-mode
-  :mode "\\.ts\\'"
-  )
-
-;; (leaf tide
-;;   :straight t
-;;   :hook
-;;   (typescript-ts-mode-hook . tide-setup)
-;;   (tsx-ts-mode-hook . tide-setup)
-;;   (js-mode-hook . tide-setup)
-;;   (vue-mode-hook . tide-setup)
-;;   (typescript-ts-mode-hook . tide-hl-identifier-mode)
-;;   )
-
-(leaf vue-mode
-  :straight t
-  :mode "\\.vue\\'"
-  :custom
-  ;; 0, 1, or 2, representing (respectively) none, low, and high coloring
-  (mmm-submode-decoration-level . 0)
-  )
-
-(leaf markdown-mode
-  :straight t
-  :ensure-system-package multimarkdown
-  :mode ("README\\.md\\'" . gfm-mode)
-  :custom
-  (markdown-command . "multimarkdown")
-  :bind
-  (:markdown-mode-map
-   ("C-c C-e" . markdown-do)
-   ))
-
-(leaf yaml-ts-mode
-  :mode ("\\.yml\\'" "\\.yaml\\'")
-  :setq-default
-  (format-all-formatters . '(("YAML" (prettier)))))
-
-(leaf plantuml-mode
-  :straight t
-  :ensure-system-package plantuml
-  :mode ("\\.puml\\'" "\\.plantuml\\'" "\\.wsd\\'" "\\.pu\\'" "\\.iuml\\'")
-  :custom
-  (plantuml-default-exec-mode . 'executable)
-  (plantuml-executable-args . '(
-                                "-headless"
-                                "-charset"
-                                "UTF-8"
-                                ))
-  )
-
-(leaf mermaid-mode
-  :straight t
-  :ensure-system-package
-  (mmdc . mermaid-cli)
-  )
-
-(leaf just-mode
-  :straight t
-  :mode ("\\justfile\\'")
-  )
-(leaf justl
-  :straight t
-  :bind
-  ("C-c p r" . justl-exec-recipe-in-dir)
-  )
-
-(leaf dockerfile-mode
-  :straight t
-  :mode ("\\Dockerfile\\'")
-  )
-
-(leaf hl-todo
-  :straight t
-  :global-minor-mode global-hl-todo-mode
-  )
-
-(leaf magit-todos
-  :straight t
-  :after magit
-  :global-minor-mode magit-todos-mode
-  )
-
-(leaf consult-todo
-  :straight t
-  :after consult
-  :bind
-  ("C-c p t" . consult-todo-project)
-  ("C-c j t" . consult-todo)
-  )
-
-(leaf ledger-mode
-  :straight t
-  :ensure-system-package ledger
-  :mode "\\.ledger\\'"
-  :custom
-  (ledger-post-amount-alignment-column . 60)
-  )
-
 ;; Org模式相关的，和GTD相关的
 (leaf org
   :ensure-system-package (pandoc zip)
@@ -1069,7 +921,7 @@
                              ("T" "带上下文捕获任务" entry (file+headline  "~/org/gtd/gtd.org" "Inbox For GTD") "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:")
                              ("t" "捕获任务" entry (file+headline  "~/org/gtd/gtd.org" "Inbox For GTD") "* TODO %?\n")
                              ("n" "摘抄" entry (file  "~/org/inbox/emacs.org") "* TODO 摘抄自 %a \n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:\n%i\n" :immediate-finish t)
-                             ("x" "快速捕获任务" entry (file+headline  "~/org/gtd/gtd.org" "Inbox For GTD") "* TODO %l \n" :immediate-finish t)
+                             ("x" "快速捕获任务" entry (file+headline  "~/org/gtd/gtd.org" "Inbox For GTD") "* TODO %l \nSCHEDULED: %t\n" :immediate-finish t)
                              ))
   :config
   (org-clock-auto-clockout-insinuate)
@@ -1091,6 +943,10 @@
   (org-after-tags-change-hook . org-save-all-org-buffers)
   (org-after-refile-insert-hook . org-save-all-org-buffers)
   (org-after-todo-state-change-hook . org-save-all-org-buffers)
+  )
+
+(leaf org-contrib
+  :straight t
   )
 
 (leaf org-agenda
@@ -1118,7 +974,7 @@
 
                                   ("r" . "回顾统计")
                                   ("rt" "今日完成任务"
-                                   tags "+CLOSED>=\"<today>\"|+LAST_REPEAT>=\"<today>\"|+TIMESTAMP>=\"<today>\"+TIMESTAMP<\"<tomorrow>\""
+                                   tags "+CLOSED>=\"<today>\"|+LAST_REPEAT>=\"<today>\"-habit|+TIMESTAMP>=\"<today>\"+TIMESTAMP<\"<tomorrow>\"-habit"
                                    ((org-agenda-overriding-header "今日完成的任务")
                                     (org-agenda-sorting-strategy '(priority-down))
                                     (org-agenda-start-with-entry-text-mode . nil)
@@ -1126,7 +982,7 @@
                                    nil)
 
                                   ("ry" "昨日完成任务"
-                                   tags "+CLOSED>=\"<-1d>\"+CLOSED<\"<today>\"|+LAST_REPEAT>=\"<-1d>\"+LAST_REPEAT<\"<today>\"|+TIMESTAMP>=\"<-1d>\"+TIMESTAMP<\"<today>\""
+                                   tags "+CLOSED>=\"<-1d>\"+CLOSED<\"<today>\"|+LAST_REPEAT>=\"<-1d>\"+LAST_REPEAT<\"<today>\"-habit|+TIMESTAMP>=\"<-1d>\"+TIMESTAMP<\"<today>\"-habit"
                                    ((org-agenda-overriding-header "昨日完成的任务")
                                     (org-agenda-sorting-strategy '(priority-down))
                                     (org-agenda-start-with-entry-text-mode . nil)
@@ -1135,7 +991,7 @@
 
                                   ("rw" "本周完成任务"
                                    tags ,(let ((monday (grass-emacs/current-monday)))
-                                           (format "+CLOSED>=\"<%s>\"|+LAST_REPEAT>=\"<%s>\"|+TIMESTAMP>=\"<%s>\"+TIMESTAMP<=\"<now>\"" monday monday monday))
+                                           (format "+CLOSED>=\"<%s>\"|+LAST_REPEAT>=\"<%s>\"-habit|+TIMESTAMP>=\"<%s>\"+TIMESTAMP<=\"<now>\"-habit" monday monday monday))
                                    ((org-agenda-overriding-header "本周完成的任务")
                                     (org-agenda-sorting-strategy '(priority-down))
                                     (org-agenda-start-with-entry-text-mode . nil)
@@ -1147,7 +1003,7 @@
                                                (monday (grass-emacs/current-monday))
                                                (last-monday (grass-emacs/last-monday)))
                                            (format
-                                            "+CLOSED>=\"<%s>\"+CLOSED<\"<%s>\"|+LAST_REPEAT>=\"<%s>\"+LAST_REPEAT<\"<%s>\"|+TIMESTAMP>=\"<%s>\"+TIMESTAMP<\"<%s>\""
+                                            "+CLOSED>=\"<%s>\"+CLOSED<\"<%s>\"|+LAST_REPEAT>=\"<%s>\"+LAST_REPEAT<\"<%s>\"-habit|+TIMESTAMP>=\"<%s>\"+TIMESTAMP<\"<%s>\"-habit"
                                             last-monday monday last-monday monday last-monday monday))
                                    ((org-agenda-overriding-header "上周完成的任务")
                                     (org-agenda-sorting-strategy '(priority-down))
@@ -1197,7 +1053,6 @@
   (org-roam-directory . "~/org/roam/")
   `(org-roam-node-display-template . ,(concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
   :bind
-  ("C-c n l" . org-roam-buffer-toggle)
   ("C-c n f" . org-roam-node-find)
   ("C-c n g" . org-roam-graph)
   ("C-c n i" . org-roam-node-insert)
@@ -1208,6 +1063,32 @@
   :config
   (org-roam-db-autosync-mode)
   )
+
+(leaf consult-org-roam
+   :straight t
+   :after org-roam
+   :require t
+   :global-minor-mode t
+   :custom
+   ;; Use `ripgrep' for searching with `consult-org-roam-search'
+   (consult-org-roam-grep-func . 'consult-ripgrep)
+   ;; Configure a custom narrow key for `consult-buffer'
+   (consult-org-roam-buffer-narrow-key . ?r)
+   ;; Display org-roam buffers right after non-org-roam buffers
+   ;; in consult-buffer (and not down at the bottom)
+   (consult-org-roam-buffer-after-buffers . t)
+   :config
+   ;; Eventually suppress previewing for certain functions
+   (consult-customize
+    consult-org-roam-forward-links
+    :preview-key "M-.")
+   :bind
+   ;; Define some convenient keybindings as an addition
+   ("C-c n e" . consult-org-roam-file-find)
+   ("C-c n b" . consult-org-roam-backlinks)
+   ("C-c n B" . consult-org-roam-backlinks-recursive)
+   ("C-c n l" . consult-org-roam-forward-links)
+   ("C-c n r" . consult-org-roam-search))
 
 ;; org 美化
 (leaf org-modern
@@ -1322,8 +1203,7 @@
 
 (leaf org-anki
   :straight t
-  ;; :ensure-system-package anki
-
+  :ensure-system-package anki
   )
 
 (leaf toc-org
@@ -1382,6 +1262,169 @@
                               (1- cn-day))))
     (format "%04d-%02d-%02d 周%s %s%s" year month
             day dayname cn-month-string cn-day-string)))
+
+(leaf format-all
+  :straight t
+  :commands format-all-mode
+  :bind
+  ("C-c b =" . format-all-region-or-buffer)
+  )
+
+(leaf editorconfig
+  :straight t
+  :global-minor-mode editorconfig-mode
+  )
+
+(leaf nix-mode
+  :straight t
+  :mode "\\.nix\\'"
+  ;; :custom
+  ;; (lsp-bridge-nix-lsp-server . 'rnix-lsp)
+  :setq-default
+  (format-all-formatters . '(("Nix" (nixfmt))))
+  )
+
+(leaf php-mode
+  :straight t
+  :mode "\\.php\\'"
+  :custom
+  (lsp-bridge-php-lsp-server . 'phpactor)
+  :bind
+  (:php-mode-map
+   ;; 清除 C-. 为 embark 腾空
+   ("C-," . nil)
+   ("C-." . nil))
+  )
+
+(leaf python
+  :ensure-system-package pyright
+  :custom
+  (lsp-bridge-python-lsp-server . 'pyright)
+  )
+
+(leaf haskell-mode
+  :straight t
+  :ensure-system-package
+  (haskell-language-server-wrapper . haskell-language-server)
+  (cabal . cabal-install)
+  ghc
+  :mode "\\.hs\\'"
+  )
+
+;; 配置emmet-mode
+;; 默认为C-j展开
+(leaf emmet-mode
+  :straight t
+  :hook html-mode-hook
+  :hook html-ts-mode-hook
+  :hook css-mode-hook
+  :hook vue-mode-hook
+  )
+
+(leaf typescript-ts-mode
+  :mode "\\.ts\\'"
+  )
+
+;; (leaf tide
+;;   :straight t
+;;   :hook
+;;   (typescript-ts-mode-hook . tide-setup)
+;;   (tsx-ts-mode-hook . tide-setup)
+;;   (js-mode-hook . tide-setup)
+;;   (vue-mode-hook . tide-setup)
+;;   (typescript-ts-mode-hook . tide-hl-identifier-mode)
+;;   )
+
+(leaf vue-mode
+  :straight t
+  :mode "\\.vue\\'"
+  :custom
+  ;; 0, 1, or 2, representing (respectively) none, low, and high coloring
+  (mmm-submode-decoration-level . 0)
+  )
+
+(leaf markdown-mode
+  :straight t
+  :ensure-system-package multimarkdown
+  :mode ("README\\.md\\'" . gfm-mode)
+  :custom
+  (markdown-command . "multimarkdown")
+  :bind
+  (:markdown-mode-map
+   ("C-c C-e" . markdown-do)
+   ))
+
+(leaf yaml-ts-mode
+  :mode ("\\.yml\\'" "\\.yaml\\'")
+  :setq-default
+  (format-all-formatters . '(("YAML" (prettier)))))
+
+(leaf dotenv-mode
+  :straight t
+  :mode "\\.env\\..*\\'"
+  )
+
+(leaf plantuml-mode
+  :straight t
+  :ensure-system-package plantuml
+  :mode ("\\.puml\\'" "\\.plantuml\\'" "\\.wsd\\'" "\\.pu\\'" "\\.iuml\\'")
+  :custom
+  (plantuml-default-exec-mode . 'executable)
+  (plantuml-executable-args . '(
+                                "-headless"
+                                "-charset"
+                                "UTF-8"
+                                ))
+  )
+
+(leaf mermaid-mode
+  :straight t
+  :ensure-system-package
+  (mmdc . mermaid-cli)
+  )
+
+(leaf just-mode
+  :straight t
+  :mode ("\\justfile\\'")
+  )
+(leaf justl
+  :straight t
+  :bind
+  ("C-c p r" . justl-exec-recipe-in-dir)
+  )
+
+(leaf dockerfile-mode
+  :straight t
+  :mode ("\\Dockerfile\\'")
+  )
+
+(leaf hl-todo
+  :straight t
+  :global-minor-mode global-hl-todo-mode
+  )
+
+(leaf magit-todos
+  :straight t
+  :after magit
+  :global-minor-mode magit-todos-mode
+  )
+
+(leaf consult-todo
+  :straight t
+  :after consult
+  :bind
+  ("C-c p t" . consult-todo-project)
+  ("C-c j t" . consult-todo)
+  )
+
+(leaf ledger-mode
+  :straight t
+  :ensure-system-package ledger
+  :require ob-ledger
+  :mode "\\.ledger\\'"
+  :custom
+  (ledger-post-amount-alignment-column . 60)
+  )
 
 ;; 高亮当前行
 (leaf hl-line
