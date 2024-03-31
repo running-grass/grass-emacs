@@ -28,7 +28,6 @@
           # overlays = [ (import emacs-overlay) ];
         };
         emacsWrap = import ./emacsWrap.nix { inherit pkgs; };
-        packages = import ./packages.nix { inherit pkgs; };
         fontPackages = import ./font-packages.nix { inherit pkgs; };
         env-vars = {
           # eaf
@@ -42,12 +41,12 @@
     # Nixos 使用的模块
     // (let
       system = "x86_64-linux";
-      inherit (getEmacs system) emacsWrap packages fontPackages env-vars;
+      inherit (getEmacs system) emacsWrap fontPackages env-vars;
     in {
       nixosModules.default = { config, ... }: {
         options = { };
         config = {
-          environment.systemPackages = packages ++ [ emacsWrap ];
+          environment.systemPackages = [ emacsWrap ];
           environment.variables =
             (env-vars // { GRASS_EMACS_ENV = "nix-module"; });
           fonts = {
@@ -67,14 +66,11 @@
     # Macos 使用的模块
     // (let
       system = "x86_64-darwin";
-      inherit (getEmacs system) emacsWrap packages fontPackages env-vars pkgs;
+      inherit (getEmacs system) emacsWrap  fontPackages env-vars pkgs;
     in {
       darwinModules.default = { config, ... }: {
         options = { };
         config = {
-          environment.systemPackages = packages; # ++ [ emacsWrap ];
-          # environment.variables =
-          #   (env-vars // { GRASS_EMACS_ENV = "nix-module"; });
           fonts = {
             fontDir.enable = true;
             fonts = fontPackages;
@@ -86,13 +82,6 @@
 
             brews = [ "emacs-plus@30" ];
           };
-
-          # home-manager.extraSpecialArgs = { inherit pkgs; };
-
-          # home-manager.users.grass = {
-          #   imports = [ ./modules/rbw.nix ];
-          #   programs.zsh.shellAliases = { };
-          # };
         };
       };
     })

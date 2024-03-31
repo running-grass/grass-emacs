@@ -1277,6 +1277,7 @@
 
 (leaf nix-mode
   :straight t
+  :ensure-system-package nixfmt
   :mode "\\.nix\\'"
   ;; :custom
   ;; (lsp-bridge-nix-lsp-server . 'rnix-lsp)
@@ -1286,6 +1287,7 @@
 
 (leaf php-mode
   :straight t
+  :ensure-system-package phpactor
   :mode "\\.php\\'"
   :custom
   (lsp-bridge-php-lsp-server . 'phpactor)
@@ -1300,6 +1302,11 @@
   :ensure-system-package pyright
   :custom
   (lsp-bridge-python-lsp-server . 'pyright)
+  )
+
+(leaf ess
+  :straight t
+  :ensure-system-package R
   )
 
 (leaf haskell-mode
@@ -1322,6 +1329,10 @@
   )
 
 (leaf typescript-ts-mode
+  :ensure-system-package
+  typescript
+  (typescript-language-server .   nodePackages.typescript-language-server)
+  yaml-language-server
   :mode "\\.ts\\'"
   )
 
@@ -1337,6 +1348,11 @@
 
 (leaf vue-mode
   :straight t
+  :ensure-system-package
+  emmet-ls
+  (vue-language-server . nodePackages.volar)
+  (vscode-css-language-server . vscode-langservers-extracted)
+
   :mode "\\.vue\\'"
   :custom
   ;; 0, 1, or 2, representing (respectively) none, low, and high coloring
