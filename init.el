@@ -969,8 +969,7 @@
                                     (org-agenda-skip-function '(org-agenda-skip-entry-if 'regexp "Inbox For GTD"))
                                     ))
 
-                                  ("w" . "每周回顾")
-                                  ("wp" "每周项目回顾" tags "+project" ((org-use-tag-inheritance nil)))
+                                  ("p" "每周项目回顾" tags-tree "+project" )
 
                                   ("r" . "回顾统计")
                                   ("rt" "今日完成任务"
@@ -1330,8 +1329,8 @@
 
 (leaf typescript-ts-mode
   :ensure-system-package
-  typescript
-  (typescript-language-server .   nodePackages.typescript-language-server)
+  (typescript-language-server . nodePackages.typescript-language-server)
+  (tsc . typescript)
   yaml-language-server
   :mode "\\.ts\\'"
   )
