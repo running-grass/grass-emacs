@@ -69,6 +69,7 @@
 - [[#编程语言][编程语言]]
   - [[#通用配置][通用配置]]
   - [[#nix][Nix]]
+  - [[#sh-script][Sh Script]]
   - [[#php][PHP]]
   - [[#python][Python]]
   - [[#r][R]]
@@ -1831,7 +1832,13 @@ Org-mode 相关的配置。
     (format-all-formatters . '(("Nix" (nixfmt))))
     )
 #+end_src
+** Sh Script
+#+begin_src emacs-lisp
+  (leaf sh-script
+    :require ob-shell
+    )
 
+#+end_src
 ** PHP
 
 #+begin_src emacs-lisp

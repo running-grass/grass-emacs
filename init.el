@@ -1284,6 +1284,10 @@
   (format-all-formatters . '(("Nix" (nixfmt))))
   )
 
+(leaf sh-script
+  :require ob-shell
+  )
+
 (leaf php-mode
   :straight t
   :ensure-system-package phpactor
