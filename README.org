@@ -81,6 +81,7 @@
   - [[#dotenv][Dotenv]]
   - [[#plantuml][PlantUML]]
   - [[#mermaid][Mermaid]]
+  - [[#gnuplot][Gnuplot]]
   - [[#just-file][Just File]]
   - [[#docker][Docker]]
   - [[#todo-keyword][TODO-keyword]]
@@ -1986,6 +1987,17 @@ Org-mode 相关的配置。
     :straight t
     :ensure-system-package
     (mmdc . mermaid-cli)
+    )
+#+end_src
+
+** Gnuplot
+
+#+begin_src emacs-lisp
+  (leaf gnuplot
+    :straight t
+    :ensure-system-package gnuplot
+    :mode "\\.gp\\'"
+    :require ob-gnuplot
     )
 #+end_src
 ** Just File
