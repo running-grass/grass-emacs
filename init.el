@@ -923,6 +923,11 @@
                              ("n" "摘抄" entry (file  "~/org/inbox/emacs.org") "* TODO 摘抄自 %a \n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:\n%i\n" :immediate-finish t)
                              ("x" "快速捕获任务" entry (file+headline  "~/org/gtd/gtd.org" "Inbox For GTD") "* TODO %l \nSCHEDULED: %t\n" :immediate-finish t)
                              ))
+
+
+  ;; 图片显示
+  (org-startup-with-inline-images . t)
+  (org-cycle-inline-images-display . t)
   :config
   (org-clock-auto-clockout-insinuate)
   (defun grass-emacs/next-monday ()
@@ -1307,11 +1312,6 @@
   (lsp-bridge-python-lsp-server . 'pyright)
   )
 
-(leaf ess
-  :straight t
-  :ensure-system-package R
-  )
-
 (leaf haskell-mode
   :straight t
   :ensure-system-package
@@ -1400,6 +1400,20 @@
   :straight t
   :ensure-system-package
   (mmdc . mermaid-cli)
+  )
+
+(leaf gnuplot
+  :straight t
+  :ensure-system-package gnuplot
+  :mode "\\.gp\\'"
+  :require ob-gnuplot
+  )
+
+(leaf ess
+  :straight t
+  :ensure-system-package R
+  :mode "\\.r\\'"
+  :require ob-R
   )
 
 (leaf just-mode

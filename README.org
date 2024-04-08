@@ -72,7 +72,6 @@
   - [[#sh-script][Sh Script]]
   - [[#php][PHP]]
   - [[#python][Python]]
-  - [[#r][R]]
   - [[#haskell][Haskell]]
   - [[#web][Web]]
   - [[#vue][Vue]]
@@ -82,6 +81,7 @@
   - [[#plantuml][PlantUML]]
   - [[#mermaid][Mermaid]]
   - [[#gnuplot][Gnuplot]]
+  - [[#r][R]]
   - [[#just-file][Just File]]
   - [[#docker][Docker]]
   - [[#todo-keyword][TODO-keyword]]
@@ -1350,6 +1350,11 @@ Org-mode 相关的配置。
                                ("n" "摘抄" entry (file  "~/org/inbox/emacs.org") "* TODO 摘抄自 %a \n:PROPERTIES:\n:CREATED: %U\n:RELATED: %a\n:END:\n%i\n" :immediate-finish t)
                                ("x" "快速捕获任务" entry (file+headline  "~/org/gtd/gtd.org" "Inbox For GTD") "* TODO %l \nSCHEDULED: %t\n" :immediate-finish t)
                                ))
+
+
+    ;; 图片显示
+    (org-startup-with-inline-images . t)
+    (org-cycle-inline-images-display . t)
     :config
     (org-clock-auto-clockout-insinuate)
     (defun grass-emacs/next-monday ()
@@ -1866,13 +1871,6 @@ Org-mode 相关的配置。
     )
 #+end_src
 
-** R
-#+begin_src emacs-lisp
-  (leaf ess
-    :straight t
-    :ensure-system-package R
-    )
-#+end_src
 ** Haskell
 #+begin_src emacs-lisp
   (leaf haskell-mode
@@ -1998,6 +1996,16 @@ Org-mode 相关的配置。
     :ensure-system-package gnuplot
     :mode "\\.gp\\'"
     :require ob-gnuplot
+    )
+#+end_src
+
+** R
+#+begin_src emacs-lisp
+  (leaf ess
+    :straight t
+    :ensure-system-package R
+    :mode "\\.r\\'"
+    :require ob-R
     )
 #+end_src
 ** Just File
