@@ -252,7 +252,7 @@
     (startup-redirect-eln-cache (expand-emacs-cache "eln-cache")))
 
   ;; 定义自定义文件
-  (defconst *custom-file* (expand-emacs-data "custom.el") "一些个性化的定义存放之地")
+  (defconst custom-file (expand-emacs-data "custom.el") "一些个性化的定义存放之地")
 
   ;; 插件默认使用这个目录，如果需要的话，再调整到其它相关目录
   (setq user-emacs-directory (expand-emacs-state ""))
@@ -1268,6 +1268,7 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
                                         ))
     :bind
     ("C-c p R" . projectile-replace)
+    ("C-c p S" . projectile-save-project-buffers)
     )
 
   ;; 绑定 consult-projectile
@@ -1985,6 +1986,8 @@ Org-mode 相关的配置。
     :straight t
     :ensure-system-package
     (mmdc . mermaid-cli)
+    :custom
+    (mermaid-output-format . ".svg")
     )
 #+end_src
 
@@ -2277,8 +2280,8 @@ Org-mode 相关的配置。
 #+end_src
 * 加载自定义文件
 #+begin_src emacs-lisp
-  (when (file-exists-p *custom-file*)
-    (load *custom-file*))
+  (when (file-exists-p custom-file)
+    (load custom-file))
 #+end_src
 
 * Footer

@@ -75,7 +75,7 @@
   (startup-redirect-eln-cache (expand-emacs-cache "eln-cache")))
 
 ;; 定义自定义文件
-(defconst *custom-file* (expand-emacs-data "custom.el") "一些个性化的定义存放之地")
+(defconst custom-file (expand-emacs-data "custom.el") "一些个性化的定义存放之地")
 
 ;; 插件默认使用这个目录，如果需要的话，再调整到其它相关目录
 (setq user-emacs-directory (expand-emacs-state ""))
@@ -854,6 +854,7 @@
                                       ))
   :bind
   ("C-c p R" . projectile-replace)
+  ("C-c p S" . projectile-save-project-buffers)
   )
 
 ;; 绑定 consult-projectile
@@ -1400,6 +1401,8 @@
   :straight t
   :ensure-system-package
   (mmdc . mermaid-cli)
+  :custom
+  (mermaid-output-format . ".svg")
   )
 
 (leaf gnuplot
@@ -1648,7 +1651,7 @@
   (auto-save-enable)
   )
 
-(when (file-exists-p *custom-file*)
-  (load *custom-file*))
+(when (file-exists-p custom-file)
+  (load custom-file))
 
 ;;; init.el ends here
