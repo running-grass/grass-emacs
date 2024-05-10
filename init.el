@@ -900,7 +900,7 @@
                          ))
   (org-clock-string-limit . 5)
   (org-log-refile . 'nil)
-  (org-log-done . 'time)
+  (org-log-done . 'nil)
   (org-log-into-drawer . "LOGBOOK")
 
   (org-clock-stored-history . t)
@@ -959,7 +959,7 @@
   :after org
   :custom
   ;; 除了gtd的，还有各种外部收集箱中的未整理的也要显示
-  (org-agenda-files . '("~/org/gtd/gtd.org" "~/org/inbox"))
+  (org-agenda-files . '("~/org/gtd/gtd.org" "~/org/inbox" "~/org/roam/project"))
   (org-agenda-tags-column . 0)
   (org-agenda-include-diary . t)
   (org-agenda-show-future-repeats . 'next)
@@ -1064,7 +1064,32 @@
   ("C-c n C" . org-roam-capture)
   ;; Dailies
   ("C-c n j" . org-roam-dailies-capture-today)
+  :init
+  (defvar org-roam--project-directory (concat org-roam-directory "project/") "roam中存放带待办任务的项目目录")
+  (defun org-roam--project-add ()
+    "用于把当前的文件移动 roam的项目目录中"
+    (interactive)
 
+    (let* ((filename (buffer-file-name))
+          (new-filename (expand-file-name (file-name-nondirectory filename) org-roam--project-directory)))
+      (rename-file filename new-filename)
+      (find-file new-filename)
+      (message "File moved to %s" org-roam--project-directory))
+    )
+  (defun org-roam--project-remove ()
+    "用于把当前的文件从 roam的项目目录中移动到 roam 目录"
+    (interactive)
+    (let* ((filename (buffer-file-name))
+          (new-filename (expand-file-name (file-name-nondirectory filename) org-roam-directory)))
+
+      (when (s-prefix-p (expand-file-name org-roam--project-directory) (buffer-file-name))
+        (progn
+          (rename-file filename new-filename)
+          (find-file new-filename)
+          (message "ok")
+        )
+        ))
+    )
   :config
   (org-roam-db-autosync-mode)
   )
@@ -1402,7 +1427,7 @@
   :ensure-system-package
   (mmdc . mermaid-cli)
   :custom
-  (mermaid-output-format . ".svg")
+  (mermaid-output-format . ".png")
   )
 
 (leaf gnuplot
