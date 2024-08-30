@@ -56,7 +56,7 @@
           };
 
           services.emacs = {
-            enable = true;
+            enable = false;
             package = emacsWrap;
             defaultEditor = true;
           };

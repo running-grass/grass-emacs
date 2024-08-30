@@ -11,5 +11,5 @@ pkgs.mkShell {
   # vars
   inherit (env-vars) QT_QPA_PLATFORM_PLUGIN_PATH;
 
-  buildInputs = packages ++ [ emacsWrap dev-emacs ];
+  # buildInputs = packages ++ [ emacsWrap dev-emacs ];
 }

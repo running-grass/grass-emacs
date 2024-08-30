@@ -732,7 +732,7 @@
         '(
           ("fever+https://grass@rss.grass.work:30443"
            :api-url "https://grass@rss.grass.work:30443/fever/"
-           :password  (grass-emacs/get-bitwarden-password "miniflux-fever"))
+           :password  (grass-emacs/get-bitwarden-password "miniflux-fever grass"))
           ))
 
   ;; enable elfeed-protocol
@@ -791,6 +791,7 @@
   ;; formatter
   (lsp-bridge-enable-auto-format-code . nil)
   (lsp-bridge-auto-format-code-idle . nil)
+  (lsp-bridge-enable-inlay-hint . t)
   :hook
   (vue-mode-hook . lsp-bridge-mode)
 
@@ -882,8 +883,9 @@
   (org-special-ctrl-a/e . t)
   (org-insert-heading-respect-content . t)
 
-  (org-protocol-default-template-key . "n")
-
+  (org-protocol-deault-template-key . "n")
+  ;; 使org子项目具有先后依赖
+  (org-enforce-todo-dependencies . t)
   ;; Org styling, hide markup etc.
   (org-hide-emphasis-markers . t)
   (org-pretty-entities . t)
@@ -900,7 +902,7 @@
                          ))
   (org-clock-string-limit . 5)
   (org-log-refile . 'nil)
-  (org-log-done . 'nil)
+  (org-log-done . 'time)
   (org-log-into-drawer . "LOGBOOK")
 
   (org-clock-stored-history . t)
@@ -964,7 +966,7 @@
   (org-agenda-include-diary . t)
   (org-agenda-show-future-repeats . 'next)
   ;; 在agenda视图中默认显示实体文本内容，且最多10行
-  (org-agenda-start-with-entry-text-mode . t)
+  (org-agenda-start-with-entry-text-mode . nil)
   (org-agenda-entry-text-maxlines . 3)
 
   (org-agenda-custom-commands . `(
@@ -991,6 +993,7 @@
                                    ((org-agenda-overriding-header "昨日完成的任务")
                                     (org-agenda-sorting-strategy '(priority-down))
                                     (org-agenda-start-with-entry-text-mode . nil)
+                                    (org-agenda-prefix-format '((todo . " %i %-12:c %s ")))
                                     )
                                    nil)
 
@@ -1021,6 +1024,10 @@
   :bind
   ("C-c n a" . org-agenda)
   ("C-c n n" . org-agenda-list)
+
+  :config
+  (assoc-delete-all 'todo org-agenda-prefix-format)
+  (add-to-list 'org-agenda-prefix-format '(todo . " %i %-12:c %s "))
   )
 
 (leaf org-habit
@@ -1216,13 +1223,13 @@
   :init
   ;; 多个日历
   (setq org-caldav-calendars (list (list
-                                    :url (concat "https://grass:" (grass-emacs/get-bitwarden-password "carddav:grass") "@carddav.grass.work:30443/grass")
+                                    :url (concat "https://grass:" (grass-emacs/get-bitwarden-password "carddav grass") "@carddav.grass.work:30443/grass")
                                     :calendar-id "34a7e558-4066-efe4-69f7-15ada01bc7b6" ; 个人日历
                                     :select-tags (list "personal" "work")
                                     :files '("~/org/gtd/gtd.org")
                                     :inbox "~/org/inbox/caldav-personal.org")
                                    (list
-                                    :url (concat "https://family:" (grass-emacs/get-bitwarden-password "carddav:family") "@carddav.grass.work:30443/family")
+                                    :url (concat "https://family:" (grass-emacs/get-bitwarden-password "carddav family") "@carddav.grass.work:30443/family")
                                     :calendar-id "593557a2-6721-38bf-0243-0cd18c9237ea" ; 家庭日历
                                     :select-tags (list "family")
                                     :files '("~/org/gtd/gtd.org")
@@ -1265,6 +1272,8 @@
                          (holiday-lunar 10 1 "寒衣节")
                          (holiday-lunar 12 23 "小年")
                          (holiday-lunar 12 30 "除夕")
+                         (holiday-float 5 0 2 "母亲节")
+                         (holiday-float 6 0 3 "父亲节")
                          ))
   ;; 在议程中自定义显示格式为阴历
   (org-agenda-format-date . 'grass-emacs/org-agenda-format-date-aligned)
@@ -1307,7 +1316,8 @@
 
 (leaf nix-mode
   :straight t
-  :ensure-system-package nixfmt
+  :ensure-system-package
+  (nixfmt . nixfmt-classic)
   :mode "\\.nix\\'"
   ;; :custom
   ;; (lsp-bridge-nix-lsp-server . 'rnix-lsp)
@@ -1379,7 +1389,7 @@
   :straight t
   :ensure-system-package
   emmet-ls
-  (vue-language-server . nodePackages.volar)
+  (vue-language-server . nodePackages.vls)
   (vscode-css-language-server . vscode-langservers-extracted)
 
   :mode "\\.vue\\'"
@@ -1409,6 +1419,11 @@
   :mode "\\.env\\..*\\'"
   )
 
+(leaf direnv
+  :straight t
+  :global-minor-mode direnv-mode
+  )
+
 (leaf plantuml-mode
   :straight t
   :ensure-system-package plantuml
@@ -1428,6 +1443,7 @@
   (mmdc . mermaid-cli)
   :custom
   (mermaid-output-format . ".png")
+  (mermaid-flags . "-w 2000")
   )
 
 (leaf gnuplot
@@ -1485,6 +1501,12 @@
   :mode "\\.ledger\\'"
   :custom
   (ledger-post-amount-alignment-column . 60)
+  )
+
+(leaf idris-mode
+  :straight t
+  :custom
+  (idris-interpreter-path . "idris2")
   )
 
 ;; 高亮当前行

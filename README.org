@@ -78,6 +78,7 @@
   - [[#markdown][Markdown]]
   - [[#yaml][YAML]]
   - [[#dotenv][Dotenv]]
+  - [[#direnv][DirEnv]]
   - [[#plantuml][PlantUML]]
   - [[#mermaid][Mermaid]]
   - [[#gnuplot][Gnuplot]]
@@ -86,6 +87,7 @@
   - [[#docker][Docker]]
   - [[#todo-keyword][TODO-keyword]]
   - [[#ledger][Ledger]]
+  - [[#idris2][Idris2]]
 - [[#style][Style]]
 - [[#杂项][杂项]]
   - [[#undoredo][Undo/Redo]]
@@ -1106,7 +1108,7 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
           '(
             ("fever+https://grass@rss.grass.work:30443"
              :api-url "https://grass@rss.grass.work:30443/fever/"
-             :password  (grass-emacs/get-bitwarden-password "miniflux-fever"))
+             :password  (grass-emacs/get-bitwarden-password "miniflux-fever grass"))
             ))
 
     ;; enable elfeed-protocol
@@ -1187,6 +1189,7 @@ embark 是另一个比较神奇的工具。Emacs 基本的操作流程是先输�
     ;; formatter
     (lsp-bridge-enable-auto-format-code . nil)
     (lsp-bridge-auto-format-code-idle . nil)
+    (lsp-bridge-enable-inlay-hint . t)
     :hook
     (vue-mode-hook . lsp-bridge-mode)
 
@@ -1309,8 +1312,9 @@ Org-mode 相关的配置。
     (org-special-ctrl-a/e . t)
     (org-insert-heading-respect-content . t)
 
-    (org-protocol-default-template-key . "n")
-
+    (org-protocol-deault-template-key . "n")
+    ;; 使org子项目具有先后依赖
+    (org-enforce-todo-dependencies . t)
     ;; Org styling, hide markup etc.
     (org-hide-emphasis-markers . t)
     (org-pretty-entities . t)
@@ -1327,7 +1331,7 @@ Org-mode 相关的配置。
                            ))
     (org-clock-string-limit . 5)
     (org-log-refile . 'nil)
-    (org-log-done . 'nil)
+    (org-log-done . 'time)
     (org-log-into-drawer . "LOGBOOK")
 
     (org-clock-stored-history . t)
@@ -1396,7 +1400,7 @@ Org-mode 相关的配置。
     (org-agenda-include-diary . t)
     (org-agenda-show-future-repeats . 'next)
     ;; 在agenda视图中默认显示实体文本内容，且最多10行
-    (org-agenda-start-with-entry-text-mode . t)
+    (org-agenda-start-with-entry-text-mode . nil)
     (org-agenda-entry-text-maxlines . 3)
 
     (org-agenda-custom-commands . `(
@@ -1423,6 +1427,7 @@ Org-mode 相关的配置。
                                      ((org-agenda-overriding-header "昨日完成的任务")
                                       (org-agenda-sorting-strategy '(priority-down))
                                       (org-agenda-start-with-entry-text-mode . nil)
+                                      (org-agenda-prefix-format '((todo . " %i %-12:c %s ")))
                                       )
                                      nil)
 
@@ -1453,6 +1458,10 @@ Org-mode 相关的配置。
     :bind
     ("C-c n a" . org-agenda)
     ("C-c n n" . org-agenda-list)
+
+    :config
+    (assoc-delete-all 'todo org-agenda-prefix-format)
+    (add-to-list 'org-agenda-prefix-format '(todo . " %i %-12:c %s "))
     )
 #+end_src
 ** Org Habit
@@ -1661,13 +1670,13 @@ Org-mode 相关的配置。
     :init
     ;; 多个日历
     (setq org-caldav-calendars (list (list
-                                      :url (concat "https://grass:" (grass-emacs/get-bitwarden-password "carddav:grass") "@carddav.grass.work:30443/grass")
+                                      :url (concat "https://grass:" (grass-emacs/get-bitwarden-password "carddav grass") "@carddav.grass.work:30443/grass")
                                       :calendar-id "34a7e558-4066-efe4-69f7-15ada01bc7b6" ; 个人日历
                                       :select-tags (list "personal" "work")
                                       :files '("~/org/gtd/gtd.org")
                                       :inbox "~/org/inbox/caldav-personal.org")
                                      (list
-                                      :url (concat "https://family:" (grass-emacs/get-bitwarden-password "carddav:family") "@carddav.grass.work:30443/family")
+                                      :url (concat "https://family:" (grass-emacs/get-bitwarden-password "carddav family") "@carddav.grass.work:30443/family")
                                       :calendar-id "593557a2-6721-38bf-0243-0cd18c9237ea" ; 家庭日历
                                       :select-tags (list "family")
                                       :files '("~/org/gtd/gtd.org")
@@ -1717,6 +1726,8 @@ Org-mode 相关的配置。
                            (holiday-lunar 10 1 "寒衣节")
                            (holiday-lunar 12 23 "小年")
                            (holiday-lunar 12 30 "除夕")
+                           (holiday-float 5 0 2 "母亲节")
+                           (holiday-float 6 0 3 "父亲节")
                            ))
     ;; 在议程中自定义显示格式为阴历
     (org-agenda-format-date . 'grass-emacs/org-agenda-format-date-aligned)
@@ -1856,7 +1867,8 @@ Org-mode 相关的配置。
 #+begin_src emacs-lisp
   (leaf nix-mode
     :straight t
-    :ensure-system-package nixfmt
+    :ensure-system-package
+    (nixfmt . nixfmt-classic)
     :mode "\\.nix\\'"
     ;; :custom
     ;; (lsp-bridge-nix-lsp-server . 'rnix-lsp)
@@ -1947,7 +1959,7 @@ Org-mode 相关的配置。
     :straight t
     :ensure-system-package
     emmet-ls
-    (vue-language-server . nodePackages.volar)
+    (vue-language-server . nodePackages.vls)
     (vscode-css-language-server . vscode-langservers-extracted)
 
     :mode "\\.vue\\'"
@@ -1988,6 +2000,14 @@ Org-mode 相关的配置。
     :mode "\\.env\\..*\\'"
     )
 #+end_src
+
+** DirEnv
+#+begin_src emacs-lisp
+  (leaf direnv
+    :straight t
+    :global-minor-mode direnv-mode
+    )
+#+end_src
 ** PlantUML
 
 #+begin_src emacs-lisp
@@ -2013,6 +2033,7 @@ Org-mode 相关的配置。
     (mmdc . mermaid-cli)
     :custom
     (mermaid-output-format . ".png")
+    (mermaid-flags . "-w 2000")
     )
 #+end_src
 
@@ -2089,6 +2110,15 @@ Org-mode 相关的配置。
     :mode "\\.ledger\\'"
     :custom
     (ledger-post-amount-alignment-column . 60)
+    )
+#+end_src
+
+** Idris2
+#+begin_src emacs-lisp
+  (leaf idris-mode
+    :straight t
+    :custom
+    (idris-interpreter-path . "idris2")
     )
 #+end_src
 * Style
